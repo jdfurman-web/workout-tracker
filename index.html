@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Ruck+Iron">
+<meta name="theme-color" content="#0f1117">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<title>Ruck + Iron â Workout Tracker</title>
+<style>
+:root {
+  --bg: #0f1117;
+  --card: #1a1d28;
+  --card2: #222536;
+  --border: #2a2d3a;
+  --accent: #4a9eff;
+  --green: #34d399;
+  --yellow: #f59e0b;
+  --red: #ef4444;
+  --text: #e2e8f0;
+  --muted: #94a3b8;
+  --dim: #64748b;
+  --heading: #f8fafc;
+  --radius: 14px;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.5;
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding-top: var(--safe-top);
+  padding-bottom: calc(70px + var(--safe-bottom));
+  overflow-x: hidden;
+}
+
+/* ââ Header ââ */
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(15,17,23,0.92);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  padding: 12px 16px 8px;
+  border-bottom: 1px solid var(--border);
+}
+.header-title { font-size: 1.25rem; font-weight: 700; color: var(--heading); }
+.header-sub { font-size: 0.8rem; color: var(--muted); margin-top: 2px; }
+.veek-phase { display: inline-block; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; padding: 2px 8px; border-radius: 10px; background: rgba(74,158,255,0.15); color: var(--accent); margin-left: 8px; }
+
+/* ââ Navigation ââ */
+.nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  background: rgba(26,29,40,0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid var(--border);
+  display: flex;
+  padding-bottom: var(--safe-bottom);
+}
+.nav-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 10px 0 8px;
+  background: none;
+  border: none;
+  color: var(--dim);
+  font-size: 0.65rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+.nav-btn.active { color: var(--accent); }
+.nav-btn svg { width: 22px; height: 22px; }
+
+/* ââ Pages ââ */
+.page { display: none; padding: 16px; }
+.page.active { display: block; }
+
+/* ââ Cards ââ */
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-bottom: 12px;
+}
+
+/* ââ Today View ââ */
+.day-type {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 4px;
+}
+.day-type.strength { color: var(--accent); }
+.day-type.ruck { color: var(--green); }
+.day-type.rest { color: var(--yellow); }
+.day-name { font-size: 1.4rem; font-weight: 700; color: var(--heading); margin-bottom: 4px; }
+.day-desc { font-size: 0.85rem; color: var(--muted); margin-bottom: 16px; }
+
+/* ââ Exercise Row ââ */
+.exercise {
+  background: var(--card2);
+  border-radius: 12px;
+  margin-bottom: 10px;
+  overflow: hidden;
+}
+.exercise-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  cursor: pointer;
+}
+.exercise-header:active { background: rgba(255,255,255,0.03); }
+.ex-name { font-weight: 600; font-size: 0.95rem; color: var(--heading); flex: 1; }
+.ex-prescription { font-size: 0.8rem; color: var(--muted); margin-left: 8px; white-space: nowrap; }
+.ex-check { width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--border); margin-left: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.2s; }
+.ex-check.done { border-color: var(--green); background: var(--green); }
+.ex-check.done::after { content: 'â'; font-size: 12px; color: var(--bg); font-weight: 700; }
+.ex-check.partial { border-color: var(--yellow); background: rgba(245,158,11,0.2); }
+.exercise-detail { display: none; padding: 0 14px 14px; }
+.exercise-detail.open { display: block; }
+.ex-note { font-size: 0.8rem; color: var(--muted); font-style: italic; margin-bottom: 10px; }
+.ex-rest { font-size: 0.75rem; color: var(--yellow); margin-bottom: 10px; }
+
+/* ââ Set Logging ââ */
+.set-row {
+  display: grid;
+  grid-template-columns: 32px 1fr 1fr 60px;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.set-label { font-size: 0.75rem; font-weight: 700; color: var(--dim); text-align: center; }
+.set-input {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 8px;
+  color: var(--text);
+  font-size: 0.95rem;
+  text-align: center;
+  width: 100%;
+  -webkit-appearance: none;
+  appearance: none;
+}
+.set-input:focus { border-color: var(--accent); outline: none; }
+.set-input::placeholder { color: var(--dim); }
+.set-header {
+  display: grid;
+  grid-template-columns: 32px 1fr 1fr 60px;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.set-header span { font-size: 0.65rem; font-weight: 600; color: var(--dim); text-transform: uppercase; text-align: center; }
+
+/* ââ Ruck Logging ââ */
+.ruck-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.ruck-field label {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--dim);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+/* ââ RPE Selector ââ */
+.rpe-row {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+}
+.rpe-btn {
+  flex: 1;
+  padding: 8px 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.rpe-btn.selected { border-color: var(--accent); background: rgba(74,158,255,0.15); color: var(--accent); }
+.rpe-label { font-size: 0.7rem; font-weight: 600; color: var(--dim); text-transform: uppercase; margin-top: 10px; margin-bottom: 4px; }
+
+/* ââ Notes ââ */
+.notes-input {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px;
+  color: var(--text);
+  font-size: 0.85rem;
+  resize: vertical;
+  min-height: 44px;
+  font-family: inherit;
+}
+.notes-input:focus { border-color: var(--accent); outline: none; }
+
+/* ââ Buttons ââ */
+.btn {
+  display: block;
+  width: 100%;
+  padding: 14px;
+  border: none;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.15s;
+}
+.btn-primary { background: var(--accent); color: white; }
+.btn-primary:active { background: #3a8bee; transform: scale(0.98); }
+.btn-secondary { background: var(--card2); color: var(--text); border: 1px solid var(--border); }
+.btn-danger { background: rgba(239,68,68,0.15); color: var(--red); border: 1px solid rgba(239,68,68,0.3); }
+.btn + .btn { margin-top: 8px; }
+
+/* ââ Week View ââ */
+.week-day {
+  display: flex;
+  align-items: center;
+  padding: 14px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  margin-bottom: 8px;
+  cursor: pointer;
+}
+.week-day:active { background: var(--card2); }
+.week-day.today { border-color: var(--accent); }
+.wd-date { width: 44px; text-align: center; margin-right: 12px; }
+.wd-dow { font-size: 0.7rem; color: var(--dim); text-transform: uppercase; font-weight: 600; }
+.wd-num { font-size: 1.1rem; font-weight: 700; color: var(--heading); }
+.wd-info { flex: 1; }
+.wd-type { font-size: 0.9rem; font-weight: 600; color: var(--heading); }
+.wd-detail { font-size: 0.75rem; color: var(--muted); }
+.wd-status { width: 10px; height: 10px; border-radius: 50%; margin-left: 8px; }
+.wd-status.complete { background: var(--green); }
+.wd-status.partial { background: var(--yellow); }
+.wd-status.upcoming { background: var(--border); }
+
+/* ââ History ââ */
+.history-entry {
+  padding: 12px 14px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  margin-bottom: 8px;
+}
+.he-date { font-size: 0.75rem; color: var(--dim); }
+.he-title { font-size: 0.95rem; font-weight: 600; color: var(--heading); }
+.he-stats { font-size: 0.8rem; color: var(--muted); margin-top: 4px; }
+
+/* ââ Settings ââ */
+.setting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border);
+}
+.setting-label { font-size: 0.9rem; color: var(--text); }
+.setting-value { font-size: 0.9rem; color: var(--muted); }
+
+/* ââ Stats Grid ââ */
+.stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.stat-box {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px;
+  text-align: center;
+}
+.stat-num { font-size: 1.6rem; font-weight: 700; color: var(--heading); }
+.stat-label { font-size: 0.7rem; color: var(--dim); text-transform: uppercase; font-weight: 600; margin-top: 2px; }
+
+/* ââ Timer ââ */
+.timer-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 200;
+  background: rgba(26,29,40,0.97);
+  backdrop-filter: blur(20px);
+  padding: calc(var(--safe-top) + 8px) 16px 10px;
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 2px solid var(--accent);
+}
+.timer-bar.active { display: flex; }
+.timer-time { font-size: 1.6rem; font-weight: 700; color: var(--heading); font-variant-numeric: tabular-nums; }
+.timer-label { font-size: 0.75rem; color: var(--muted); }
+.timer-dismiss {
+  padding: 6px 16px;
+  background: var(--card2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* ââ Misc ââ */
+.section-title { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--dim); margin: 20px 0 10px; }
+.empty-state { text-align: center; padding: 40px 20px; color: var(--muted); }
+.empty-state p { margin-top: 8px; font-size: 0.85rem; }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 0.7rem; font-weight: 600; }
+.badge-blue { background: rgba(74,158,255,0.15); color: var(--accent); }
+.badge-green { background: rgba(52,211,153,0.15); color: var(--green); }
+.badge-yellow { background: rgba(245,158,11,0.15); color: var(--yellow); }
+
+/* ââ Date picker ââ */
+.date-input {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px;
+  color: var(--text);
+  font-size: 0.9rem;
+  width: 100%;
+  -webkit-appearance: none;
+}
+.date-input:focus { border-color: var(--accent); outline: none; }
+
+/* ââ Transitions ââ */
+.exercise-detail { transition: none; }
+ection-title">Program</div>
+  <div class="card">
+    <div class="setting-row">
+      <span class="setting-label">Start Date</span>
+      <input type="date" class="date-input" id="startDateInput" style="width:auto;">
+    </div>
+    <div class="setting-row">
+      <span class="setting-label">Current Week</span>
+      <span class="setting-value" id="currentWeekDisplay">â</span>
+    </div>
+    <div class="setting-row" style="border:none;">
+      <span class="setting-label">Phase</span>
+      <span class="setting-value" id="currentPhaseDisplay">â</span>
+    </div>
+  
+  
+  
+  
+  
+  </div>
+  <div class="section-title">Data</div>
+  <button class="btn btn-secondary" onclick="exportData()">Export All Data (JSON)</button>
+  
+  
+  </div>
+
+<!-- Navigation -->
+<nav class="nav">
+  <button class="nav-btn active" onclick="showPage('Today')" id="navToday">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+    Today
+  </button>
+  <button class="nav-btn" onclick="showPage('Week')" id="navWeek">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+    Week
+  </button>
+  <button class="nav-btn" onclick="showPage('History')" id="navHistory">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+    Progress
+  </button>
+  <button class="nav-btn" onclick="showPage('Settings')" id="navSettings">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+    Settings
+  </button>
+</nav>
+
+<script>
+// âââââââââââââââââââââââââââââââââââââââââââ
+// PROGRAM DATA â All 12 Weeks
+// âââââââââââââââââââââââââââââââââââââââââââ
+rcuit.', note: 'Deload.', exercises: [] },
+
+    // ââ PHASE 3 ââ
+    strengthA_9: {
+      name: 'Upper (Peak)',
+      type: 'strength',
+      duration: '55-60 min',
+      exercises: [
+        { name: 'Barbell Bench Press', sets: 4, reps: '5-6', rest: 150, note: 'Heavier. Chase a 5RM PR by Week 12.' },
+        { name: 'Weighted Pull-up / Heavy Lat Pull', sets: 4, reps: '6-8', rest: 120, note: 'Pull heavy. Match your press.' },
+        { name: 'Incline DB Press', sets: 3, reps: '8-10', rest: 90, note: 'Angle change for upper chest.' },
+        { name: 'Chest-Supported Row', sets: 3, reps: '10-12', rest: 75, note: 'Isolate the back. No cheating.' },
+        { name: 'DB Overhead Press', sets: 3, reps: '8-10', rest: 90, note: 'Standing. Brace hard.' },
+        { name: 'Face Pulls + Band Pull-Aparts', sets: 3, reps: '15 each', rest: 45, note: 'Superset. Shoulder health.' },
+        { name: 'Rower / Ski Erg', sets: 6, reps: '30s on / 30s off', rest: 0, note: 'FINISHER. 6 min. Max effort.' },
+      ]
+    },
+    strengthA_10: null, strengthA_11: null,
+    strengthA_12: {
+      name: 'Upper â TEST WEEK',
+      type: 'strength',
+      duration: '45-50 min',
+      exercises: [
+        { name: 'Barbell Bench Press â 5RM TEST', sets: 5, reps: 'Work to 5RM', rest: 180, note: 'Warm up: bar x10, 50% x5, 70% x3, 85% x2, then go for 5RM.' },
+        { name: 'Weighted Pull-up / Lat Pull â 5RM TEST', sets: 4, reps: 'Work to 5RM', rest: 150, note: 'Same warm-up protocol.' },
+        { name: 'DB Overhead Press', sets: 3, reps: '8', rest: 90, note: 'Moderate. Save energy for tests.' },
+        { name: 'Face Pulls', sets: 2, reps: '15', rest: 45, note: 'Shoulder health.' },
+      ]
+    },
+    strengthB_9: {
+      name: 'Lower + Core (Peak)',
+      type: 'strength',
+      duration: '55-60 min',
+      exercises: [
+        { name: 'Barbell Back Squat', sets: 4, reps: '5-6', rest: 150, note: 'Go for a 5RM PR by Week 12.' },
+        { name: 'Trap Bar Deadlift', sets: 4, reps: '5-6', rest: 150, note: 'New movement. The king.' },
+        { name: 'Walking Lunges (loaded)', sets: 3, reps: '10/leg', rest: 75, note: 'Heavy DBs or barbell.' },
+        { name: 'Leg Curl', sets: 3, reps: '10-12', rest: 60, note: 'Hamstrings honest.' },
+        { name: 'Farmer\'s Carry', sets: 3, reps: '80 yd', rest: 60, note: 'Heaviest yet.' },
+        { name: 'Hanging Leg Raise', sets: 3, reps: '10-12', rest: 45, note: 'Or knee raise if needed.' },
+      ]
+    },
+    strengthB_10: null, strengthB_11: null,
+    strengthB_12: {
+      name: 'Lower â TEST WEEK',
+      type: 'strength',
+      duration: '45-50 min',
+      exercises: [
+        { name: 'Barbell Back Squat â 5RM TEST', sets: 5, reps: 'Work to 5RM', rest: 180, note: 'Warm up: bar x10, 50% x5, 70% x3, 85% x2, then 5RM.' },
+        { name: 'Trap Bar Deadlift â 5RM TEST', sets: 5, reps: 'Work to 5RM', rest: 180, note: 'Same warm-up. Record everything.' },
+        { name: 'Walking Lunges', sets: 2, reps: '8/leg', rest: 60, note: 'Light. Save legs.' },
+        { name: 'Plank', sets: 2, reps: '45s', rest: 45, note: 'Done.' },
+      ]
+    },
+    ruckA_9: { name: 'Tempo Ruck', type: 'ruck', duration: '45 min', ruckWeight: '30 lbs', ruckTarget: '15 min zone 2 â 15 min push â 15 min zone 2', note: 'Push pace = HR 140-155 bpm.', exercises: [] },
+    ruckA_10: { name: 'Tempo Ruck', type: 'ruck', duration: '50 min', ruckWeight: '35-40 lbs*', ruckTarget: '10 min Z2 â 20 min push â 10 min Z2 â 10 min push', note: 'Weight bump + tempo.', exercises: [] },
+    ruckA_11: { name: 'Tempo Ruck', type: 'ruck', duration: '50 min', ruckWeight: '40-45 lbs*', ruckTarget: 'Same as Wk 10, heavier pack', note: 'Heaviest tempo ruck.', exercises: [] },
+    ruckA_12: { name: '4-Mile Time Trial', type: 'ruck', duration: 'TBD', ruckWeight: '30 lbs', ruckTarget: '4 miles â best effort, record time', note: 'BENCHMARK. Base plate weight. All out.', exercises: [] },
+    ruckB_9: { name: 'Long Ruck (Peak)', type: 'ruck', duration: '60 min', ruckWeight: '35-40 lbs*', ruckTarget: '60 min with hills', note: 'Push duration.', exercises: [] },
+    ruckB_10: { name: 'Long Ruck (Peak)', type: 'ruck', duration: '60 min', ruckWeight: '40-45 lbs*', ruckTarget: '60 min â heaviest long ruck yet', note: 'Maintain posture.', exercises: [] },
+    ruckB_11: { name: 'Long Ruck (Peak)', type: 'ruck', duration: '70 min', ruckWeight: '40-45 lbs*', ruckTarget: '70 min â peak volume ruck', note: 'This is the hard one.', exercises: [] },
+    ruckB_12: { name: '5-Mile Benchmark', type: 'ruck', duration: 'TBD', ruckWeight: '45 lbs*', ruckTarget: '5 miles â full send, record time', note: 'BENCHMARK. Record time + RPE.', exercises: [] },
+  }
+};
+
+// Fill in null weeks (same as previous non-null)
+function resolveWorkout(type, week) {
+  let key = `${type}_${week}`;
+  if (PROGRAM.workouts[key]) return PROGRAMNworkouts[key];
+  // Walk backward to find the last defined workout
+  for (let w = week - 1; w >= 1; w--) {
+    let k = `${type}_${w}`;
+    if (PROGRAM.workouts[k]) return PROGRAM.workouts[k];
+  }
+  return null;
+}
+
+// âââââââââââââââââââââââââââââââââââââââââââ
+// STATE
+// âââââââââââââââââââââââââââââââââââââââââââ
+
+function getState() {
+  try {
+    return JSON.parse(localStorage.getItem('ruckIronState') || '{}');
+  } catch { return {}; }
+}
+function saveState(s) { localStorage.setItem('ruckIronState', JSON.stringify(s)); }
+
+function getStartDate() {
+  const s = getState();
+  return s.startDate || null;
+}
+function setStartDate(d) {
+  const s = getState();
+  s.startDate = d;
+  saveState(s);
+}
+
+function getWeekNumber(date) {
+  const start = new Date(getStartDate());
+  start.setHours(0,0,0,0);
+  const d = new Date(date);
+  d.setHours(0,0,0,0);
+  const diff = Math.floor((d - start) / (1000*60*60*24));
+  if (diff < 0) return 0;
+  return Math.floor(diff / 7) + 1;
+}
+
+function getPhase(week) {
+  if (week <= 4) return PROGRAM.phases[0];
+  if (week <= 8) return PROGRAM.phases[1];
+  return PROGRAM.phases[2];
+}
+
+function getDayWorkout(date) {
+  const dow = date.getDay();
+  const week = getWeekNumber(date);
+  if (week < 1 || week > 12) return null;
+  const type = PROGRAM.trainingDays[dow];
+  if (!type) return { type: 'rest', message: PROGRAM.restDays[dow] || 'Rest day' };
+  const workout = resolveWorkout(type, week);
+  if (!workout) return { type: 'rest', message: 'Rest day' };
+  return { ...workout, week, slotType: type };
+}
+
+// Log data
+function getLog(dateStr) {
+  const s = getState();
+  return (s.logs || {})[dateStr] || null;
+}
+function saveLog(dateStr, data) {
+  const s = getState();
+  if (!s.logs) s.logs = {};
+  s.logs[dateStr] = data;
+  saveState(s);
+}
+
+function dateStr(d) {
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
