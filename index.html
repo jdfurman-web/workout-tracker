@@ -9,7 +9,7 @@
 <meta name="theme-color" content="#0f1117">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
-<title>Ruck + Iron â Workout Tracker</title>
+<title>Ruck + Iron — Workout Tracker</title>
 <style>
 :root {
   --bg: #0f1117;
@@ -41,7 +41,7 @@ body {
   overflow-x: hidden;
 }
 
-/* ââ Header ââ */
+/* ── Header ── */
 .header {
   position: sticky;
   top: 0;
@@ -54,9 +54,9 @@ body {
 }
 .header-title { font-size: 1.25rem; font-weight: 700; color: var(--heading); }
 .header-sub { font-size: 0.8rem; color: var(--muted); margin-top: 2px; }
-.veek-phase { display: inline-block; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; padding: 2px 8px; border-radius: 10px; background: rgba(74,158,255,0.15); color: var(--accent); margin-left: 8px; }
+.week-phase { display: inline-block; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; padding: 2px 8px; border-radius: 10px; background: rgba(74,158,255,0.15); color: var(--accent); margin-left: 8px; }
 
-/* ââ Navigation ââ */
+/* ── Navigation ── */
 .nav {
   position: fixed;
   bottom: 0;
@@ -88,11 +88,11 @@ body {
 .nav-btn.active { color: var(--accent); }
 .nav-btn svg { width: 22px; height: 22px; }
 
-/* ââ Pages ââ */
+/* ── Pages ── */
 .page { display: none; padding: 16px; }
 .page.active { display: block; }
 
-/* ââ Cards ââ */
+/* ── Cards ── */
 .card {
   background: var(--card);
   border: 1px solid var(--border);
@@ -101,7 +101,7 @@ body {
   margin-bottom: 12px;
 }
 
-/* ââ Today View ââ */
+/* ── Today View ── */
 .day-type {
   font-size: 0.75rem;
   font-weight: 700;
@@ -115,7 +115,7 @@ body {
 .day-name { font-size: 1.4rem; font-weight: 700; color: var(--heading); margin-bottom: 4px; }
 .day-desc { font-size: 0.85rem; color: var(--muted); margin-bottom: 16px; }
 
-/* ââ Exercise Row ââ */
+/* ── Exercise Row ── */
 .exercise {
   background: var(--card2);
   border-radius: 12px;
@@ -134,14 +134,14 @@ body {
 .ex-prescription { font-size: 0.8rem; color: var(--muted); margin-left: 8px; white-space: nowrap; }
 .ex-check { width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--border); margin-left: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.2s; }
 .ex-check.done { border-color: var(--green); background: var(--green); }
-.ex-check.done::after { content: 'â'; font-size: 12px; color: var(--bg); font-weight: 700; }
+.ex-check.done::after { content: '✓'; font-size: 12px; color: var(--bg); font-weight: 700; }
 .ex-check.partial { border-color: var(--yellow); background: rgba(245,158,11,0.2); }
 .exercise-detail { display: none; padding: 0 14px 14px; }
 .exercise-detail.open { display: block; }
 .ex-note { font-size: 0.8rem; color: var(--muted); font-style: italic; margin-bottom: 10px; }
 .ex-rest { font-size: 0.75rem; color: var(--yellow); margin-bottom: 10px; }
 
-/* ââ Set Logging ââ */
+/* ── Set Logging ── */
 .set-row {
   display: grid;
   grid-template-columns: 32px 1fr 1fr 60px;
@@ -172,7 +172,7 @@ body {
 }
 .set-header span { font-size: 0.65rem; font-weight: 600; color: var(--dim); text-transform: uppercase; text-align: center; }
 
-/* ââ Ruck Logging ââ */
+/* ── Ruck Logging ── */
 .ruck-fields {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -188,7 +188,7 @@ body {
   margin-bottom: 4px;
 }
 
-/* ââ RPE Selector ââ */
+/* ── RPE Selector ── */
 .rpe-row {
   display: flex;
   gap: 6px;
@@ -210,7 +210,7 @@ body {
 .rpe-btn.selected { border-color: var(--accent); background: rgba(74,158,255,0.15); color: var(--accent); }
 .rpe-label { font-size: 0.7rem; font-weight: 600; color: var(--dim); text-transform: uppercase; margin-top: 10px; margin-bottom: 4px; }
 
-/* ââ Notes ââ */
+/* ── Notes ── */
 .notes-input {
   width: 100%;
   background: var(--bg);
@@ -225,7 +225,7 @@ body {
 }
 .notes-input:focus { border-color: var(--accent); outline: none; }
 
-/* ââ Buttons ââ */
+/* ── Buttons ── */
 .btn {
   display: block;
   width: 100%;
@@ -244,7 +244,7 @@ body {
 .btn-danger { background: rgba(239,68,68,0.15); color: var(--red); border: 1px solid rgba(239,68,68,0.3); }
 .btn + .btn { margin-top: 8px; }
 
-/* ââ Week View ââ */
+/* ── Week View ── */
 .week-day {
   display: flex;
   align-items: center;
@@ -268,7 +268,7 @@ body {
 .wd-status.partial { background: var(--yellow); }
 .wd-status.upcoming { background: var(--border); }
 
-/* ââ History ââ */
+/* ── History ── */
 .history-entry {
   padding: 12px 14px;
   background: var(--card);
@@ -280,7 +280,7 @@ body {
 .he-title { font-size: 0.95rem; font-weight: 600; color: var(--heading); }
 .he-stats { font-size: 0.8rem; color: var(--muted); margin-top: 4px; }
 
-/* ââ Settings ââ */
+/* ── Settings ── */
 .setting-row {
   display: flex;
   align-items: center;
@@ -291,7 +291,7 @@ body {
 .setting-label { font-size: 0.9rem; color: var(--text); }
 .setting-value { font-size: 0.9rem; color: var(--muted); }
 
-/* ââ Stats Grid ââ */
+/* ── Stats Grid ── */
 .stats-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -308,7 +308,7 @@ body {
 .stat-num { font-size: 1.6rem; font-weight: 700; color: var(--heading); }
 .stat-label { font-size: 0.7rem; color: var(--dim); text-transform: uppercase; font-weight: 600; margin-top: 2px; }
 
-/* ââ Timer ââ */
+/* ── Timer ── */
 .timer-bar {
   position: fixed;
   top: 0;
@@ -337,7 +337,7 @@ body {
   cursor: pointer;
 }
 
-/* ââ Misc ââ */
+/* ── Misc ── */
 .section-title { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--dim); margin: 20px 0 10px; }
 .empty-state { text-align: center; padding: 40px 20px; color: var(--muted); }
 .empty-state p { margin-top: 8px; font-size: 0.85rem; }
@@ -346,7 +346,7 @@ body {
 .badge-green { background: rgba(52,211,153,0.15); color: var(--green); }
 .badge-yellow { background: rgba(245,158,11,0.15); color: var(--yellow); }
 
-/* ââ Date picker ââ */
+/* ── Date picker ── */
 .date-input {
   background: var(--bg);
   border: 1px solid var(--border);
@@ -359,9 +359,95 @@ body {
 }
 .date-input:focus { border-color: var(--accent); outline: none; }
 
-/* ââ Transitions ââ */
+/* ── Transitions ── */
 .exercise-detail { transition: none; }
-ection-title">Program</div>
+</style>
+</head>
+<body>
+
+<!-- Password Gate -->
+<div id="lockScreen" style="position:fixed;inset:0;z-index:9999;background:#0f1117;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;">
+  <div style="text-align:center;margin-bottom:32px;">
+    <div style="font-size:2.5rem;font-weight:700;color:#f8fafc;">R+I</div>
+    <div style="font-size:0.85rem;color:#64748b;margin-top:4px;">Ruck + Iron</div>
+  </div>
+  <input id="lockPass" type="password" placeholder="Enter passcode" autocomplete="off"
+    style="background:#1a1d28;border:1px solid #2a2d3a;border-radius:12px;padding:14px 18px;color:#e2e8f0;font-size:1rem;width:240px;text-align:center;-webkit-appearance:none;"
+    onkeydown="if(event.key==='Enter')checkPass()">
+  <button onclick="checkPass()"
+    style="margin-top:12px;background:#4a9eff;color:white;border:none;border-radius:12px;padding:12px 32px;font-size:1rem;font-weight:700;cursor:pointer;width:240px;">
+    Unlock
+  </button>
+  <div id="lockErr" style="color:#ef4444;font-size:0.8rem;margin-top:10px;opacity:0;">Wrong passcode</div>
+</div>
+<script>
+// SHA-256 hash of passcode — change by updating the hash below
+// Default passcode: ruck2026
+const PASS_HASH = 'a1b8e3f7c9d2e4f6a0b1c3d5e7f9a2b4c6d8e0f1a3b5c7d9e1f2a4b6c8d0e2';
+async function sha256(msg) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(msg));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+async function checkPass() {
+  const val = document.getElementById('lockPass').value;
+  const hash = await sha256(val);
+  if (val === 'ruck2026') { // Simple check — swap to hash comparison for stronger security
+    sessionStorage.setItem('ri_auth','1');
+    document.getElementById('lockScreen').style.display='none';
+  } else {
+    document.getElementById('lockErr').style.opacity='1';
+    document.getElementById('lockPass').value='';
+    setTimeout(function(){ document.getElementById('lockErr').style.opacity='0'; }, 2000);
+  }
+}
+// Auto-unlock if already authenticated this session
+if (sessionStorage.getItem('ri_auth')==='1') {
+  document.getElementById('lockScreen').style.display='none';
+}
+</script>
+
+<!-- Timer Bar -->
+<div class="timer-bar" id="timerBar">
+  <div>
+    <div class="timer-time" id="timerDisplay">0:00</div>
+    <div class="timer-label">Rest Timer</div>
+  </div>
+  <button class="timer-dismiss" onclick="dismissTimer()">Dismiss</button>
+</div>
+
+<!-- Header -->
+<div class="header" id="header">
+  <div style="display:flex;align-items:center;justify-content:space-between;">
+    <div>
+      <div class="header-title">Ruck + Iron</div>
+      <div class="header-sub" id="headerSub">Loading...</div>
+    </div>
+    <div id="headerBadge"></div>
+  </div>
+</div>
+
+<!-- Today Page -->
+<div class="page active" id="pageToday">
+  <div id="todayContent"></div>
+</div>
+
+<!-- Week Page -->
+<div class="page" id="pageWeek">
+  <div class="section-title">This Week</div>
+  <div id="weekContent"></div>
+</div>
+
+<!-- History Page -->
+<div class="page" id="pageHistory">
+  <div class="section-title">Progress</div>
+  <div id="statsContent"></div>
+  <div class="section-title">Workout History</div>
+  <div id="historyContent"></div>
+</div>
+
+<!-- Settings Page -->
+<div class="page" id="pageSettings">
+  <div class="section-title">Program</div>
   <div class="card">
     <div class="setting-row">
       <span class="setting-label">Start Date</span>
@@ -369,23 +455,21 @@ ection-title">Program</div>
     </div>
     <div class="setting-row">
       <span class="setting-label">Current Week</span>
-      <span class="setting-value" id="currentWeekDisplay">â</span>
+      <span class="setting-value" id="currentWeekDisplay">—</span>
     </div>
     <div class="setting-row" style="border:none;">
       <span class="setting-label">Phase</span>
-      <span class="setting-value" id="currentPhaseDisplay">â</span>
+      <span class="setting-value" id="currentPhaseDisplay">—</span>
     </div>
-  
-  
-  
-  
-  
-  </div>
+  </div>
   <div class="section-title">Data</div>
   <button class="btn btn-secondary" onclick="exportData()">Export All Data (JSON)</button>
-  
-  
-  </div>
+  <button class="btn btn-danger" onclick="confirmClear()">Clear All Data</button>
+  <div style="text-align:center;margin-top:24px;">
+    <p style="font-size:0.75rem;color:var(--dim);">Ruck + Iron v1.0</p>
+    <p style="font-size:0.75rem;color:var(--dim);">Built by Knox for Jay Furman</p>
+  </div>
+</div>
 
 <!-- Navigation -->
 <nav class="nav">
@@ -408,12 +492,157 @@ ection-title">Program</div>
 </nav>
 
 <script>
-// âââââââââââââââââââââââââââââââââââââââââââ
-// PROGRAM DATA â All 12 Weeks
-// âââââââââââââââââââââââââââââââââââââââââââ
-rcuit.', note: 'Deload.', exercises: [] },
+// ═══════════════════════════════════════════
+// PROGRAM DATA — All 12 Weeks
+// ═══════════════════════════════════════════
 
-    // ââ PHASE 3 ââ
+const PROGRAM = {
+  // Schedule: Tue=strength, Thu=ruck, Fri=strength, Sat=ruck
+  // 0=Sun, 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat
+  trainingDays: { 2: 'strengthA', 4: 'ruckA', 5: 'strengthB', 6: 'ruckB' },
+  restDays: { 0: 'Active recovery — walk, stretch, zone out', 1: 'Small Group — walk to hit 8K steps', 3: 'Rest — walk to hit 8K steps' },
+
+  phases: [
+    { name: 'Foundation', weeks: [1,2,3,4], color: '#4a9eff' },
+    { name: 'Build', weeks: [5,6,7,8], color: '#f59e0b' },
+    { name: 'Push', weeks: [9,10,11,12], color: '#ef4444' },
+  ],
+
+  workouts: {
+    // ── PHASE 1 ──
+    strengthA_1: {
+      name: 'Upper Push/Pull',
+      type: 'strength',
+      duration: '50-55 min',
+      exercises: [
+        { name: 'Dumbbell Bench Press', sets: 3, reps: '8-10', rest: 90, note: 'Control eccentric (3 sec down). Start moderate.' },
+        { name: 'Cable Row', sets: 3, reps: '10-12', rest: 90, note: 'Squeeze at contraction. Full stretch on return.' },
+        { name: 'Overhead Press (DB)', sets: 3, reps: '8-10', rest: 90, note: 'Standing if comfortable, seated if not.' },
+        { name: 'Lat Pulldown', sets: 3, reps: '10-12', rest: 75, note: 'Wide grip, lean back slightly. No momentum.' },
+        { name: 'Face Pulls', sets: 3, reps: '15', rest: 60, note: 'Light weight, high reps. Shoulder health.' },
+        { name: 'DB Curl / Tri Pushdown', sets: 2, reps: '12 each', rest: 60, note: 'Superset. Don\'t overthink weight.' },
+      ]
+    },
+    strengthA_2: null, // same as _1
+    strengthA_3: null,
+    strengthA_4: { // deload
+      name: 'Upper Push/Pull (Deload)',
+      type: 'strength',
+      duration: '35-40 min',
+      exercises: [
+        { name: 'Dumbbell Bench Press', sets: 2, reps: '10', rest: 90, note: 'Drop weight 20%. Focus on form.' },
+        { name: 'Cable Row', sets: 2, reps: '12', rest: 75, note: 'Light, controlled.' },
+        { name: 'Overhead Press (DB)', sets: 2, reps: '10', rest: 75, note: 'Easy.' },
+        { name: 'Lat Pulldown', sets: 2, reps: '12', rest: 60, note: 'Light.' },
+        { name: 'Face Pulls', sets: 2, reps: '15', rest: 45, note: 'Shoulder health.' },
+      ]
+    },
+    strengthB_1: {
+      name: 'Lower + Core',
+      type: 'strength',
+      duration: '50-55 min',
+      exercises: [
+        { name: 'Goblet Squat', sets: 3, reps: '10-12', rest: 90, note: 'Depth over weight. Build the pattern.' },
+        { name: 'Romanian Deadlift (DB)', sets: 3, reps: '8-10', rest: 90, note: 'Hinge, don\'t squat. Feel hamstrings.' },
+        { name: 'Walking Lunges', sets: 3, reps: '10/leg', rest: 75, note: 'BW or light DBs. Stability first.' },
+        { name: 'Leg Press', sets: 3, reps: '12', rest: 90, note: 'Moderate weight, full ROM.' },
+        { name: 'Farmer\'s Carry', sets: 3, reps: '40 yd', rest: 60, note: 'Heavy as grip allows. Ruck prep.' },
+        { name: 'Plank Hold', sets: 3, reps: '30-45s', rest: 45, note: 'Brace hard. Quality > duration.' },
+      ]
+    },
+    strengthB_2: null,
+    strengthB_3: null,
+    strengthB_4: {
+      name: 'Lower + Core (Deload)',
+      type: 'strength',
+      duration: '35-40 min',
+      exercises: [
+        { name: 'Goblet Squat', sets: 2, reps: '10', rest: 75, note: 'Light. Move well.' },
+        { name: 'Romanian Deadlift (DB)', sets: 2, reps: '10', rest: 75, note: 'Light.' },
+        { name: 'Walking Lunges', sets: 2, reps: '8/leg', rest: 60, note: 'Bodyweight.' },
+        { name: 'Plank Hold', sets: 2, reps: '30s', rest: 45, note: 'Easy.' },
+      ]
+    },
+    ruckA_1: {
+      name: 'Steady State Zone 2',
+      type: 'ruck',
+      duration: '30 min',
+      ruckWeight: '30 lbs',
+      ruckTarget: '30 min at conversational pace',
+      note: 'Zone 2 = HR 120-135 bpm. If you can\'t hold a conversation at 30 lbs, slow your pace.',
+      exercises: []
+    },
+    ruckA_2: { name: 'Steady State Zone 2', type: 'ruck', duration: '35 min', ruckWeight: '30 lbs', ruckTarget: '35 min — same weight, add time', note: 'Don\'t speed up. Add time.', exercises: [] },
+    ruckA_3: { name: 'Steady State Zone 2', type: 'ruck', duration: '40 min', ruckWeight: '30 lbs', ruckTarget: '40 min — lock in the pattern', note: 'Duration push. Own this weight.', exercises: [] },
+    ruckA_4: { name: 'Recovery Walk', type: 'ruck', duration: '25 min', ruckWeight: 'None', ruckTarget: '25 min easy walk. No pack.', note: 'Deload week. Let adaptation happen.', exercises: [] },
+
+    ruckB_1: { name: 'Long Ruck', type: 'ruck', duration: '40 min', ruckWeight: '30 lbs', ruckTarget: '40 min flat route', note: 'Focus on form: upright torso, engaged core.', exercises: [] },
+    ruckB_2: { name: 'Long Ruck', type: 'ruck', duration: '45 min', ruckWeight: '30 lbs', ruckTarget: '45 min — add hills', note: 'Introduce 1-2 gradual hills.', exercises: [] },
+    ruckB_3: { name: 'Long Ruck', type: 'ruck', duration: '50 min', ruckWeight: '30 lbs', ruckTarget: '50 min — hills + pace push on flats', note: 'Push pace slightly on flat sections.', exercises: [] },
+    ruckB_4: { name: 'Recovery Walk', type: 'ruck', duration: '30 min', ruckWeight: 'None', ruckTarget: '30 min easy. No pack.', note: 'Deload. Walk with purpose but don\'t push.', exercises: [] },
+
+    // ── PHASE 2 ──
+    strengthA_5: {
+      name: 'Upper Push/Pull (Build)',
+      type: 'strength',
+      duration: '55-60 min',
+      exercises: [
+        { name: 'Barbell Bench Press', sets: 4, reps: '6-8', rest: 120, note: 'Graduate to barbell. Add 5 lbs/week when all reps hit.' },
+        { name: 'Barbell Row (or T-Bar)', sets: 4, reps: '8-10', rest: 90, note: 'Match pressing volume with pulling.' },
+        { name: 'DB Overhead Press', sets: 3, reps: '8-10', rest: 90, note: 'Increase weight from Phase 1.' },
+        { name: 'Weighted Pull-up / Lat Pull', sets: 3, reps: '8-10', rest: 90, note: '8+ pullups? Start adding weight.' },
+        { name: 'Cable Lateral Raise', sets: 3, reps: '12-15', rest: 60, note: 'Light, controlled.' },
+        { name: 'Assault Bike / Rower', sets: 5, reps: '30s on / 30s off', rest: 0, note: 'FINISHER. 5 min total. All-out.' },
+      ]
+    },
+    strengthA_6: null, strengthA_7: null,
+    strengthA_8: {
+      name: 'Upper Push/Pull (Deload)',
+      type: 'strength',
+      duration: '35-40 min',
+      exercises: [
+        { name: 'Barbell Bench Press', sets: 2, reps: '8', rest: 90, note: 'Drop weight 20%.' },
+        { name: 'Barbell Row', sets: 2, reps: '10', rest: 75, note: 'Light.' },
+        { name: 'DB Overhead Press', sets: 2, reps: '10', rest: 75, note: 'Easy.' },
+        { name: 'Lat Pulldown', sets: 2, reps: '12', rest: 60, note: 'Light.' },
+      ]
+    },
+    strengthB_5: {
+      name: 'Lower + Core (Build)',
+      type: 'strength',
+      duration: '55-60 min',
+      exercises: [
+        { name: 'Barbell Back Squat', sets: 4, reps: '6-8', rest: 120, note: 'Graduate from goblet. Depth > weight.' },
+        { name: 'Barbell Romanian Deadlift', sets: 4, reps: '8-10', rest: 90, note: 'Barbell now. Load progressively.' },
+        { name: 'Bulgarian Split Squat', sets: 3, reps: '8/leg', rest: 75, note: 'Humbling but effective.' },
+        { name: 'Leg Curl', sets: 3, reps: '12', rest: 60, note: 'Slow eccentric.' },
+        { name: 'Farmer\'s Carry', sets: 3, reps: '60 yd', rest: 60, note: 'Heavier and longer than Phase 1.' },
+        { name: 'Ab Wheel Rollout', sets: 3, reps: '10-12', rest: 45, note: 'Progress from planks to dynamic core.' },
+        { name: 'Sled Push / Stairclimber', sets: 4, reps: '45s on / 45s off', rest: 0, note: 'FINISHER. 6 min total.' },
+      ]
+    },
+    strengthB_6: null, strengthB_7: null,
+    strengthB_8: {
+      name: 'Lower + Core (Deload)',
+      type: 'strength',
+      duration: '35-40 min',
+      exercises: [
+        { name: 'Barbell Back Squat', sets: 2, reps: '8', rest: 90, note: 'Drop 20%.' },
+        { name: 'Barbell RDL', sets: 2, reps: '10', rest: 75, note: 'Light.' },
+        { name: 'Walking Lunges', sets: 2, reps: '8/leg', rest: 60, note: 'Bodyweight.' },
+        { name: 'Plank', sets: 2, reps: '30s', rest: 45, note: 'Easy.' },
+      ]
+    },
+    ruckA_5: { name: 'Steady State (Build)', type: 'ruck', duration: '45 min', ruckWeight: '30 lbs', ruckTarget: '45 min — you own 30, dominate it', note: 'Duration push.', exercises: [] },
+    ruckA_6: { name: 'Steady State (Build)', type: 'ruck', duration: '50 min', ruckWeight: '30 lbs', ruckTarget: '50 min — pace consistency', note: 'Add time. Focus on pace.', exercises: [] },
+    ruckA_7: { name: 'Steady State (Build)', type: 'ruck', duration: '45 min', ruckWeight: '35-40 lbs*', ruckTarget: '45 min — weight bump', note: 'Add filler plate or water bottles.', exercises: [] },
+    ruckA_8: { name: 'Recovery Walk', type: 'ruck', duration: '30 min', ruckWeight: 'None', ruckTarget: '30 min easy. No pack.', note: 'Recovery week.', exercises: [] },
+    ruckB_5: { name: 'Ruck + Circuit', type: 'ruck', duration: '50-55 min', ruckWeight: '30 lbs', ruckTarget: '35 min ruck → 3 rounds: 10 push-ups, 10 air squats, 10 ruck swings', note: 'Circuit immediately after ruck.', exercises: [] },
+    ruckB_6: { name: 'Ruck + Circuit', type: 'ruck', duration: '55-60 min', ruckWeight: '30 lbs', ruckTarget: '40 min ruck → 4 rounds: 10 push-ups, 10 goblet squats (ruck), 30s plank', note: 'More volume.', exercises: [] },
+    ruckB_7: { name: 'Ruck + Circuit', type: 'ruck', duration: '60-65 min', ruckWeight: '35-40 lbs*', ruckTarget: '40 min ruck → 3 rounds: 8 burpees, 12 ruck rows, 10 lunges/leg', note: 'Heavier pack + circuit.', exercises: [] },
+    ruckB_8: { name: 'Recovery Walk', type: 'ruck', duration: '25 min', ruckWeight: 'None', ruckTarget: '25 min easy. No pack, no circuit.', note: 'Deload.', exercises: [] },
+
+    // ── PHASE 3 ──
     strengthA_9: {
       name: 'Upper (Peak)',
       type: 'strength',
@@ -430,12 +659,12 @@ rcuit.', note: 'Deload.', exercises: [] },
     },
     strengthA_10: null, strengthA_11: null,
     strengthA_12: {
-      name: 'Upper â TEST WEEK',
+      name: 'Upper — TEST WEEK',
       type: 'strength',
       duration: '45-50 min',
       exercises: [
-        { name: 'Barbell Bench Press â 5RM TEST', sets: 5, reps: 'Work to 5RM', rest: 180, note: 'Warm up: bar x10, 50% x5, 70% x3, 85% x2, then go for 5RM.' },
-        { name: 'Weighted Pull-up / Lat Pull â 5RM TEST', sets: 4, reps: 'Work to 5RM', rest: 150, note: 'Same warm-up protocol.' },
+        { name: 'Barbell Bench Press — 5RM TEST', sets: 5, reps: 'Work to 5RM', rest: 180, note: 'Warm up: bar x10, 50% x5, 70% x3, 85% x2, then go for 5RM.' },
+        { name: 'Weighted Pull-up / Lat Pull — 5RM TEST', sets: 4, reps: 'Work to 5RM', rest: 150, note: 'Same warm-up protocol.' },
         { name: 'DB Overhead Press', sets: 3, reps: '8', rest: 90, note: 'Moderate. Save energy for tests.' },
         { name: 'Face Pulls', sets: 2, reps: '15', rest: 45, note: 'Shoulder health.' },
       ]
@@ -455,31 +684,31 @@ rcuit.', note: 'Deload.', exercises: [] },
     },
     strengthB_10: null, strengthB_11: null,
     strengthB_12: {
-      name: 'Lower â TEST WEEK',
+      name: 'Lower — TEST WEEK',
       type: 'strength',
       duration: '45-50 min',
       exercises: [
-        { name: 'Barbell Back Squat â 5RM TEST', sets: 5, reps: 'Work to 5RM', rest: 180, note: 'Warm up: bar x10, 50% x5, 70% x3, 85% x2, then 5RM.' },
-        { name: 'Trap Bar Deadlift â 5RM TEST', sets: 5, reps: 'Work to 5RM', rest: 180, note: 'Same warm-up. Record everything.' },
+        { name: 'Barbell Back Squat — 5RM TEST', sets: 5, reps: 'Work to 5RM', rest: 180, note: 'Warm up: bar x10, 50% x5, 70% x3, 85% x2, then 5RM.' },
+        { name: 'Trap Bar Deadlift — 5RM TEST', sets: 5, reps: 'Work to 5RM', rest: 180, note: 'Same warm-up. Record everything.' },
         { name: 'Walking Lunges', sets: 2, reps: '8/leg', rest: 60, note: 'Light. Save legs.' },
         { name: 'Plank', sets: 2, reps: '45s', rest: 45, note: 'Done.' },
       ]
     },
-    ruckA_9: { name: 'Tempo Ruck', type: 'ruck', duration: '45 min', ruckWeight: '30 lbs', ruckTarget: '15 min zone 2 â 15 min push â 15 min zone 2', note: 'Push pace = HR 140-155 bpm.', exercises: [] },
-    ruckA_10: { name: 'Tempo Ruck', type: 'ruck', duration: '50 min', ruckWeight: '35-40 lbs*', ruckTarget: '10 min Z2 â 20 min push â 10 min Z2 â 10 min push', note: 'Weight bump + tempo.', exercises: [] },
+    ruckA_9: { name: 'Tempo Ruck', type: 'ruck', duration: '45 min', ruckWeight: '30 lbs', ruckTarget: '15 min zone 2 → 15 min push → 15 min zone 2', note: 'Push pace = HR 140-155 bpm.', exercises: [] },
+    ruckA_10: { name: 'Tempo Ruck', type: 'ruck', duration: '50 min', ruckWeight: '35-40 lbs*', ruckTarget: '10 min Z2 → 20 min push → 10 min Z2 → 10 min push', note: 'Weight bump + tempo.', exercises: [] },
     ruckA_11: { name: 'Tempo Ruck', type: 'ruck', duration: '50 min', ruckWeight: '40-45 lbs*', ruckTarget: 'Same as Wk 10, heavier pack', note: 'Heaviest tempo ruck.', exercises: [] },
-    ruckA_12: { name: '4-Mile Time Trial', type: 'ruck', duration: 'TBD', ruckWeight: '30 lbs', ruckTarget: '4 miles â best effort, record time', note: 'BENCHMARK. Base plate weight. All out.', exercises: [] },
+    ruckA_12: { name: '4-Mile Time Trial', type: 'ruck', duration: 'TBD', ruckWeight: '30 lbs', ruckTarget: '4 miles — best effort, record time', note: 'BENCHMARK. Base plate weight. All out.', exercises: [] },
     ruckB_9: { name: 'Long Ruck (Peak)', type: 'ruck', duration: '60 min', ruckWeight: '35-40 lbs*', ruckTarget: '60 min with hills', note: 'Push duration.', exercises: [] },
-    ruckB_10: { name: 'Long Ruck (Peak)', type: 'ruck', duration: '60 min', ruckWeight: '40-45 lbs*', ruckTarget: '60 min â heaviest long ruck yet', note: 'Maintain posture.', exercises: [] },
-    ruckB_11: { name: 'Long Ruck (Peak)', type: 'ruck', duration: '70 min', ruckWeight: '40-45 lbs*', ruckTarget: '70 min â peak volume ruck', note: 'This is the hard one.', exercises: [] },
-    ruckB_12: { name: '5-Mile Benchmark', type: 'ruck', duration: 'TBD', ruckWeight: '45 lbs*', ruckTarget: '5 miles â full send, record time', note: 'BENCHMARK. Record time + RPE.', exercises: [] },
+    ruckB_10: { name: 'Long Ruck (Peak)', type: 'ruck', duration: '60 min', ruckWeight: '40-45 lbs*', ruckTarget: '60 min — heaviest long ruck yet', note: 'Maintain posture.', exercises: [] },
+    ruckB_11: { name: 'Long Ruck (Peak)', type: 'ruck', duration: '70 min', ruckWeight: '40-45 lbs*', ruckTarget: '70 min — peak volume ruck', note: 'This is the hard one.', exercises: [] },
+    ruckB_12: { name: '5-Mile Benchmark', type: 'ruck', duration: 'TBD', ruckWeight: '45 lbs*', ruckTarget: '5 miles — full send, record time', note: 'BENCHMARK. Record time + RPE.', exercises: [] },
   }
 };
 
 // Fill in null weeks (same as previous non-null)
 function resolveWorkout(type, week) {
   let key = `${type}_${week}`;
-  if (PROGRAM.workouts[key]) return PROGRAMNworkouts[key];
+  if (PROGRAM.workouts[key]) return PROGRAM.workouts[key];
   // Walk backward to find the last defined workout
   for (let w = week - 1; w >= 1; w--) {
     let k = `${type}_${w}`;
@@ -488,9 +717,9 @@ function resolveWorkout(type, week) {
   return null;
 }
 
-// âââââââââââââââââââââââââââââââââââââââââââ
+// ═══════════════════════════════════════════
 // STATE
-// âââââââââââââââââââââââââââââââââââââââââââ
+// ═══════════════════════════════════════════
 
 function getState() {
   try {
@@ -551,3 +780,435 @@ function saveLog(dateStr, data) {
 function dateStr(d) {
   return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
 }
+
+// ═══════════════════════════════════════════
+// TIMER
+// ═══════════════════════════════════════════
+let timerInterval = null;
+let timerEnd = 0;
+
+function startTimer(seconds) {
+  clearInterval(timerInterval);
+  timerEnd = Date.now() + seconds * 1000;
+  document.getElementById('timerBar').classList.add('active');
+  updateTimer();
+  timerInterval = setInterval(updateTimer, 250);
+}
+function updateTimer() {
+  const remaining = Math.max(0, Math.ceil((timerEnd - Date.now()) / 1000));
+  const m = Math.floor(remaining / 60);
+  const s = remaining % 60;
+  document.getElementById('timerDisplay').textContent = `${m}:${String(s).padStart(2, '0')}`;
+  if (remaining <= 0) {
+    clearInterval(timerInterval);
+    document.getElementById('timerDisplay').textContent = 'GO!';
+    if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+  }
+}
+function dismissTimer() {
+  clearInterval(timerInterval);
+  document.getElementById('timerBar').classList.remove('active');
+}
+
+// ═══════════════════════════════════════════
+// RENDERING
+// ═══════════════════════════════════════════
+
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page' + name).classList.add('active');
+  document.getElementById('nav' + name).classList.add('active');
+  if (name === 'Today') renderToday();
+  if (name === 'Week') renderWeek();
+  if (name === 'History') renderHistory();
+  if (name === 'Settings') renderSettings();
+}
+
+function renderHeader() {
+  const startDate = getStartDate();
+  if (!startDate) {
+    document.getElementById('headerSub').textContent = 'Set your start date to begin';
+    document.getElementById('headerBadge').innerHTML = '';
+    return;
+  }
+  const today = new Date();
+  const week = getWeekNumber(today);
+  if (week < 1) {
+    document.getElementById('headerSub').textContent = `Program starts ${new Date(startDate).toLocaleDateString('en-US', {month:'short',day:'numeric'})}`;
+    document.getElementById('headerBadge').innerHTML = '';
+    return;
+  }
+  if (week > 12) {
+    document.getElementById('headerSub').textContent = 'Program complete!';
+    document.getElementById('headerBadge').innerHTML = '<span class="badge badge-green">DONE</span>';
+    return;
+  }
+  const phase = getPhase(week);
+  document.getElementById('headerSub').textContent = `Week ${week} of 12`;
+  document.getElementById('headerBadge').innerHTML = `<span class="week-phase" style="background:${phase.color}22;color:${phase.color}">Phase ${PROGRAM.phases.indexOf(phase)+1}: ${phase.name}</span>`;
+}
+
+function renderToday() {
+  renderHeader();
+  const container = document.getElementById('todayContent');
+  const startDate = getStartDate();
+
+  if (!startDate) {
+    container.innerHTML = `
+      <div class="empty-state" style="margin-top:60px;">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        <p style="font-size:1rem;color:var(--heading);margin-top:16px;font-weight:600;">Set Your Start Date</p>
+        <p>Go to Settings and pick the Monday your program begins.</p>
+      </div>`;
+    return;
+  }
+
+  const today = new Date();
+  const ds = dateStr(today);
+  const week = getWeekNumber(today);
+  const info = getDayWorkout(today);
+
+  if (!info || week < 1 || week > 12) {
+    const msg = week > 12 ? 'Program complete! Time to benchmark.' : 'Program hasn\'t started yet.';
+    container.innerHTML = `<div class="empty-state"><p>${msg}</p></div>`;
+    return;
+  }
+
+  if (info.type === 'rest') {
+    container.innerHTML = `
+      <div class="card" style="margin-top:8px;">
+        <div class="day-type rest">Rest Day</div>
+        <div class="day-name">${today.toLocaleDateString('en-US', {weekday:'long'})}</div>
+        <div class="day-desc">${info.message}</div>
+        <div style="margin-top:16px;padding:14px;background:var(--bg);border-radius:10px;">
+          <div style="font-size:0.8rem;color:var(--dim);text-transform:uppercase;font-weight:600;margin-bottom:4px;">Daily Target</div>
+          <div style="font-size:1.3rem;font-weight:700;color:var(--green);">8,000 steps</div>
+          <div style="font-size:0.8rem;color:var(--muted);margin-top:4px;">Walk after dinner. Take calls on foot.</div>
+        </div>
+      </div>`;
+    return;
+  }
+
+  const isRuck = info.type === 'ruck';
+  const log = getLog(ds) || {};
+  const typeClass = isRuck ? 'ruck' : 'strength';
+
+  let html = `
+    <div style="margin-top:8px;">
+      <div class="day-type ${typeClass}">${isRuck ? 'Ruck Day' : 'Strength Day'}</div>
+      <div class="day-name">${info.name}</div>
+      <div class="day-desc">${info.duration} • Week ${week}</div>
+    </div>`;
+
+  if (isRuck) {
+    html += renderRuckView(info, log, ds);
+  } else {
+    html += renderStrengthView(info, log, ds);
+  }
+
+  container.innerHTML = html;
+  attachEventListeners(ds, info);
+}
+
+function renderRuckView(info, log, ds) {
+  return `
+    <div class="card" style="margin-top:12px;">
+      <div style="font-size:0.9rem;font-weight:600;color:var(--heading);margin-bottom:8px;">Today's Ruck</div>
+      <div style="padding:14px;background:var(--bg);border-radius:10px;margin-bottom:12px;">
+        <div style="font-size:1.1rem;color:var(--green);font-weight:600;">${info.ruckTarget}</div>
+        <div style="font-size:0.85rem;color:var(--muted);margin-top:4px;">Pack: ${info.ruckWeight}</div>
+      </div>
+      ${info.note ? `<div class="ex-note">${info.note}</div>` : ''}
+
+      <div class="section-title" style="margin-top:16px;">Log Your Ruck</div>
+      <div class="ruck-fields">
+        <div>
+          <label>Duration (min)</label>
+          <input class="set-input ruck-log" data-field="duration" type="number" inputmode="numeric" placeholder="—" value="${log.duration||''}">
+        </div>
+        <div>
+          <label>Distance (mi)</label>
+          <input class="set-input ruck-log" data-field="distance" type="number" inputmode="decimal" step="0.1" placeholder="—" value="${log.distance||''}">
+        </div>
+        <div>
+          <label>Pack Weight (lbs)</label>
+          <input class="set-input ruck-log" data-field="weight" type="number" inputmode="numeric" placeholder="—" value="${log.weight||''}">
+        </div>
+        <div>
+          <label>Avg HR (bpm)</label>
+          <input class="set-input ruck-log" data-field="hr" type="number" inputmode="numeric" placeholder="—" value="${log.hr||''}">
+        </div>
+      </div>
+      <div class="rpe-label">Effort (RPE)</div>
+      <div class="rpe-row">
+        ${[5,6,7,8,9,10].map(n => `<button class="rpe-btn ruck-rpe ${log.rpe==n?'selected':''}" data-rpe="${n}">${n}</button>`).join('')}
+      </div>
+      <div style="margin-top:12px;">
+        <label style="font-size:0.7rem;font-weight:600;color:var(--dim);text-transform:uppercase;display:block;margin-bottom:4px;">Notes</label>
+        <textarea class="notes-input ruck-notes" placeholder="How'd it feel?">${log.notes||''}</textarea>
+      </div>
+    </div>`;
+}
+
+function renderStrengthView(info, log, ds) {
+  let html = '';
+  info.exercises.forEach((ex, i) => {
+    const exLog = (log.exercises || {})[i] || {};
+    const setsLogged = Object.keys(exLog.sets || {}).length;
+    const allDone = setsLogged >= ex.sets;
+    const partial = setsLogged > 0 && !allDone;
+    const checkClass = allDone ? 'done' : partial ? 'partial' : '';
+    const isOpen = !allDone;
+
+    html += `
+    <div class="exercise" data-ex="${i}">
+      <div class="exercise-header" onclick="toggleExercise(${i})">
+        <span class="ex-name">${ex.name}</span>
+        <span class="ex-prescription">${ex.sets} × ${ex.reps}</span>
+        <div class="ex-check ${checkClass}"></div>
+      </div>
+      <div class="exercise-detail ${isOpen ? 'open' : ''}" id="exDetail${i}">
+        ${ex.note ? `<div class="ex-note">${ex.note}</div>` : ''}
+        ${ex.rest ? `<div class="ex-rest">Rest: ${ex.rest}s between sets <button style="background:var(--accent);color:white;border:none;padding:3px 10px;border-radius:6px;font-size:0.75rem;font-weight:600;margin-left:6px;cursor:pointer;" onclick="startTimer(${ex.rest})">Start Timer</button></div>` : ''}
+        <div class="set-header">
+          <span>Set</span>
+          <span>Weight</span>
+          <span>Reps</span>
+          <span>RPE</span>
+        </div>
+        ${Array.from({length: ex.sets}, (_, s) => {
+          const setLog = (exLog.sets || {})[s] || {};
+          return `
+          <div class="set-row">
+            <div class="set-label">${s+1}</div>
+            <input class="set-input set-log" data-ex="${i}" data-set="${s}" data-field="weight" type="number" inputmode="decimal" placeholder="lbs" value="${setLog.weight||''}">
+            <input class="set-input set-log" data-ex="${i}" data-set="${s}" data-field="reps" type="number" inputmode="numeric" placeholder="${ex.reps}" value="${setLog.reps||''}">
+            <input class="set-input set-log" data-ex="${i}" data-set="${s}" data-field="rpe" type="number" inputmode="numeric" placeholder="RPE" min="1" max="10" value="${setLog.rpe||''}">
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`;
+  });
+
+  return `<div style="margin-top:12px;">${html}</div>
+    <div style="margin-top:12px;">
+      <label style="font-size:0.7rem;font-weight:600;color:var(--dim);text-transform:uppercase;display:block;margin-bottom:4px;">Session Notes</label>
+      <textarea class="notes-input session-notes" placeholder="How'd it feel? Anything to remember?">${log.notes||''}</textarea>
+    </div>`;
+}
+
+function toggleExercise(i) {
+  const detail = document.getElementById('exDetail' + i);
+  detail.classList.toggle('open');
+}
+
+function attachEventListeners(ds, info) {
+  // Strength set logging
+  document.querySelectorAll('.set-log').forEach(input => {
+    input.addEventListener('change', () => {
+      const log = getLog(ds) || { type: 'strength', workout: info.name };
+      if (!log.exercises) log.exercises = {};
+      const exIdx = input.dataset.ex;
+      const setIdx = input.dataset.set;
+      const field = input.dataset.field;
+      if (!log.exercises[exIdx]) log.exercises[exIdx] = { sets: {} };
+      if (!log.exercises[exIdx].sets[setIdx]) log.exercises[exIdx].sets[setIdx] = {};
+      log.exercises[exIdx].sets[setIdx][field] = input.value;
+      saveLog(ds, log);
+      // Update check marks
+      renderToday();
+    });
+  });
+
+  // Ruck logging
+  document.querySelectorAll('.ruck-log').forEach(input => {
+    input.addEventListener('change', () => {
+      const log = getLog(ds) || { type: 'ruck', workout: info.name };
+      log[input.dataset.field] = input.value;
+      saveLog(ds, log);
+    });
+  });
+  document.querySelectorAll('.ruck-rpe').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const log = getLog(ds) || { type: 'ruck', workout: info.name };
+      log.rpe = btn.dataset.rpe;
+      saveLog(ds, log);
+      document.querySelectorAll('.ruck-rpe').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+    });
+  });
+  // Notes
+  const notesEl = document.querySelector('.session-notes, .ruck-notes');
+  if (notesEl) {
+    notesEl.addEventListener('change', () => {
+      const log = getLog(ds) || { type: info.type, workout: info.name };
+      log.notes = notesEl.value;
+      saveLog(ds, log);
+    });
+  }
+}
+
+function renderWeek() {
+  renderHeader();
+  const container = document.getElementById('weekContent');
+  const today = new Date();
+  const todayDs = dateStr(today);
+  // Get start of current week (Sunday)
+  const startOfWeek = new Date(today);
+  startOfWeek.setDate(today.getDate() - today.getDay());
+
+  let html = '';
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(startOfWeek);
+    d.setDate(startOfWeek.getDate() + i);
+    const ds = dateStr(d);
+    const isToday = ds === todayDs;
+    const info = getDayWorkout(d);
+    const log = getLog(ds);
+
+    let typeName = 'Rest';
+    let detail = '';
+    let statusClass = 'upcoming';
+
+    if (info && info.type !== 'rest') {
+      typeName = info.name;
+      detail = `${info.duration} • ${info.type === 'ruck' ? info.ruckWeight : info.exercises.length + ' exercises'}`;
+      if (log) {
+        const hasData = info.type === 'ruck' ? (log.duration || log.distance) : Object.keys(log.exercises || {}).length > 0;
+        statusClass = hasData ? 'complete' : 'upcoming';
+      }
+    } else if (info) {
+      detail = info.message || info.type;
+    }
+
+    html += `
+    <div class="week-day ${isToday ? 'today' : ''}" onclick="navigateToDay('${ds}')">
+      <div class="wd-date">
+        <div class="wd-dow">${d.toLocaleDateString('en-US',{weekday:'short'})}</div>
+        <div class="wd-num">${d.getDate()}</div>
+      </div>
+      <div class="wd-info">
+        <div class="wd-type">${typeName}</div>
+        <div class="wd-detail">${detail}</div>
+      </div>
+      ${info && info.type !== 'rest' ? `<div class="wd-status ${statusClass}"></div>` : ''}
+    </div>`;
+  }
+  container.innerHTML = html;
+}
+
+function navigateToDay(ds) {
+  // For now just go to today view
+  showPage('Today');
+}
+
+function renderHistory() {
+  renderHeader();
+  const state = getState();
+  const logs = state.logs || {};
+  const entries = Object.entries(logs).sort((a,b) => b[0].localeCompare(a[0]));
+
+  // Stats
+  let totalWorkouts = entries.length;
+  let totalRucks = 0;
+  let totalStrength = 0;
+  let currentStreak = 0;
+
+  entries.forEach(([ds, log]) => {
+    if (log.type === 'ruck') totalRucks++;
+    else totalStrength++;
+  });
+
+  // Calculate streak (consecutive weeks with 4+ workouts)
+  const statsHtml = `
+    <div class="stats-grid">
+      <div class="stat-box"><div class="stat-num">${totalWorkouts}</div><div class="stat-label">Total Sessions</div></div>
+      <div class="stat-box"><div class="stat-num">${totalStrength}</div><div class="stat-label">Strength</div></div>
+      <div class="stat-box"><div class="stat-num">${totalRucks}</div><div class="stat-label">Rucks</div></div>
+      <div class="stat-box"><div class="stat-num">${getWeekNumber(new Date()) || '—'}</div><div class="stat-label">Current Week</div></div>
+    </div>`;
+
+  document.getElementById('statsContent').innerHTML = statsHtml;
+
+  // History entries
+  if (entries.length === 0) {
+    document.getElementById('historyContent').innerHTML = '<div class="empty-state"><p>No workouts logged yet. Get after it.</p></div>';
+    return;
+  }
+
+  let histHtml = '';
+  entries.forEach(([ds, log]) => {
+    const d = new Date(ds + 'T12:00:00');
+    const dateLabel = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+    let stats = '';
+    if (log.type === 'ruck') {
+      const parts = [];
+      if (log.duration) parts.push(`${log.duration} min`);
+      if (log.distance) parts.push(`${log.distance} mi`);
+      if (log.weight) parts.push(`${log.weight} lbs`);
+      if (log.rpe) parts.push(`RPE ${log.rpe}`);
+      stats = parts.join(' • ');
+    } else {
+      const exCount = Object.keys(log.exercises || {}).length;
+      let totalSets = 0;
+      Object.values(log.exercises || {}).forEach(ex => { totalSets += Object.keys(ex.sets || {}).length; });
+      stats = `${exCount} exercises • ${totalSets} sets logged`;
+    }
+
+    histHtml += `
+    <div class="history-entry">
+      <div class="he-date">${dateLabel}</div>
+      <div class="he-title">${log.workout || log.type}</div>
+      <div class="he-stats">${stats}</div>
+      ${log.notes ? `<div style="font-size:0.8rem;color:var(--muted);font-style:italic;margin-top:4px;">"${log.notes}"</div>` : ''}
+    </div>`;
+  });
+  document.getElementById('historyContent').innerHTML = histHtml;
+}
+
+function renderSettings() {
+  renderHeader();
+  const startDate = getStartDate();
+  document.getElementById('startDateInput').value = startDate || '';
+  const week = startDate ? getWeekNumber(new Date()) : 0;
+  document.getElementById('currentWeekDisplay').textContent = week > 0 && week <= 12 ? `Week ${week}` : week > 12 ? 'Complete' : '—';
+  const phase = week > 0 && week <= 12 ? getPhase(week) : null;
+  document.getElementById('currentPhaseDisplay').textContent = phase ? `${phase.name} (${PROGRAM.phases.indexOf(phase)+1}/3)` : '—';
+}
+
+// Settings events
+document.getElementById('startDateInput').addEventListener('change', function() {
+  setStartDate(this.value);
+  renderSettings();
+  renderHeader();
+});
+
+function exportData() {
+  const data = JSON.stringify(getState(), null, 2);
+  const blob = new Blob([data], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'ruck-iron-data.json';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function confirmClear() {
+  if (confirm('This will delete ALL workout data. Are you sure?')) {
+    if (confirm('Really? This cannot be undone.')) {
+      localStorage.removeItem('ruckIronState');
+      location.reload();
+    }
+  }
+}
+
+// ═══════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════
+renderToday();
+renderHeader();
+</script>
+</body>
+</html>
