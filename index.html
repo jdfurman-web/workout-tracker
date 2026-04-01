@@ -141,6 +141,34 @@ body {
 .ex-note { font-size: 0.8rem; color: var(--muted); font-style: italic; margin-bottom: 10px; }
 .ex-rest { font-size: 0.75rem; color: var(--yellow); margin-bottom: 10px; }
 
+/* ── Weight Suggestions ── */
+.ex-suggestion {
+  font-size: 0.75rem;
+  padding: 4px 10px;
+  border-radius: 8px;
+  margin: 0 0 10px 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.ex-suggestion.progress {
+  background: rgba(52, 211, 153, 0.12);
+  color: var(--green);
+  border: 1px solid rgba(52, 211, 153, 0.25);
+}
+.ex-suggestion.hold {
+  background: rgba(74, 158, 255, 0.10);
+  color: var(--accent);
+  border: 1px solid rgba(74, 158, 255, 0.2);
+}
+.ex-suggestion.first {
+  background: rgba(148, 163, 184, 0.10);
+  color: var(--muted);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+}
+.ex-suggestion svg { width: 14px; height: 14px; flex-shrink: 0; }
+.ex-suggestion strong { font-weight: 700; }
+
 /* ── Set Logging ── */
 .set-row {
   display: grid;
@@ -462,11 +490,24 @@ if (sessionStorage.getItem('ri_auth')==='1') {
       <span class="setting-value" id="currentPhaseDisplay">—</span>
     </div>
   </div>
+  <div class="section-title">Cloud Sync</div>
+  <div class="card">
+    <div style="font-size:0.85rem;color:var(--muted);margin-bottom:10px;">Sync workout data to the cloud so Knox can include lift details in your weekly wellness digest.</div>
+    <div class="setting-row" style="border:none;">
+      <span class="setting-label">Gist ID</span>
+      <input type="text" class="set-input" id="gistIdInput" placeholder="Auto-created on first sync" style="font-size:0.8rem;text-align:left;width:180px;" readonly>
+    </div>
+  </div>
+  <button class="btn btn-secondary" onclick="syncToCloud()" id="syncBtn" style="background:rgba(52,211,153,0.15);color:var(--green);border-color:rgba(52,211,153,0.3);">
+    ☁️ Sync to Knox
+  </button>
+  <div id="syncStatus" style="font-size:0.75rem;color:var(--dim);text-align:center;margin-top:6px;"></div>
+
   <div class="section-title">Data</div>
   <button class="btn btn-secondary" onclick="exportData()">Export All Data (JSON)</button>
   <button class="btn btn-danger" onclick="confirmClear()">Clear All Data</button>
   <div style="text-align:center;margin-top:24px;">
-    <p style="font-size:0.75rem;color:var(--dim);">Ruck + Iron v1.0</p>
+    <p style="font-size:0.75rem;color:var(--dim);">Ruck + Iron v2.0</p>
     <p style="font-size:0.75rem;color:var(--dim);">Built by Knox for Jay Furman</p>
   </div>
 </div>
@@ -775,10 +816,130 @@ function saveLog(dateStr, data) {
   if (!s.logs) s.logs = {};
   s.logs[dateStr] = data;
   saveState(s);
+  // Auto-sync to cloud if configured (debounced)
+  debouncedSync();
+}
+
+let _syncTimer = null;
+function debouncedSync() {
+  if (!getSyncPat() || !getSyncGistId()) return; // Only auto-sync after initial setup
+  clearTimeout(_syncTimer);
+  _syncTimer = setTimeout(() => {
+    syncToCloud().catch(() => {}); // Silent background sync
+  }, 30000); // Sync 30s after last change
 }
 
 function dateStr(d) {
   return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+
+// ═══════════════════════════════════════════
+// WEIGHT PROGRESSION SUGGESTIONS
+// ═══════════════════════════════════════════
+
+function getLastLogForWorkout(workoutName) {
+  const state = getState();
+  const logs = state.logs || {};
+  const today = dateStr(new Date());
+  const entries = Object.entries(logs)
+    .filter(([ds, log]) => log.workout === workoutName && ds !== today && log.type === 'strength')
+    .sort((a, b) => b[0].localeCompare(a[0]));
+  return entries.length > 0 ? { date: entries[0][0], log: entries[0][1] } : null;
+}
+
+function parseRepRange(repStr) {
+  // Handle "8-10", "15", "12 each", "10-12"
+  const cleaned = repStr.replace(/[^0-9\-]/g, '');
+  if (cleaned.includes('-')) {
+    const parts = cleaned.split('-');
+    return { min: parseInt(parts[0]), max: parseInt(parts[1]) };
+  }
+  const n = parseInt(cleaned);
+  return { min: n, max: n };
+}
+
+function getWeightIncrement(exerciseName) {
+  const name = exerciseName.toLowerCase();
+  // Dumbbell movements: smaller increments
+  if (name.includes('dumbbell') || name.includes('db ') || name.includes('overhead press (db)') || name.includes('curl')) {
+    return 2.5;
+  }
+  // Cable/machine movements: larger increments
+  return 5;
+}
+
+function getSuggestion(exerciseDef, exIndex, lastLog) {
+  if (!lastLog || !lastLog.exercises || !lastLog.exercises[exIndex]) {
+    return { type: 'first', weight: null, detail: 'First session — start moderate, find your working weight' };
+  }
+
+  const prevEx = lastLog.exercises[exIndex];
+  const sets = prevEx.sets || {};
+  const setKeys = Object.keys(sets);
+
+  if (setKeys.length === 0) {
+    return { type: 'first', weight: null, detail: 'No previous data — start moderate' };
+  }
+
+  const range = parseRepRange(exerciseDef.reps);
+  const increment = getWeightIncrement(exerciseDef.name);
+
+  // Gather previous performance
+  let weights = [];
+  let reps = [];
+  let allHitMax = true;
+  let allSetsLogged = true;
+
+  for (let s = 0; s < exerciseDef.sets; s++) {
+    const set = sets[s];
+    if (!set || !set.weight || !set.reps) {
+      allSetsLogged = false;
+      allHitMax = false;
+      break;
+    }
+    weights.push(parseFloat(set.weight));
+    reps.push(parseInt(set.reps));
+    if (parseInt(set.reps) < range.max) {
+      allHitMax = false;
+    }
+  }
+
+  if (weights.length === 0) {
+    return { type: 'first', weight: null, detail: 'Incomplete previous data — repeat last weight' };
+  }
+
+  const prevWeight = weights[0];
+  const avgReps = Math.round(reps.reduce((a, b) => a + b, 0) / reps.length);
+  const minReps = Math.min(...reps);
+
+  // Progression decision
+  if (allHitMax && allSetsLogged) {
+    const newWeight = prevWeight + increment;
+    return {
+      type: 'progress',
+      weight: newWeight,
+      detail: `Hit ${range.max} reps × all sets at ${prevWeight} → go up to ${newWeight}`
+    };
+  } else if (minReps < range.min) {
+    // Didn't even hit minimum — might need to drop
+    return {
+      type: 'hold',
+      weight: prevWeight,
+      detail: `${minReps} reps last time (min: ${range.min}) — hold at ${prevWeight}, focus on form`
+    };
+  } else {
+    return {
+      type: 'hold',
+      weight: prevWeight,
+      detail: `Avg ${avgReps} reps (target: ${range.max}) — hold at ${prevWeight}, build reps`
+    };
+  }
+}
+
+function getSuggestionIcon(type) {
+  if (type === 'progress') return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 19V5M5 12l7-7 7 7"/></svg>';
+  if (type === 'hold') return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14"/></svg>';
+  return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="3"/></svg>';
 }
 
 // ═══════════════════════════════════════════
@@ -952,7 +1113,16 @@ function renderRuckView(info, log, ds) {
 }
 
 function renderStrengthView(info, log, ds) {
+  // Get previous workout data for suggestions
+  const prev = getLastLogForWorkout(info.name);
+  const prevLog = prev ? prev.log : null;
+  const prevDate = prev ? new Date(prev.date + 'T12:00:00').toLocaleDateString('en-US', {month:'short', day:'numeric'}) : null;
+
   let html = '';
+  if (prev) {
+    html += `<div style="font-size:0.7rem;color:var(--dim);margin:12px 0 4px;text-align:center;">Suggestions based on ${prevDate} session</div>`;
+  }
+
   info.exercises.forEach((ex, i) => {
     const exLog = (log.exercises || {})[i] || {};
     const setsLogged = Object.keys(exLog.sets || {}).length;
@@ -960,6 +1130,11 @@ function renderStrengthView(info, log, ds) {
     const partial = setsLogged > 0 && !allDone;
     const checkClass = allDone ? 'done' : partial ? 'partial' : '';
     const isOpen = !allDone;
+
+    // Get weight suggestion
+    const suggestion = getSuggestion(ex, i, prevLog);
+    const sugBadge = `<div class="ex-suggestion ${suggestion.type}">${getSuggestionIcon(suggestion.type)} ${suggestion.weight ? `<strong>${suggestion.weight} lbs</strong> · ` : ''}${suggestion.detail}</div>`;
+    const weightPlaceholder = suggestion.weight ? suggestion.weight : 'lbs';
 
     html += `
     <div class="exercise" data-ex="${i}">
@@ -969,6 +1144,7 @@ function renderStrengthView(info, log, ds) {
         <div class="ex-check ${checkClass}"></div>
       </div>
       <div class="exercise-detail ${isOpen ? 'open' : ''}" id="exDetail${i}">
+        ${sugBadge}
         ${ex.note ? `<div class="ex-note">${ex.note}</div>` : ''}
         ${ex.rest ? `<div class="ex-rest">Rest: ${ex.rest}s between sets <button style="background:var(--accent);color:white;border:none;padding:3px 10px;border-radius:6px;font-size:0.75rem;font-weight:600;margin-left:6px;cursor:pointer;" onclick="startTimer(${ex.rest})">Start Timer</button></div>` : ''}
         <div class="set-header">
@@ -982,7 +1158,7 @@ function renderStrengthView(info, log, ds) {
           return `
           <div class="set-row">
             <div class="set-label">${s+1}</div>
-            <input class="set-input set-log" data-ex="${i}" data-set="${s}" data-field="weight" type="number" inputmode="decimal" placeholder="lbs" value="${setLog.weight||''}">
+            <input class="set-input set-log" data-ex="${i}" data-set="${s}" data-field="weight" type="number" inputmode="decimal" placeholder="${weightPlaceholder}" value="${setLog.weight||''}" ${!setLog.weight && suggestion.weight ? `data-suggested="${suggestion.weight}"` : ''}>
             <input class="set-input set-log" data-ex="${i}" data-set="${s}" data-field="reps" type="number" inputmode="numeric" placeholder="${ex.reps}" value="${setLog.reps||''}">
             <input class="set-input set-log" data-ex="${i}" data-set="${s}" data-field="rpe" type="number" inputmode="numeric" placeholder="RPE" min="1" max="10" value="${setLog.rpe||''}">
           </div>`;
@@ -1004,6 +1180,25 @@ function toggleExercise(i) {
 }
 
 function attachEventListeners(ds, info) {
+  // Auto-fill suggested weight on focus
+  document.querySelectorAll('.set-log[data-suggested]').forEach(input => {
+    input.addEventListener('focus', function() {
+      if (!this.value && this.dataset.suggested) {
+        this.value = this.dataset.suggested;
+        // Trigger save
+        const log = getLog(ds) || { type: 'strength', workout: info.name };
+        if (!log.exercises) log.exercises = {};
+        const exIdx = this.dataset.ex;
+        const setIdx = this.dataset.set;
+        if (!log.exercises[exIdx]) log.exercises[exIdx] = { sets: {} };
+        if (!log.exercises[exIdx].sets[setIdx]) log.exercises[exIdx].sets[setIdx] = {};
+        log.exercises[exIdx].sets[setIdx].weight = this.value;
+        saveLog(ds, log);
+        delete this.dataset.suggested;
+      }
+    }, { once: true });
+  });
+
   // Strength set logging
   document.querySelectorAll('.set-log').forEach(input => {
     input.addEventListener('change', () => {
@@ -1175,6 +1370,9 @@ function renderSettings() {
   document.getElementById('currentWeekDisplay').textContent = week > 0 && week <= 12 ? `Week ${week}` : week > 12 ? 'Complete' : '—';
   const phase = week > 0 && week <= 12 ? getPhase(week) : null;
   document.getElementById('currentPhaseDisplay').textContent = phase ? `${phase.name} (${PROGRAM.phases.indexOf(phase)+1}/3)` : '—';
+  // Show Gist ID if configured
+  const gistId = getSyncGistId();
+  document.getElementById('gistIdInput').value = gistId || '';
 }
 
 // Settings events
@@ -1193,6 +1391,73 @@ function exportData() {
   a.download = 'ruck-iron-data.json';
   a.click();
   URL.revokeObjectURL(url);
+}
+
+// ═══════════════════════════════════════════
+// CLOUD SYNC (GitHub Gist)
+// ═══════════════════════════════════════════
+
+function getSyncPat() { return localStorage.getItem('ruckIronSyncPat') || ''; }
+function setSyncPat(pat) { localStorage.setItem('ruckIronSyncPat', pat); }
+function getSyncGistId() { return localStorage.getItem('ruckIronGistId') || ''; }
+function setSyncGistId(id) { localStorage.setItem('ruckIronGistId', id); }
+
+async function syncToCloud() {
+  let pat = getSyncPat();
+  if (!pat) {
+    pat = prompt('Enter your GitHub PAT (fine-grained, Gist scope only).\nThis is stored locally on your device — never sent anywhere except GitHub.');
+    if (!pat) return;
+    setSyncPat(pat);
+  }
+
+  const btn = document.getElementById('syncBtn');
+  const status = document.getElementById('syncStatus');
+  btn.disabled = true;
+  btn.textContent = '⏳ Syncing...';
+  status.textContent = '';
+
+  try {
+    const data = JSON.stringify(getState(), null, 2);
+    const gistId = getSyncGistId();
+    const headers = {
+      'Authorization': `Bearer ${pat}`,
+      'Content-Type': 'application/json',
+      'Accept': 'application/vnd.github+json'
+    };
+
+    if (gistId) {
+      const resp = await fetch(`https://api.github.com/gists/${gistId}`, {
+        method: 'PATCH', headers,
+        body: JSON.stringify({ files: { 'ruck-iron-data.json': { content: data } } })
+      });
+      if (resp.status === 401) { setSyncPat(''); throw new Error('Invalid PAT — cleared, try again'); }
+      if (!resp.ok) throw new Error(`Update failed: ${resp.status}`);
+      status.textContent = `✅ Synced — ${new Date().toLocaleTimeString()}`;
+      status.style.color = 'var(--green)';
+    } else {
+      const resp = await fetch('https://api.github.com/gists', {
+        method: 'POST', headers,
+        body: JSON.stringify({
+          description: 'Ruck+Iron Workout Data — auto-synced from PWA',
+          public: false,
+          files: { 'ruck-iron-data.json': { content: data } }
+        })
+      });
+      if (resp.status === 401) { setSyncPat(''); throw new Error('Invalid PAT — cleared, try again'); }
+      if (!resp.ok) throw new Error(`Create failed: ${resp.status}`);
+      const result = await resp.json();
+      setSyncGistId(result.id);
+      document.getElementById('gistIdInput').value = result.id;
+      status.textContent = `✅ Created & synced — ${new Date().toLocaleTimeString()}`;
+      status.style.color = 'var(--green)';
+    }
+  } catch (e) {
+    status.textContent = `❌ ${e.message}`;
+    status.style.color = 'var(--red)';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '☁️ Sync to Knox';
+  }
 }
 
 function confirmClear() {
