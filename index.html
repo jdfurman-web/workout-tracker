@@ -494,9 +494,14 @@ if (sessionStorage.getItem('ri_auth')==='1') {
   <div class="card">
     <div style="font-size:0.85rem;color:var(--muted);margin-bottom:10px;">Sync workout data so Knox can include lift details in your weekly wellness digest. Data syncs to a private file in the workout-tracker repo.</div>
   </div>
-  <button class="btn btn-secondary" onclick="syncToCloud()" id="syncBtn" style="background:rgba(52,211,153,0.15);color:var(--green);border-color:rgba(52,211,153,0.3);">
-    ☁️ Sync to Knox
-  </button>
+  <div style="display:flex;gap:8px;">
+    <button class="btn btn-secondary" onclick="syncToCloud()" id="syncBtn" style="flex:1;background:rgba(52,211,153,0.15);color:var(--green);border-color:rgba(52,211,153,0.3);">
+      ☁️ Sync Up
+    </button>
+    <button class="btn btn-secondary" onclick="restoreFromCloud()" id="restoreBtn" style="flex:1;background:rgba(74,158,255,0.10);color:var(--accent);border-color:rgba(74,158,255,0.2);">
+      ⬇️ Restore
+    </button>
+  </div>
   <div id="syncStatus" style="font-size:0.75rem;color:var(--dim);text-align:center;margin-top:6px;"></div>
 
   <div class="section-title">Data</div>
@@ -1451,6 +1456,44 @@ async function syncToCloud() {
   } finally {
     btn.disabled = false;
     btn.textContent = '☁️ Sync to Knox';
+  }
+}
+
+async function restoreFromCloud() {
+  const btn = document.getElementById('restoreBtn');
+  const status = document.getElementById('syncStatus');
+  btn.disabled = true;
+  btn.textContent = '⏳ Restoring...';
+  status.textContent = '';
+
+  try {
+    const resp = await fetch(`https://raw.githubusercontent.com/${SYNC_REPO}/main/${SYNC_FILE}?t=${Date.now()}`);
+    if (!resp.ok) throw new Error(`Fetch failed: ${resp.status}`);
+    const data = await resp.json();
+
+    // Merge: cloud data fills in anything missing locally
+    const local = getState();
+    const merged = { ...data };
+    if (local.logs) {
+      merged.logs = { ...data.logs, ...local.logs };
+    }
+    if (local.startDate && !merged.startDate) {
+      merged.startDate = local.startDate;
+    }
+
+    saveState(merged);
+    const logCount = Object.keys(merged.logs || {}).length;
+    status.textContent = `✅ Restored ${logCount} workout(s) — ${new Date().toLocaleTimeString()}`;
+    status.style.color = 'var(--green)';
+
+    // Refresh views
+    showPage('Today');
+  } catch (e) {
+    status.textContent = `❌ ${e.message}`;
+    status.style.color = 'var(--red)';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '⬇️ Restore';
   }
 }
 
