@@ -492,11 +492,7 @@ if (sessionStorage.getItem('ri_auth')==='1') {
   </div>
   <div class="section-title">Cloud Sync</div>
   <div class="card">
-    <div style="font-size:0.85rem;color:var(--muted);margin-bottom:10px;">Sync workout data to the cloud so Knox can include lift details in your weekly wellness digest.</div>
-    <div class="setting-row" style="border:none;">
-      <span class="setting-label">Gist ID</span>
-      <input type="text" class="set-input" id="gistIdInput" placeholder="Auto-created on first sync" style="font-size:0.8rem;text-align:left;width:180px;" readonly>
-    </div>
+    <div style="font-size:0.85rem;color:var(--muted);margin-bottom:10px;">Sync workout data so Knox can include lift details in your weekly wellness digest. Data syncs to a private file in the workout-tracker repo.</div>
   </div>
   <button class="btn btn-secondary" onclick="syncToCloud()" id="syncBtn" style="background:rgba(52,211,153,0.15);color:var(--green);border-color:rgba(52,211,153,0.3);">
     ☁️ Sync to Knox
@@ -1370,9 +1366,6 @@ function renderSettings() {
   document.getElementById('currentWeekDisplay').textContent = week > 0 && week <= 12 ? `Week ${week}` : week > 12 ? 'Complete' : '—';
   const phase = week > 0 && week <= 12 ? getPhase(week) : null;
   document.getElementById('currentPhaseDisplay').textContent = phase ? `${phase.name} (${PROGRAM.phases.indexOf(phase)+1}/3)` : '—';
-  // Show Gist ID if configured
-  const gistId = getSyncGistId();
-  document.getElementById('gistIdInput').value = gistId || '';
 }
 
 // Settings events
@@ -1397,15 +1390,16 @@ function exportData() {
 // CLOUD SYNC (GitHub Gist)
 // ═══════════════════════════════════════════
 
+const SYNC_REPO = 'jdfurman-web/workout-tracker';
+const SYNC_FILE = 'data/ruck-iron-data.json';
+
 function getSyncPat() { return localStorage.getItem('ruckIronSyncPat') || ''; }
 function setSyncPat(pat) { localStorage.setItem('ruckIronSyncPat', pat); }
-function getSyncGistId() { return localStorage.getItem('ruckIronGistId') || ''; }
-function setSyncGistId(id) { localStorage.setItem('ruckIronGistId', id); }
 
 async function syncToCloud() {
   let pat = getSyncPat();
   if (!pat) {
-    pat = prompt('Enter your GitHub PAT (fine-grained, Gist scope only).\nThis is stored locally on your device — never sent anywhere except GitHub.');
+    pat = prompt('Enter your GitHub PAT (fine-grained, Contents read/write on workout-tracker repo).\nStored locally on your device only.');
     if (!pat) return;
     setSyncPat(pat);
   }
@@ -1418,39 +1412,39 @@ async function syncToCloud() {
 
   try {
     const data = JSON.stringify(getState(), null, 2);
-    const gistId = getSyncGistId();
     const headers = {
       'Authorization': `Bearer ${pat}`,
       'Content-Type': 'application/json',
       'Accept': 'application/vnd.github+json'
     };
 
-    if (gistId) {
-      const resp = await fetch(`https://api.github.com/gists/${gistId}`, {
-        method: 'PATCH', headers,
-        body: JSON.stringify({ files: { 'ruck-iron-data.json': { content: data } } })
-      });
-      if (resp.status === 401) { setSyncPat(''); throw new Error('Invalid PAT — cleared, try again'); }
-      if (!resp.ok) throw new Error(`Update failed: ${resp.status}`);
-      status.textContent = `✅ Synced — ${new Date().toLocaleTimeString()}`;
-      status.style.color = 'var(--green)';
-    } else {
-      const resp = await fetch('https://api.github.com/gists', {
-        method: 'POST', headers,
-        body: JSON.stringify({
-          description: 'Ruck+Iron Workout Data — auto-synced from PWA',
-          public: false,
-          files: { 'ruck-iron-data.json': { content: data } }
-        })
-      });
-      if (resp.status === 401) { setSyncPat(''); throw new Error('Invalid PAT — cleared, try again'); }
-      if (!resp.ok) throw new Error(`Create failed: ${resp.status}`);
-      const result = await resp.json();
-      setSyncGistId(result.id);
-      document.getElementById('gistIdInput').value = result.id;
-      status.textContent = `✅ Created & synced — ${new Date().toLocaleTimeString()}`;
-      status.style.color = 'var(--green)';
+    // Check if file exists (get SHA for update)
+    let sha = null;
+    const getResp = await fetch(`https://api.github.com/repos/${SYNC_REPO}/contents/${SYNC_FILE}`, { headers });
+    if (getResp.status === 401) { setSyncPat(''); throw new Error('Invalid PAT — cleared, try again'); }
+    if (getResp.ok) {
+      const existing = await getResp.json();
+      sha = existing.sha;
     }
+
+    // Create or update file
+    const body = {
+      message: `sync: workout data ${new Date().toISOString().slice(0,10)}`,
+      content: btoa(unescape(encodeURIComponent(data))),
+      ...(sha ? { sha } : {})
+    };
+
+    const putResp = await fetch(`https://api.github.com/repos/${SYNC_REPO}/contents/${SYNC_FILE}`, {
+      method: 'PUT', headers, body: JSON.stringify(body)
+    });
+    if (putResp.status === 401) { setSyncPat(''); throw new Error('Invalid PAT — cleared, try again'); }
+    if (!putResp.ok) {
+      const err = await putResp.json().catch(() => ({}));
+      throw new Error(`Sync failed: ${putResp.status} ${err.message || ''}`);
+    }
+
+    status.textContent = `✅ Synced — ${new Date().toLocaleTimeString()}`;
+    status.style.color = 'var(--green)';
   } catch (e) {
     status.textContent = `❌ ${e.message}`;
     status.style.color = 'var(--red)';
