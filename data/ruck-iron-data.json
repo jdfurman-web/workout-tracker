@@ -107,6 +107,89 @@
           }
         }
       }
+    },
+    "2026-04-04": {
+      "type": "strength",
+      "workout": "Lower + Core",
+      "exercises": {
+        "0": {
+          "sets": {
+            "0": {
+              "weight": "35",
+              "reps": "12"
+            },
+            "1": {
+              "weight": "35",
+              "reps": "12"
+            },
+            "2": {
+              "weight": "35",
+              "reps": "12"
+            }
+          }
+        },
+        "1": {
+          "sets": {
+            "0": {
+              "weight": "50",
+              "reps": "10"
+            },
+            "1": {
+              "weight": "50",
+              "reps": "10"
+            },
+            "2": {
+              "weight": "50",
+              "reps": "10"
+            }
+          }
+        },
+        "2": {
+          "sets": {
+            "0": {
+              "weight": "0",
+              "reps": "10"
+            },
+            "1": {
+              "weight": "0",
+              "reps": "10"
+            }
+          }
+        },
+        "3": {
+          "sets": {
+            "0": {
+              "weight": "110",
+              "reps": "12"
+            },
+            "1": {
+              "weight": "130",
+              "reps": "12"
+            },
+            "2": {
+              "weight": "130",
+              "reps": "12"
+            }
+          }
+        },
+        "5": {
+          "sets": {
+            "0": {
+              "weight": "0",
+              "reps": "45"
+            },
+            "1": {
+              "weight": "0",
+              "reps": "45"
+            },
+            "2": {
+              "weight": "0",
+              "reps": "45"
+            }
+          }
+        }
+      },
+      "notes": "Lifetime Tulsa. Swapped Farmer's Carry for Calf Raise machine 3x12@150. Walking Lunges 2 sets instead of 3 (BW)."
     }
   }
 }
