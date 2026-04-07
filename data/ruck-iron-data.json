@@ -190,6 +190,120 @@
         }
       },
       "notes": "Lifetime Tulsa. Swapped Farmer's Carry for Calf Raise machine 3x12@150. Walking Lunges 2 sets instead of 3 (BW)."
+    },
+    "2026-04-07": {
+      "type": "strength",
+      "workout": "Upper Push/Pull",
+      "exercises": {
+        "0": {
+          "sets": {
+            "0": {
+              "reps": "10",
+              "weight": "35",
+              "rpe": "5"
+            },
+            "1": {
+              "weight": "35",
+              "reps": "10",
+              "rpe": "7"
+            },
+            "2": {
+              "reps": "10",
+              "weight": "35",
+              "rpe": "8"
+            }
+          }
+        },
+        "1": {
+          "sets": {
+            "0": {
+              "weight": "42.5",
+              "reps": "12",
+              "rpe": "6"
+            },
+            "1": {
+              "weight": "42.5",
+              "reps": "12",
+              "rpe": "6"
+            },
+            "2": {
+              "weight": "42.5",
+              "reps": "12",
+              "rpe": "7"
+            }
+          }
+        },
+        "2": {
+          "sets": {
+            "0": {
+              "weight": "25",
+              "reps": "8",
+              "rpe": "6"
+            },
+            "1": {
+              "weight": "25",
+              "reps": "8",
+              "rpe": "8"
+            },
+            "2": {
+              "weight": "25",
+              "reps": "8",
+              "rpe": "9"
+            }
+          }
+        },
+        "3": {
+          "sets": {
+            "0": {
+              "weight": "145",
+              "reps": "10",
+              "rpe": "6"
+            },
+            "1": {
+              "weight": "145",
+              "reps": "10",
+              "rpe": "7"
+            },
+            "2": {
+              "weight": "145",
+              "reps": "10",
+              "rpe": "9"
+            }
+          }
+        },
+        "4": {
+          "sets": {
+            "0": {
+              "weight": "32.5",
+              "reps": "15",
+              "rpe": "6"
+            },
+            "1": {
+              "weight": "32.5",
+              "reps": "15",
+              "rpe": "7"
+            },
+            "2": {
+              "weight": "32.5",
+              "reps": "15",
+              "rpe": "8"
+            }
+          }
+        },
+        "5": {
+          "sets": {
+            "0": {
+              "weight": "20",
+              "reps": "12"
+            },
+            "1": {
+              "weight": "0",
+              "reps": "0"
+            }
+          }
+        }
+      },
+      "notes": "OH press - right shoulder hitchy and some pain"
     }
   }
 }
