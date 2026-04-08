@@ -389,6 +389,132 @@ body {
 
 /* ── Transitions ── */
 .exercise-detail { transition: none; }
+
+/* ── Date Nav ── */
+.date-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 10px 0 4px;
+}
+.date-nav-btn {
+  background: var(--card2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 1.1rem;
+  transition: all 0.15s;
+}
+.date-nav-btn:active { background: var(--card); transform: scale(0.95); }
+.date-nav-label {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--heading);
+  min-width: 160px;
+  text-align: center;
+}
+.date-nav-today {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--accent);
+  cursor: pointer;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: rgba(74,158,255,0.1);
+}
+
+/* ── Swap Workout ── */
+.swap-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 0 12px;
+}
+.swap-btn {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--accent);
+  background: rgba(74,158,255,0.1);
+  border: 1px solid rgba(74,158,255,0.2);
+  border-radius: 8px;
+  padding: 5px 12px;
+  cursor: pointer;
+}
+.swap-btn:active { background: rgba(74,158,255,0.2); }
+.swap-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  background: rgba(0,0,0,0.7);
+  display: none;
+  align-items: flex-end;
+  justify-content: center;
+}
+.swap-modal.open { display: flex; }
+.swap-sheet {
+  background: var(--card);
+  border-radius: 16px 16px 0 0;
+  width: 100%;
+  max-width: 500px;
+  max-height: 75vh;
+  overflow-y: auto;
+  padding: 20px 16px calc(20px + var(--safe-bottom));
+}
+.swap-sheet-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--heading);
+  margin-bottom: 14px;
+  text-align: center;
+}
+.swap-option {
+  display: flex;
+  align-items: center;
+  padding: 12px;
+  background: var(--card2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  margin-bottom: 8px;
+  cursor: pointer;
+}
+.swap-option:active { background: var(--bg); }
+.swap-option .so-type {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 2px 8px;
+  border-radius: 6px;
+  margin-right: 10px;
+  white-space: nowrap;
+}
+.swap-option .so-type.strength { background: rgba(74,158,255,0.15); color: var(--accent); }
+.swap-option .so-type.ruck { background: rgba(52,211,153,0.15); color: var(--green); }
+.swap-option .so-info { flex: 1; }
+.swap-option .so-name { font-size: 0.9rem; font-weight: 600; color: var(--heading); }
+.swap-option .so-detail { font-size: 0.75rem; color: var(--muted); }
+.swap-cancel {
+  display: block;
+  width: 100%;
+  padding: 14px;
+  margin-top: 8px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  color: var(--muted);
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-align: center;
+  cursor: pointer;
+}
 </style>
 </head>
 <body>
@@ -508,8 +634,17 @@ if (sessionStorage.getItem('ri_auth')==='1') {
   <button class="btn btn-secondary" onclick="exportData()">Export All Data (JSON)</button>
   <button class="btn btn-danger" onclick="confirmClear()">Clear All Data</button>
   <div style="text-align:center;margin-top:24px;">
-    <p style="font-size:0.75rem;color:var(--dim);">Ruck + Iron v2.0</p>
+    <p style="font-size:0.75rem;color:var(--dim);">Ruck + Iron v2.1</p>
     <p style="font-size:0.75rem;color:var(--dim);">Built by Knox for Jay Furman</p>
+  </div>
+</div>
+
+<!-- Swap Workout Modal -->
+<div class="swap-modal" id="swapModal" onclick="if(event.target===this)closeSwap()">
+  <div class="swap-sheet">
+    <div class="swap-sheet-title">Choose a Workout</div>
+    <div id="swapOptions"></div>
+    <button class="swap-cancel" onclick="closeSwap()">Cancel</button>
   </div>
 </div>
 
@@ -944,12 +1079,36 @@ function getSuggestionIcon(type) {
 }
 
 // ═══════════════════════════════════════════
-// TIMER
+// TIMER + AUDIO CHIME
 // ═══════════════════════════════════════════
 let timerInterval = null;
 let timerEnd = 0;
+let audioCtx = null;
+
+function playChime() {
+  try {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    // Three-tone ascending chime
+    const notes = [523.25, 659.25, 783.99]; // C5, E5, G5
+    notes.forEach((freq, i) => {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0.3, audioCtx.currentTime + i * 0.15);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + i * 0.15 + 0.4);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(audioCtx.currentTime + i * 0.15);
+      osc.stop(audioCtx.currentTime + i * 0.15 + 0.4);
+    });
+  } catch(e) {}
+}
 
 function startTimer(seconds) {
+  // Unlock audio context on user gesture (iOS requirement)
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
   clearInterval(timerInterval);
   timerEnd = Date.now() + seconds * 1000;
   document.getElementById('timerBar').classList.add('active');
@@ -964,12 +1123,85 @@ function updateTimer() {
   if (remaining <= 0) {
     clearInterval(timerInterval);
     document.getElementById('timerDisplay').textContent = 'GO!';
-    if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+    playChime();
+    if (navigator.vibrate) navigator.vibrate([200, 100, 200, 100, 200]);
   }
 }
 function dismissTimer() {
   clearInterval(timerInterval);
   document.getElementById('timerBar').classList.remove('active');
+}
+
+// ═══════════════════════════════════════════
+// DATE NAVIGATION + WORKOUT SWAP
+// ═══════════════════════════════════════════
+let viewDate = new Date(); // the date currently shown on Today page
+let swapOverride = {}; // { 'YYYY-MM-DD': { slotType, week } } for swapped workouts
+
+function getSwapOverride(ds) {
+  const s = getState();
+  return (s.swaps || {})[ds] || null;
+}
+function saveSwapOverride(ds, slotType, week) {
+  const s = getState();
+  if (!s.swaps) s.swaps = {};
+  s.swaps[ds] = { slotType, week };
+  saveState(s);
+}
+function clearSwapOverride(ds) {
+  const s = getState();
+  if (s.swaps) { delete s.swaps[ds]; saveState(s); }
+}
+
+function navDay(offset) {
+  viewDate.setDate(viewDate.getDate() + offset);
+  renderToday();
+}
+function navToToday() {
+  viewDate = new Date();
+  renderToday();
+}
+
+function openSwap() {
+  const ds = dateStr(viewDate);
+  const week = getWeekNumber(viewDate);
+  const clampedWeek = Math.max(1, Math.min(12, week));
+  const phase = getPhase(clampedWeek);
+
+  // Build list of available workouts for current week
+  const options = [];
+  const types = ['strengthA', 'strengthB', 'ruckA', 'ruckB'];
+  types.forEach(type => {
+    const workout = resolveWorkout(type, clampedWeek);
+    if (workout) {
+      options.push({ type, workout, week: clampedWeek });
+    }
+  });
+
+  // Also offer adjacent weeks if desired
+  let html = '';
+  options.forEach(opt => {
+    const typeLabel = opt.workout.type === 'ruck' ? 'ruck' : 'strength';
+    html += `
+    <div class="swap-option" onclick="selectSwap('${ds}','${opt.type}',${opt.week})">
+      <span class="so-type ${typeLabel}">${typeLabel}</span>
+      <div class="so-info">
+        <div class="so-name">${opt.workout.name}</div>
+        <div class="so-detail">${opt.workout.duration} • Week ${opt.week}</div>
+      </div>
+    </div>`;
+  });
+
+  document.getElementById('swapOptions').innerHTML = html;
+  document.getElementById('swapModal').classList.add('open');
+}
+function closeSwap() {
+  document.getElementById('swapModal').classList.remove('open');
+}
+function selectSwap(ds, slotType, week) {
+  saveSwapOverride(ds, slotType, week);
+  closeSwap();
+  renderToday();
 }
 
 // ═══════════════════════════════════════════
@@ -1026,28 +1258,59 @@ function renderToday() {
     return;
   }
 
-  const today = new Date();
-  const ds = dateStr(today);
-  const week = getWeekNumber(today);
-  const info = getDayWorkout(today);
+  const d = viewDate;
+  const ds = dateStr(d);
+  const realToday = dateStr(new Date());
+  const isToday = ds === realToday;
+  const week = getWeekNumber(d);
+
+  // Date navigation bar
+  const dayLabel = isToday ? 'Today' : d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+  let dateNavHtml = `
+    <div class="date-nav">
+      <button class="date-nav-btn" onclick="navDay(-1)">‹</button>
+      <div>
+        <div class="date-nav-label">${dayLabel}</div>
+        ${!isToday ? `<div style="text-align:center;margin-top:4px;"><span class="date-nav-today" onclick="navToToday()">Back to Today</span></div>` : ''}
+      </div>
+      <button class="date-nav-btn" onclick="navDay(1)">›</button>
+    </div>`;
+
+  // Check for swap override
+  const swap = getSwapOverride(ds);
+  let info;
+  if (swap) {
+    const workout = resolveWorkout(swap.slotType, swap.week);
+    if (workout) {
+      info = { ...workout, week: swap.week, slotType: swap.slotType, swapped: true };
+    } else {
+      info = getDayWorkout(d);
+    }
+  } else {
+    info = getDayWorkout(d);
+  }
 
   if (!info || week < 1 || week > 12) {
     const msg = week > 12 ? 'Program complete! Time to benchmark.' : 'Program hasn\'t started yet.';
-    container.innerHTML = `<div class="empty-state"><p>${msg}</p></div>`;
+    container.innerHTML = dateNavHtml + `<div class="empty-state"><p>${msg}</p></div>`;
     return;
   }
 
-  if (info.type === 'rest') {
-    container.innerHTML = `
+  if (info.type === 'rest' && !swap) {
+    container.innerHTML = dateNavHtml + `
       <div class="card" style="margin-top:8px;">
         <div class="day-type rest">Rest Day</div>
-        <div class="day-name">${today.toLocaleDateString('en-US', {weekday:'long'})}</div>
+        <div class="day-name">${d.toLocaleDateString('en-US', {weekday:'long'})}</div>
         <div class="day-desc">${info.message}</div>
         <div style="margin-top:16px;padding:14px;background:var(--bg);border-radius:10px;">
           <div style="font-size:0.8rem;color:var(--dim);text-transform:uppercase;font-weight:600;margin-bottom:4px;">Daily Target</div>
           <div style="font-size:1.3rem;font-weight:700;color:var(--green);">8,000 steps</div>
           <div style="font-size:0.8rem;color:var(--muted);margin-top:4px;">Walk after dinner. Take calls on foot.</div>
         </div>
+      </div>
+      <div class="swap-bar">
+        <span></span>
+        <button class="swap-btn" onclick="openSwap()">🔄 Do a Different Workout</button>
       </div>`;
     return;
   }
@@ -1056,11 +1319,21 @@ function renderToday() {
   const log = getLog(ds) || {};
   const typeClass = isRuck ? 'ruck' : 'strength';
 
-  let html = `
+  let swapNote = '';
+  if (info.swapped) {
+    swapNote = `<div style="font-size:0.75rem;color:var(--yellow);margin-top:4px;">🔄 Swapped workout <button style="background:none;border:none;color:var(--dim);font-size:0.7rem;text-decoration:underline;cursor:pointer;" onclick="clearSwapOverride('${ds}');renderToday();">Reset</button></div>`;
+  }
+
+  let html = dateNavHtml + `
     <div style="margin-top:8px;">
       <div class="day-type ${typeClass}">${isRuck ? 'Ruck Day' : 'Strength Day'}</div>
       <div class="day-name">${info.name}</div>
-      <div class="day-desc">${info.duration} • Week ${week}</div>
+      <div class="day-desc">${info.duration} • Week ${info.week || week}</div>
+      ${swapNote}
+    </div>
+    <div class="swap-bar">
+      <span></span>
+      <button class="swap-btn" onclick="openSwap()">🔄 Swap Workout</button>
     </div>`;
 
   if (isRuck) {
@@ -1295,7 +1568,7 @@ function renderWeek() {
 }
 
 function navigateToDay(ds) {
-  // For now just go to today view
+  viewDate = new Date(ds + 'T12:00:00');
   showPage('Today');
 }
 
@@ -1455,7 +1728,7 @@ async function syncToCloud() {
     status.style.color = 'var(--red)';
   } finally {
     btn.disabled = false;
-    btn.textContent = '☁️ Sync to Knox';
+    btn.textContent = '☁️ Sync Up';
   }
 }
 
