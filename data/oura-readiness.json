@@ -1,0 +1,22 @@
+{
+  "date": "2026-04-08",
+  "readiness": {
+    "score": 80,
+    "level": "yellow"
+  },
+  "sleep": {
+    "score": 75,
+    "duration_hrs": 0.0
+  },
+  "activity": {
+    "score": 83,
+    "steps": 5140
+  },
+  "recommendation": "Moderate recovery \u2014 consider lighter volume",
+  "trend": {
+    "readiness_7d_avg": 82,
+    "sleep_7d_avg": 83,
+    "direction": "improving"
+  },
+  "updated": "2026-04-08T05:30:00-05:00"
+}
