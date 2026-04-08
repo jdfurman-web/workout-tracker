@@ -390,6 +390,40 @@ body {
 /* ── Transitions ── */
 .exercise-detail { transition: none; }
 
+/* ── Readiness Card ── */
+.readiness-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.readiness-ring {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: var(--heading);
+  flex-shrink: 0;
+}
+.readiness-ring.green { background: rgba(52,211,153,0.15); border: 3px solid var(--green); }
+.readiness-ring.yellow { background: rgba(245,158,11,0.15); border: 3px solid var(--yellow); }
+.readiness-ring.red { background: rgba(239,68,68,0.15); border: 3px solid var(--red); }
+.readiness-ring.unknown { background: rgba(100,116,139,0.15); border: 3px solid var(--dim); }
+.readiness-info { flex: 1; }
+.readiness-label { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--dim); }
+.readiness-rec { font-size: 0.85rem; color: var(--text); margin-top: 2px; }
+.readiness-meta { font-size: 0.7rem; color: var(--dim); margin-top: 4px; }
+.readiness-trend { display: flex; gap: 12px; margin-top: 6px; }
+.readiness-trend span { font-size: 0.7rem; color: var(--muted); }
+
 /* ── Date Nav ── */
 .date-nav {
   display: flex;
@@ -634,7 +668,7 @@ if (sessionStorage.getItem('ri_auth')==='1') {
   <button class="btn btn-secondary" onclick="exportData()">Export All Data (JSON)</button>
   <button class="btn btn-danger" onclick="confirmClear()">Clear All Data</button>
   <div style="text-align:center;margin-top:24px;">
-    <p style="font-size:0.75rem;color:var(--dim);">Ruck + Iron v2.1</p>
+    <p style="font-size:0.75rem;color:var(--dim);">Ruck + Iron v2.2</p>
     <p style="font-size:0.75rem;color:var(--dim);">Built by Knox for Jay Furman</p>
   </div>
 </div>
@@ -1344,6 +1378,8 @@ function renderToday() {
 
   container.innerHTML = html;
   attachEventListeners(ds, info);
+  // Show readiness card if data loaded
+  if (ouraData) renderReadinessCard();
 }
 
 function renderRuckView(info, log, ds) {
@@ -1780,10 +1816,72 @@ function confirmClear() {
 }
 
 // ═══════════════════════════════════════════
+// OURA READINESS
+// ═══════════════════════════════════════════
+let ouraData = null;
+
+async function fetchOuraReadiness() {
+  try {
+    const resp = await fetch(`https://raw.githubusercontent.com/jdfurman-web/workout-tracker/main/data/oura-readiness.json?t=${Date.now()}`);
+    if (!resp.ok) return null;
+    ouraData = await resp.json();
+    // Re-render if on Today page
+    if (document.getElementById('pageToday').classList.contains('active')) {
+      renderReadinessCard();
+    }
+  } catch(e) { ouraData = null; }
+}
+
+function renderReadinessCard() {
+  const existing = document.getElementById('readinessCard');
+  if (existing) existing.remove();
+  if (!ouraData || !ouraData.readiness) return;
+
+  const score = ouraData.readiness.score;
+  const level = ouraData.readiness.level || 'unknown';
+  const rec = ouraData.recommendation || '';
+  const sleep = ouraData.sleep || {};
+  const activity = ouraData.activity || {};
+  const trend = ouraData.trend || {};
+
+  const scoreDisplay = score !== null ? score : '—';
+  const sleepStr = sleep.score ? `Sleep ${sleep.score}` : '';
+  const stepsStr = activity.steps ? `${activity.steps.toLocaleString()} steps` : '';
+  const trendStr = trend.direction ? (trend.direction === 'improving' ? '↑ Improving' : trend.direction === 'declining' ? '↓ Declining' : '→ Stable') : '';
+
+  const card = document.createElement('div');
+  card.id = 'readinessCard';
+  card.innerHTML = `
+    <div class="readiness-card">
+      <div class="readiness-ring ${level}">${scoreDisplay}</div>
+      <div class="readiness-info">
+        <div class="readiness-label">Oura Readiness</div>
+        <div class="readiness-rec">${rec}</div>
+        <div class="readiness-trend">
+          ${sleepStr ? `<span>😴 ${sleepStr}</span>` : ''}
+          ${stepsStr ? `<span>👟 ${stepsStr}</span>` : ''}
+          ${trendStr ? `<span>${trendStr}</span>` : ''}
+        </div>
+        <div class="readiness-meta">Updated ${ouraData.date || '—'}</div>
+      </div>
+    </div>`;
+
+  // Insert at top of today content, after date nav
+  const container = document.getElementById('todayContent');
+  const dateNav = container.querySelector('.date-nav');
+  if (dateNav) {
+    dateNav.after(card);
+  } else {
+    container.prepend(card);
+  }
+}
+
+// ═══════════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════════
 renderToday();
 renderHeader();
+fetchOuraReadiness();
 </script>
 </body>
 </html>
