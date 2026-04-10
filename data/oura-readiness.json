@@ -1,22 +1,22 @@
 {
-  "date": "2026-04-09",
+  "date": "2026-04-10",
   "readiness": {
-    "score": 80,
-    "level": "yellow"
+    "score": 89,
+    "level": "green"
   },
   "sleep": {
-    "score": 78,
-    "duration_hrs": 5.7
+    "score": 82,
+    "duration_hrs": null
   },
   "activity": {
-    "score": 77,
-    "steps": 3967
+    "score": 78,
+    "steps": 3783
   },
-  "recommendation": "Moderate recovery \u2014 consider lighter volume",
+  "recommendation": "Good to train \u2014 go as programmed",
   "trend": {
-    "readiness_7d_avg": 82,
-    "sleep_7d_avg": 83,
+    "readiness_7d_avg": 83,
+    "sleep_7d_avg": 82,
     "direction": "stable"
   },
-  "updated": "2026-04-09T12:32:38.630182+00:00"
+  "updated": "2026-04-10T12:31:58.235828+00:00"
 }
