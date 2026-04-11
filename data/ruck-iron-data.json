@@ -304,6 +304,15 @@
         }
       },
       "notes": "OH press - right shoulder hitchy and some pain"
+    },
+    "2026-04-11": {
+      "type": "ruck",
+      "workout": "Long Ruck",
+      "duration": "49",
+      "distance": "2.6",
+      "weight": "30",
+      "hr": "115",
+      "rpe": "8"
     }
   }
 }
