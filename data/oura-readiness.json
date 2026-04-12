@@ -9,14 +9,14 @@
     "date": "2026-04-11"
   },
   "activity": {
-    "score": 83,
-    "steps": 4310
+    "score": 92,
+    "steps": 9101
   },
   "recommendation": "Moderate recovery \u2014 consider lighter volume",
-  "updated": "2026-04-11T12:32:17.388258+00:00",
+  "updated": "2026-04-12T12:31:45.973581+00:00",
   "trend": {
-    "readiness_7d_avg": 84,
-    "direction": "stable",
-    "sleep_7d_avg": 83
+    "readiness_7d_avg": 83,
+    "sleep_7d_avg": 82,
+    "direction": "stable"
   }
 }
