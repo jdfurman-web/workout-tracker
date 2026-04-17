@@ -6,17 +6,17 @@
   },
   "sleep": {
     "score": 76,
-    "duration_hrs": null
+    "duration_hrs": 5.7
   },
   "activity": {
-    "score": 91,
-    "steps": 4615
+    "score": 79,
+    "steps": 0
   },
   "recommendation": "Moderate recovery \u2014 consider lighter volume",
-  "updated": "2026-04-13T12:32:15.231161+00:00",
   "trend": {
-    "readiness_7d_avg": 83,
-    "sleep_7d_avg": 82,
-    "direction": "stable"
-  }
+    "readiness_7d_avg": 83.0,
+    "sleep_7d_avg": 81.2,
+    "direction": "improving"
+  },
+  "updated": "2026-04-17T03:24:13.428467+00:00"
 }
