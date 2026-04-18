@@ -313,6 +313,87 @@
       "weight": "30",
       "hr": "115",
       "rpe": "8"
+    },
+    "2026-04-18": {
+      "type": "strength",
+      "workout": "Upper Push/Pull (Deload)",
+      "exercises": {
+        "0": {
+          "sets": {
+            "0": {
+              "weight": "30",
+              "rpe": "5"
+            },
+            "1": {
+              "weight": "40",
+              "rpe": "8"
+            }
+          }
+        },
+        "1": {
+          "sets": {
+            "0": {
+              "weight": "50",
+              "reps": "12",
+              "rpe": "5"
+            },
+            "1": {
+              "weight": "70",
+              "reps": "8",
+              "rpe": "9"
+            }
+          }
+        },
+        "2": {
+          "sets": {
+            "0": {
+              "weight": "20",
+              "rpe": "5",
+              "reps": "10"
+            },
+            "1": {
+              "weight": "25",
+              "reps": "10",
+              "rpe": "8"
+            }
+          }
+        },
+        "3": {
+          "sets": {
+            "0": {
+              "weight": "125",
+              "rpe": "7",
+              "reps": "12"
+            },
+            "1": {
+              "weight": "145",
+              "reps": "12",
+              "rpe": "9"
+            }
+          }
+        },
+        "4": {
+          "sets": {
+            "0": {
+              "weight": "27.5",
+              "reps": "15",
+              "rpe": "4"
+            },
+            "1": {
+              "weight": "37.5",
+              "reps": "15",
+              "rpe": "7"
+            }
+          }
+        }
+      },
+      "notes": "Right shoulder pin pain on OH press"
+    }
+  },
+  "swaps": {
+    "2026-04-18": {
+      "slotType": "strengthA",
+      "week": 4
     }
   }
 }
