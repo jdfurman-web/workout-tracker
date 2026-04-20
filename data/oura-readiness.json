@@ -6,7 +6,7 @@
   },
   "sleep": {
     "score": 88,
-    "duration_hrs": null
+    "duration_hrs": 6.8
   },
   "activity": {
     "score": 78,
@@ -18,5 +18,5 @@
     "sleep_7d_avg": 81.2,
     "direction": "stable"
   },
-  "updated": "2026-04-20T13:11:16.782800+00:00"
+  "updated": "2026-04-20T13:11:51.769101+00:00"
 }
