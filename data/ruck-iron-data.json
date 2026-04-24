@@ -388,12 +388,26 @@
         }
       },
       "notes": "Right shoulder pin pain on OH press"
+    },
+    "2026-04-24": {
+      "type": "ruck",
+      "workout": "Steady State (Build)",
+      "duration": "67",
+      "distance": "3.6",
+      "weight": "30",
+      "hr": "137",
+      "rpe": "9",
+      "notes": "Solid.  RPE 8"
     }
   },
   "swaps": {
     "2026-04-18": {
       "slotType": "strengthA",
       "week": 4
+    },
+    "2026-04-24": {
+      "slotType": "ruckA",
+      "week": 5
     }
   }
 }
