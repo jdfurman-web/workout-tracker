@@ -396,8 +396,144 @@
       "distance": "3.6",
       "weight": "30",
       "hr": "137",
-      "rpe": "9",
+      "rpe": "8",
       "notes": "Solid.  RPE 8"
+    },
+    "2026-04-25": {
+      "type": "strength",
+      "workout": "Upper Push/Pull (Build)",
+      "exercises": {
+        "0": {
+          "sets": {
+            "0": {
+              "weight": "75",
+              "reps": "8",
+              "rpe": "6"
+            },
+            "1": {
+              "weight": "75",
+              "reps": "8",
+              "rpe": "6"
+            },
+            "2": {
+              "weight": "75",
+              "reps": "8",
+              "rpe": "8"
+            },
+            "3": {
+              "weight": "75",
+              "reps": "8",
+              "rpe": "8"
+            }
+          }
+        },
+        "1": {
+          "sets": {
+            "0": {
+              "weight": "70",
+              "reps": "8",
+              "rpe": "7"
+            },
+            "1": {
+              "weight": "70",
+              "reps": "8",
+              "rpe": "7"
+            },
+            "2": {
+              "weight": "70",
+              "reps": "8",
+              "rpe": "8"
+            },
+            "3": {
+              "weight": "70",
+              "reps": "8",
+              "rpe": "8"
+            }
+          }
+        },
+        "2": {
+          "sets": {
+            "0": {
+              "weight": "30",
+              "reps": "8",
+              "rpe": "8"
+            },
+            "1": {
+              "weight": "30",
+              "reps": "8",
+              "rpe": "8"
+            },
+            "2": {
+              "weight": "30",
+              "reps": "7",
+              "rpe": "9"
+            }
+          }
+        },
+        "3": {
+          "sets": {
+            "0": {
+              "weight": "165",
+              "reps": "8",
+              "rpe": "7"
+            },
+            "1": {
+              "weight": "185",
+              "reps": "8",
+              "rpe": "9"
+            },
+            "2": {
+              "weight": "185",
+              "reps": "5",
+              "rpe": "9"
+            }
+          }
+        },
+        "4": {
+          "sets": {
+            "0": {
+              "weight": "10",
+              "reps": "12",
+              "rpe": "6"
+            },
+            "1": {
+              "weight": "13",
+              "reps": "7",
+              "rpe": "9"
+            },
+            "2": {
+              "weight": "10",
+              "reps": "7",
+              "rpe": "9"
+            }
+          }
+        },
+        "5": {
+          "sets": {
+            "0": {
+              "reps": "30",
+              "rpe": "7"
+            },
+            "1": {
+              "reps": "30",
+              "rpe": "8"
+            },
+            "2": {
+              "reps": "30",
+              "rpe": "8"
+            },
+            "3": {
+              "reps": "30",
+              "rpe": "9"
+            },
+            "4": {
+              "reps": "30",
+              "rpe": "9"
+            }
+          }
+        }
+      },
+      "notes": "Right shoulder hates OH press. "
     }
   },
   "swaps": {
@@ -407,6 +543,10 @@
     },
     "2026-04-24": {
       "slotType": "ruckA",
+      "week": 5
+    },
+    "2026-04-25": {
+      "slotType": "strengthA",
       "week": 5
     }
   }
