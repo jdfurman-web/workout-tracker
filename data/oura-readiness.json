@@ -6,17 +6,23 @@
   },
   "sleep": {
     "score": 82,
-    "duration_hrs": 7.1
+    "duration_hrs": 6.9
   },
   "activity": {
-    "score": 79,
-    "steps": 251
+    "score": 85,
+    "steps": 13812,
+    "active_calories": 1137
+  },
+  "vitals": {
+    "resting_hr": 51,
+    "avg_hrv": 35,
+    "avg_breath_rate": 13.0
   },
   "recommendation": "Moderate recovery \u2014 consider lighter volume",
   "trend": {
-    "readiness_7d_avg": 79.3,
-    "sleep_7d_avg": 82.3,
+    "readiness_7d_avg": 79.5,
+    "sleep_7d_avg": 81.2,
     "direction": "stable"
   },
-  "updated": "2026-04-25T13:08:03.769445+00:00"
+  "updated": "2026-04-25T15:29:44.597551+00:00"
 }
