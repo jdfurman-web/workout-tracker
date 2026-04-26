@@ -1,28 +1,22 @@
 {
-  "date": "2026-04-25",
+  "date": "2026-04-26",
   "readiness": {
-    "score": 70,
-    "level": "yellow"
+    "score": 67,
+    "level": "red"
   },
   "sleep": {
-    "score": 82,
-    "duration_hrs": 6.9
+    "score": 83,
+    "duration_hrs": 6.5
   },
   "activity": {
-    "score": 85,
-    "steps": 13812,
-    "active_calories": 1137
+    "score": 78,
+    "steps": 251
   },
-  "vitals": {
-    "resting_hr": 51,
-    "avg_hrv": 35,
-    "avg_breath_rate": 13.0
-  },
-  "recommendation": "Moderate recovery \u2014 consider lighter volume",
+  "recommendation": "Low recovery \u2014 swap to rest or light workout",
   "trend": {
-    "readiness_7d_avg": 79.5,
-    "sleep_7d_avg": 81.2,
-    "direction": "stable"
+    "readiness_7d_avg": 77.8,
+    "sleep_7d_avg": 82.4,
+    "direction": "declining"
   },
-  "updated": "2026-04-25T15:29:44.597551+00:00"
+  "updated": "2026-04-26T14:03:55.407047+00:00"
 }
