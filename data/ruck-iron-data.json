@@ -534,6 +534,15 @@
         }
       },
       "notes": "Right shoulder hates OH press. "
+    },
+    "2026-05-15": {
+      "type": "ruck",
+      "workout": "Recovery Walk",
+      "duration": "51",
+      "distance": "1.2",
+      "weight": "30",
+      "hr": "122",
+      "rpe": "8"
     }
   },
   "swaps": {
@@ -548,6 +557,10 @@
     "2026-04-25": {
       "slotType": "strengthA",
       "week": 5
+    },
+    "2026-05-15": {
+      "slotType": "ruckA",
+      "week": 8
     }
   }
 }
