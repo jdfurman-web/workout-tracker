@@ -543,6 +543,69 @@
       "weight": "30",
       "hr": "122",
       "rpe": "8"
+    },
+    "2026-05-16": {
+      "type": "strength",
+      "workout": "Upper Push/Pull (Deload)",
+      "exercises": {
+        "0": {
+          "sets": {
+            "0": {
+              "weight": "115",
+              "reps": "8",
+              "rpe": "8"
+            },
+            "1": {
+              "weight": "115",
+              "reps": "8",
+              "rpe": "8"
+            }
+          }
+        },
+        "1": {
+          "sets": {
+            "0": {
+              "weight": "50",
+              "reps": "10",
+              "rpe": "6"
+            },
+            "1": {
+              "weight": "50",
+              "reps": "12",
+              "rpe": "8"
+            }
+          }
+        },
+        "2": {
+          "sets": {
+            "0": {
+              "reps": "12",
+              "rpe": "7",
+              "weight": "22.5"
+            },
+            "1": {
+              "weight": "22.5",
+              "reps": "12",
+              "rpe": "8"
+            }
+          }
+        },
+        "3": {
+          "sets": {
+            "0": {
+              "weight": "130",
+              "reps": "12",
+              "rpe": "8"
+            },
+            "1": {
+              "weight": "130",
+              "reps": "12",
+              "rpe": "8"
+            }
+          }
+        }
+      },
+      "notes": "Lat pulldown was done on Technogym “vertical traction” machine"
     }
   },
   "swaps": {
@@ -560,6 +623,10 @@
     },
     "2026-05-15": {
       "slotType": "ruckA",
+      "week": 8
+    },
+    "2026-05-16": {
+      "slotType": "strengthA",
       "week": 8
     }
   }
