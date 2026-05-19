@@ -606,6 +606,15 @@
         }
       },
       "notes": "Lat pulldown was done on Technogym “vertical traction” machine"
+    },
+    "2026-05-19": {
+      "type": "ruck",
+      "workout": "Recovery Walk",
+      "duration": "63",
+      "distance": "3.2",
+      "weight": "30",
+      "hr": "103",
+      "rpe": "8"
     }
   },
   "swaps": {
@@ -627,6 +636,10 @@
     },
     "2026-05-16": {
       "slotType": "strengthA",
+      "week": 8
+    },
+    "2026-05-19": {
+      "slotType": "ruckA",
       "week": 8
     }
   }
