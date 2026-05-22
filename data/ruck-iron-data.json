@@ -615,6 +615,15 @@
       "weight": "30",
       "hr": "103",
       "rpe": "8"
+    },
+    "2026-05-22": {
+      "type": "ruck",
+      "workout": "Long Ruck (Peak)",
+      "duration": "58",
+      "distance": "3.1",
+      "weight": "30",
+      "hr": "135",
+      "rpe": "9"
     }
   },
   "swaps": {
@@ -641,6 +650,10 @@
     "2026-05-19": {
       "slotType": "ruckA",
       "week": 8
+    },
+    "2026-05-22": {
+      "slotType": "ruckB",
+      "week": 9
     }
   }
 }
