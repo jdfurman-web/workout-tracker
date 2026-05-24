@@ -9,14 +9,14 @@
     "duration_hrs": 6.3
   },
   "activity": {
-    "score": 84,
-    "steps": 523
+    "score": 86,
+    "steps": 55
   },
   "recommendation": "Moderate recovery \u2014 consider lighter volume",
   "trend": {
-    "readiness_7d_avg": 80.9,
-    "sleep_7d_avg": 84.3,
+    "readiness_7d_avg": 81,
+    "sleep_7d_avg": 84,
     "direction": "stable"
   },
-  "updated": "2026-05-23T12:05:28.687582+00:00"
+  "updated": "2026-05-24T11:33:22.034168+00:00"
 }
