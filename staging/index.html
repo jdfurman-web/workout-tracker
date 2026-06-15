@@ -21,8 +21,7 @@
       get: function () { return mode; },
       set: function (m) {
         if (m !== 'auto' && m !== 'light' && m !== 'dark') return;
-        mode = m;
-        apply();
+        mode = m; apply();
         if (typeof window.renderThemeButton === 'function') window.renderThemeButton();
       },
       cycle: function () {
@@ -37,40 +36,20 @@
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:wght@300;400;500&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 :root, :root[data-theme="light"] {
-  --bg: #F5F0E8;
-  --card: #FFFCF7;
-  --border: #E0D8CC;
-  --text: #2C2418;
-  --text-dim: #8C8070;
-  --text-mid: #5C5040;
-  --accent: #C85A3A;
-  --accent-warm: #D4956A;
-  --accent-green: #4A7C59;
-  --accent-blue: #4A6A8C;
-  --accent-gold: #B8963E;
-  --tag-bg: #EDE7DB;
-  --ring-track: #EDE7DB;
-  --shadow: 0 1px 3px rgba(44,36,24,0.06);
-  --check-bg: #E8F0E8;
-  --stripe: rgba(44,36,24,0.02);
+  --bg: #F5F0E8; --card: #FFFCF7; --border: #E0D8CC;
+  --text: #2C2418; --text-dim: #8C8070; --text-mid: #5C5040;
+  --accent: #C85A3A; --accent-warm: #D4956A; --accent-green: #4A7C59;
+  --accent-blue: #4A6A8C; --accent-gold: #B8963E;
+  --tag-bg: #EDE7DB; --ring-track: #EDE7DB;
+  --shadow: 0 1px 3px rgba(44,36,24,0.06); --stripe: rgba(44,36,24,0.02);
 }
 :root[data-theme="dark"] {
-  --bg: #14110D;
-  --card: #1C1914;
-  --border: #2E2820;
-  --text: #E8DFD0;
-  --text-dim: #8C8070;
-  --text-mid: #B0A494;
-  --accent: #E07A5A;
-  --accent-warm: #D4956A;
-  --accent-green: #6FA880;
-  --accent-blue: #7094BC;
-  --accent-gold: #D4B04E;
-  --tag-bg: #2A241C;
-  --ring-track: #2A241C;
-  --shadow: 0 1px 3px rgba(0,0,0,0.4);
-  --check-bg: #1E2A22;
-  --stripe: rgba(255,255,255,0.02);
+  --bg: #14110D; --card: #1C1914; --border: #2E2820;
+  --text: #E8DFD0; --text-dim: #8C8070; --text-mid: #B0A494;
+  --accent: #E07A5A; --accent-warm: #D4956A; --accent-green: #6FA880;
+  --accent-blue: #7094BC; --accent-gold: #D4B04E;
+  --tag-bg: #2A241C; --ring-track: #2A241C;
+  --shadow: 0 1px 3px rgba(0,0,0,0.4); --stripe: rgba(255,255,255,0.02);
 }
 body, .card, .tag, button, input, select, textarea {
   transition: background-color 0.4s ease, color 0.4s ease, border-color 0.4s ease;
@@ -78,13 +57,8 @@ body, .card, .tag, button, input, select, textarea {
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  background: var(--bg);
-  color: var(--text);
-  line-height: 1.5;
-  padding: 0;
+  background: var(--bg); color: var(--text); line-height: 1.5; padding: 0;
 }
-
-/* Password gate */
 .gate {
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   min-height: 100vh; padding: 24px;
@@ -100,169 +74,87 @@ body {
   background: var(--card); color: var(--text); text-align: center; outline: none;
 }
 .gate input:focus { border-color: var(--accent); }
-.gate button {
+.gate-btn {
   margin-top: 12px; padding: 10px 32px; font-size: 14px; font-weight: 600;
   background: var(--accent); color: #fff; border: none; border-radius: 6px; cursor: pointer;
 }
-.gate button:hover { opacity: 0.9; }
+.gate-btn:hover { opacity: 0.9; }
 .gate .error { color: var(--accent); font-size: 13px; margin-top: 12px; display: none; }
-
-/* App (hidden until auth) */
 #app { display: none; }
-
-/* Header */
 .header {
-  background: var(--card);
-  border-bottom: 1px solid var(--border);
-  padding: 16px 24px;
-  display: flex; align-items: center; justify-content: space-between;
-  flex-wrap: wrap; gap: 12px;
-  position: sticky; top: 0; z-index: 100;
-  box-shadow: var(--shadow);
+  background: var(--card); border-bottom: 1px solid var(--border);
+  padding: 16px 24px; display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 12px; position: sticky; top: 0; z-index: 100; box-shadow: var(--shadow);
 }
 .header-left { display: flex; align-items: baseline; gap: 16px; }
-.header h1 {
-  font-family: 'Playfair Display', serif;
-  font-size: 22px; font-weight: 700; color: var(--text);
-}
+.header h1 { font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 700; color: var(--text); }
 .header .subtitle {
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 11px; color: var(--text-dim);
+  font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--text-dim);
   letter-spacing: 0.06em; text-transform: uppercase;
 }
 .header-right { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-
 .theme-toggle {
-  display: inline-flex; align-items: center; gap: 6px;
-  padding: 3px 9px;
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase;
-  color: var(--text-dim); background: transparent;
-  border: 1px solid var(--border); border-radius: 3px;
-  cursor: pointer; user-select: none;
+  display: inline-flex; align-items: center; gap: 6px; padding: 3px 9px;
+  font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--text-dim); background: transparent;
+  border: 1px solid var(--border); border-radius: 3px; cursor: pointer; user-select: none;
 }
 .theme-toggle:hover { color: var(--text); border-color: var(--accent); }
 .theme-toggle .glyph { font-size: 12px; line-height: 1; }
-
 .stats-bar {
-  background: var(--card);
-  border-bottom: 1px solid var(--border);
-  padding: 12px 24px;
-  display: flex; gap: 24px; flex-wrap: wrap; align-items: center;
+  background: var(--card); border-bottom: 1px solid var(--border);
+  padding: 12px 24px; display: flex; gap: 24px; flex-wrap: wrap; align-items: center;
 }
 .stat { display: flex; align-items: baseline; gap: 6px; }
-.stat-num {
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 20px; font-weight: 500; color: var(--accent);
-}
+.stat-num { font-family: 'IBM Plex Mono', monospace; font-size: 20px; font-weight: 500; color: var(--accent); }
 .stat-num.green { color: var(--accent-green); }
 .stat-num.gold { color: var(--accent-gold); }
-.stat-label {
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 10px; color: var(--text-dim);
-  letter-spacing: 0.06em; text-transform: uppercase;
-}
-.progress-bar-wrap {
-  flex: 1; min-width: 120px; height: 6px;
-  background: var(--ring-track); border-radius: 3px; overflow: hidden;
-}
-.progress-bar-fill {
-  height: 100%; background: var(--accent-green);
-  border-radius: 3px; transition: width 0.5s ease;
-}
-
-.filters {
-  padding: 12px 24px; display: flex; gap: 8px; flex-wrap: wrap;
-}
+.stat-label { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--text-dim); letter-spacing: 0.06em; text-transform: uppercase; }
+.progress-bar-wrap { flex: 1; min-width: 120px; height: 6px; background: var(--ring-track); border-radius: 3px; overflow: hidden; }
+.progress-bar-fill { height: 100%; background: var(--accent-green); border-radius: 3px; transition: width 0.5s ease; }
+.filters { padding: 12px 24px; display: flex; gap: 8px; flex-wrap: wrap; }
 .filter-btn {
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 11px; letter-spacing: 0.04em;
-  padding: 5px 14px; border: 1px solid var(--border);
-  border-radius: 20px; background: transparent;
-  color: var(--text-mid); cursor: pointer; transition: all 0.2s;
+  font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.04em;
+  padding: 5px 14px; border: 1px solid var(--border); border-radius: 20px;
+  background: transparent; color: var(--text-mid); cursor: pointer; transition: all 0.2s;
 }
 .filter-btn:hover { border-color: var(--accent); color: var(--text); }
 .filter-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
-
 .content { padding: 8px 24px 60px; max-width: 960px; }
-
-.room {
-  margin: 20px 0; background: var(--card);
-  border: 1px solid var(--border); border-radius: 8px;
-  overflow: hidden; box-shadow: var(--shadow);
-}
-.room-header {
-  padding: 12px 16px; display: flex; align-items: center;
-  justify-content: space-between; cursor: pointer; user-select: none;
-  border-bottom: 1px solid var(--border);
-}
+.room { margin: 20px 0; background: var(--card); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; box-shadow: var(--shadow); }
+.room-header { padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; user-select: none; border-bottom: 1px solid var(--border); }
 .room-header:hover { background: var(--stripe); }
-.room-title {
-  font-family: 'Inter', sans-serif;
-  font-size: 15px; font-weight: 600; color: var(--text);
-}
-.room-count {
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 11px; color: var(--text-dim); letter-spacing: 0.04em;
-}
+.room-title { font-family: 'Inter', sans-serif; font-size: 15px; font-weight: 600; color: var(--text); }
+.room-count { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--text-dim); letter-spacing: 0.04em; }
 .room-body { padding: 0; }
 .room.collapsed .room-body { display: none; }
 .chevron { color: var(--text-dim); transition: transform 0.2s; font-size: 14px; }
 .room.collapsed .chevron { transform: rotate(-90deg); }
-
-.task {
-  display: flex; align-items: flex-start; gap: 10px;
-  padding: 10px 16px; border-bottom: 1px solid var(--border);
-}
+.task { display: flex; align-items: flex-start; gap: 10px; padding: 10px 16px; border-bottom: 1px solid var(--border); }
 .task:last-child { border-bottom: none; }
 .task:hover { background: var(--stripe); }
 .task.done { opacity: 0.5; }
 .task.done .task-text { text-decoration: line-through; }
-.task input[type="checkbox"] {
-  margin-top: 3px; width: 16px; height: 16px;
-  accent-color: var(--accent-green); cursor: pointer; flex-shrink: 0;
-}
+.task input[type="checkbox"] { margin-top: 3px; width: 16px; height: 16px; accent-color: var(--accent-green); cursor: pointer; flex-shrink: 0; }
 .task-text { flex: 1; font-size: 14px; color: var(--text); line-height: 1.5; }
-.task-owner {
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 10px; letter-spacing: 0.04em; text-transform: uppercase;
-  padding: 2px 8px; border-radius: 10px; white-space: nowrap;
-  flex-shrink: 0; margin-top: 2px;
-}
+.task-owner { font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.04em; text-transform: uppercase; padding: 2px 8px; border-radius: 10px; white-space: nowrap; flex-shrink: 0; margin-top: 2px; }
 .owner-jay { background: var(--tag-bg); color: var(--accent-blue); }
 .owner-melissa { background: var(--tag-bg); color: var(--accent); }
 .owner-both { background: var(--tag-bg); color: var(--accent-gold); }
-
-@media print {
-  .header { position: static; }
-  .filters, .theme-toggle, .progress-bar-wrap, .gate { display: none; }
-  #app { display: block !important; }
-  .room { break-inside: avoid; }
-  .room.collapsed .room-body { display: block; }
-}
-
-@media (max-width: 640px) {
-  .header { padding: 12px 16px; }
-  .header h1 { font-size: 18px; }
-  .content { padding: 8px 16px 60px; }
-  .stats-bar { padding: 10px 16px; gap: 16px; }
-  .filters { padding: 10px 16px; }
-  .task { padding: 8px 12px; }
-}
+@media print { .header { position: static; } .filters, .theme-toggle, .progress-bar-wrap, .gate { display: none; } #app { display: block !important; } .room { break-inside: avoid; } .room.collapsed .room-body { display: block; } }
+@media (max-width: 640px) { .header { padding: 12px 16px; } .header h1 { font-size: 18px; } .content { padding: 8px 16px 60px; } .stats-bar { padding: 10px 16px; gap: 16px; } .filters { padding: 10px 16px; } .task { padding: 8px 12px; } }
 </style>
 </head>
 <body>
 
-<!-- PASSWORD GATE -->
 <div class="gate" id="gate">
   <h1>111 Hideaway Cove</h1>
   <p>Staging Tracker</p>
   <input type="password" id="pw" placeholder="Password" autocomplete="off">
-  <button id="gate-btn">Enter</button>
+  <button class="gate-btn" id="gate-btn">Enter</button>
   <div class="error" id="err">Incorrect password</div>
 </div>
 
-<!-- APP (hidden until auth) -->
 <div id="app">
   <div class="header">
     <div class="header-left">
@@ -270,19 +162,17 @@ body {
       <span class="subtitle">Staging Tracker</span>
     </div>
     <div class="header-right">
-      <button id="theme-toggle" class="theme-toggle" type="button" title="Cycle: Auto / Light / Dark">
+      <button id="theme-toggle" class="theme-toggle" type="button" title="Cycle theme">
         <span class="glyph" id="theme-glyph"></span><span id="theme-label">AUTO</span>
       </button>
     </div>
   </div>
-
   <div class="stats-bar">
     <div class="stat"><span class="stat-num" id="stat-done">0</span><span class="stat-label">Done</span></div>
     <div class="stat"><span class="stat-num gold" id="stat-remaining">0</span><span class="stat-label">Remaining</span></div>
     <div class="stat"><span class="stat-num green" id="stat-pct">0%</span><span class="stat-label">Complete</span></div>
     <div class="progress-bar-wrap"><div class="progress-bar-fill" id="progress-fill" style="width:0%"></div></div>
   </div>
-
   <div class="filters">
     <button class="filter-btn active" data-filter="all">All</button>
     <button class="filter-btn" data-filter="jay">Jay</button>
@@ -290,18 +180,248 @@ body {
     <button class="filter-btn" data-filter="both">Both</button>
     <button class="filter-btn" data-filter="undone">Remaining</button>
   </div>
-
   <div class="content" id="content"></div>
 </div>
 
 <script>
-// --- PASSWORD GATE ---
+// 1. DATA (must be first)
+var ROOMS = [
+  { id: 'guest-thalias', title: "Guest Room (Thalia's)", tasks: [
+    { text: "Duvet cover to cleaners", owner: "melissa" },
+    { text: "Remove cup hooks from ceiling", owner: "jay" },
+    { text: "Plug holes and paint walls", owner: "jay" },
+    { text: "Fix or defer wedding cake table", owner: "jay" },
+    { text: "Remove closet hooks", owner: "jay" },
+    { text: "Paint woodwork doors (entry door and left closet door)", owner: "jay" },
+    { text: "Donate clothes from closet", owner: "both" }
+  ]},
+  { id: 'guest-2', title: "Guest Room 2", tasks: [
+    { text: "Closet: add door bumpers and paint interior", owner: "jay" },
+    { text: "Clean out closet (sort technology, cameras, gear)", owner: "jay" },
+    { text: "Buy ceiling fan with light (room has no other light per code)", owner: "jay" },
+    { text: "Donate clothes from closet", owner: "both" }
+  ]},
+  { id: 'guest-bath', title: "Guest Bath", tasks: [
+    { text: "Scour shower thoroughly", owner: "jay" },
+    { text: "Reuse one master bath light fixture here if practical", owner: "jay" }
+  ]},
+  { id: 'office-jay', title: "Jay's Office", tasks: [
+    { text: "Buy ceiling fan with light (room needs switched lighting)", owner: "jay" },
+    { text: "Generally de-junk (leave desk where it is)", owner: "jay" },
+    { text: "Consider reducing to one monitor", owner: "jay" },
+    { text: "Take down Elvis", owner: "jay" },
+    { text: "Move blue chair to desk corner", owner: "jay" }
+  ]},
+  { id: 'office-melissa', title: "Melissa's Office", tasks: [
+    { text: "Take down whiteboard", owner: "melissa" },
+    { text: "Generally de-junk, make look nice and artistic", owner: "melissa" },
+    { text: "Install original light fixture (on hand)", owner: "melissa" },
+    { text: "Hire Three Monkeys to take down existing difficult light", owner: "melissa" }
+  ]},
+  { id: 'kitchen', title: "Kitchen", tasks: [
+    { text: "Remove and cap pendant lights (measure before removing)", owner: "jay" },
+    { text: "Look for extra chains in garage that came with lights", owner: "jay" },
+    { text: "Splice wires as needed", owner: "jay" },
+    { text: "De-junk coffee bar, remove extra plugs, clean up", owner: "jay" },
+    { text: "Coffee bar lights: keep as-is (decided)", owner: "jay" }
+  ]},
+  { id: 'family-room', title: "Family Room", tasks: [
+    { text: "Buy new ceiling fan and change out existing", owner: "jay" },
+    { text: "Take down rear speakers and subwoofer", owner: "jay" },
+    { text: "Put away both interior cameras", owner: "jay" }
+  ]},
+  { id: 'foyer-dining', title: "Foyer & Dining Room", tasks: [
+    { text: "Foyer: install original light fixture (on hand)", owner: "jay" },
+    { text: "Dining room: install original light fixture (on hand)", owner: "jay" },
+    { text: "Entryway: confirmed fine, no action needed", owner: "jay" }
+  ]},
+  { id: 'master-bed', title: "Master Bedroom & Closet", tasks: [
+    { text: "Leave fan in master bedroom as-is", owner: "jay" },
+    { text: "Get rid of at least 30% of Jay's clothing", owner: "jay" },
+    { text: "Clean up boxes and old shoes in closet", owner: "jay" },
+    { text: "Declutter closet overall", owner: "jay" },
+    { text: "Assess wall hole behind furniture (leave for now)", owner: "jay" }
+  ]},
+  { id: 'master-bath', title: "Master Bath", tasks: [
+    { text: "Install original light fixtures in master bath (x2, on hand)", owner: "melissa" },
+    { text: "Declutter cabinetry inside", owner: "melissa" }
+  ]},
+  { id: 'laundry-powder', title: "Laundry & Powder Bath", tasks: [
+    { text: "Declutter laundry cabinets", owner: "melissa" },
+    { text: "Replace powder bath light", owner: "jay" },
+    { text: "Declutter linen closet", owner: "melissa" }
+  ]},
+  { id: 'upstairs', title: "Upstairs Landing & Hub", tasks: [
+    { text: "Move big fluffy chair back to ranch", owner: "jay" },
+    { text: "Decide upstairs hub decor (flowers? leave empty?)", owner: "melissa" }
+  ]},
+  { id: 'game-room', title: "Game Room", tasks: [
+    { text: "Remove ceiling light and cap (plenty of other lights)", owner: "jay" },
+    { text: "Pack up liquor, leave a couple bottles", owner: "jay" },
+    { text: "Measure upstairs fridge hole, buy cheap Hisense bar fridge to fit", owner: "jay" },
+    { text: "Unplug nonfunctional mini fridge immediately", owner: "jay" },
+    { text: "Sonos soundbar: leave with house (decided)", owner: "jay" },
+    { text: "TVs stay mounted (decided)", owner: "jay" },
+    { text: "Tidy bags/returns near TV area", owner: "jay" }
+  ]},
+  { id: 'guitar-area', title: "Guitar Area / Upstairs Nook", tasks: [
+    { text: "Remove guitar stuff", owner: "jay" },
+    { text: "Take giant blanket to ranch", owner: "jay" },
+    { text: "Reposition chair in freed corner", owner: "jay" }
+  ]},
+  { id: 'attics', title: "Attics (Both)", tasks: [
+    { text: "Purge kids' artwork and memorabilia (keep selectively)", owner: "both" },
+    { text: "Horse gear: sell (retirement sale), Melissa keeps basic essentials only", owner: "melissa" },
+    { text: "General declutter of main attic", owner: "jay" },
+    { text: "General declutter of horse attic", owner: "melissa" },
+    { text: "Leave workout equipment as-is (shows space is usable)", owner: "jay" },
+    { text: "Call Nathan and Mel about the crib", owner: "jay" }
+  ]},
+  { id: 'garage', title: "Garage", tasks: [
+    { text: "General cleansing, specifically cobwebs", owner: "jay" },
+    { text: "Replace garage lights", owner: "jay" },
+    { text: "Remove all cabinetry from rails (leave rails)", owner: "jay" },
+    { text: "Leave roof rack installed (avoid holes)", owner: "jay" },
+    { text: "Leave fishing pole rack as-is", owner: "jay" },
+    { text: "Sort attic boxes (old computer/monitor boxes for packing or trash)", owner: "jay" },
+    { text: "General declutter", owner: "jay" }
+  ]},
+  { id: 'exterior', title: "Exterior & Yard", tasks: [
+    { text: "Power wash courtyard", owner: "jay" },
+    { text: "Round Up weeds after power washing", owner: "melissa" },
+    { text: "Round Up weeds in gravel areas", owner: "melissa" },
+    { text: "Power wash back deck", owner: "jay" },
+    { text: "Touch up paint on cool deck spots and pillar areas", owner: "jay" },
+    { text: "Remove unwatered pots, downsize plants to tidy appearance", owner: "melissa" },
+    { text: "Clean patio furniture, especially glass tabletops", owner: "melissa" },
+    { text: "Landscape guy: trim all bushes, make backyard show-worthy", owner: "jay" },
+    { text: "Clean out shed area, remove old garden hose, de-junk side of house", owner: "jay" },
+    { text: "Break down composter, take to ranch", owner: "jay" },
+    { text: "Wash windows inside and outside", owner: "both" }
+  ]},
+  { id: 'whole-house', title: "Whole House", tasks: [
+    { text: "Touch up paint throughout (after lighting changes)", owner: "both" },
+    { text: "Review all cabinets in each room, make look nicer and emptier", owner: "both" },
+    { text: "Make comprehensive fan/light list (measure all before removing)", owner: "jay" },
+    { text: "Arlo security system stays with house (confirmed)", owner: "both" }
+  ]},
+  { id: 'sale-prep', title: "Sale Documentation & Strategy", tasks: [
+    { text: "Create upgrade list and sale booklet for buyers", owner: "melissa" },
+    { text: "Document: comfort height toilets, upgraded faucets, built-in fridge, Monogram appliances", owner: "melissa" },
+    { text: "Document: spray foam, pre-wired/plumbed generator, wired/plumbed outdoor kitchen", owner: "melissa" },
+    { text: "Document: game room 7.2 surround sound pre-wire, extensive ethernet/cable, tankless hot water", owner: "melissa" },
+    { text: "Find original list of purchased upgrades", owner: "melissa" },
+    { text: "Finalize optional sale items with pricing: spa (~$20K), safe, Goal Zero battery", owner: "jay" },
+    { text: "Add study furniture + game room entertainment center to furniture sale list", owner: "jay" },
+    { text: "Spa strategy: line-item it separately as negotiation lever", owner: "jay" }
+  ]}
+];
+
+// 2. STATE
+var state = {};
+try { state = JSON.parse(localStorage.getItem('hideaway-staging') || '{}'); } catch(e) { state = {}; }
+function save() { try { localStorage.setItem('hideaway-staging', JSON.stringify(state)); } catch(e) {} }
+var currentFilter = 'all';
+
+// 3. RENDER
+function render() {
+  var container = document.getElementById('content');
+  container.innerHTML = '';
+  var totalTasks = 0, doneTasks = 0;
+  ROOMS.forEach(function(room) {
+    var roomDiv = document.createElement('div');
+    roomDiv.className = 'room';
+    var roomDone = 0, roomTotal = 0, roomVisible = 0;
+    room.tasks.forEach(function(t, ti) {
+      var key = room.id + '-' + ti;
+      var isDone = !!state[key];
+      roomTotal++; totalTasks++;
+      if (isDone) { roomDone++; doneTasks++; }
+    });
+    var header = document.createElement('div');
+    header.className = 'room-header';
+    header.innerHTML = '<div class="room-title">' + room.title + '</div>' +
+      '<div style="display:flex;align-items:center;gap:12px"><span class="room-count">' + roomDone + ' / ' + roomTotal + '</span><span class="chevron">&#9660;</span></div>';
+    header.addEventListener('click', function() { roomDiv.classList.toggle('collapsed'); });
+    roomDiv.appendChild(header);
+    var body = document.createElement('div');
+    body.className = 'room-body';
+    room.tasks.forEach(function(t, ti) {
+      var key = room.id + '-' + ti;
+      var isDone = !!state[key];
+      var show = true;
+      if (currentFilter === 'jay' && t.owner !== 'jay' && t.owner !== 'both') show = false;
+      if (currentFilter === 'melissa' && t.owner !== 'melissa' && t.owner !== 'both') show = false;
+      if (currentFilter === 'both' && t.owner !== 'both') show = false;
+      if (currentFilter === 'undone' && isDone) show = false;
+      if (!show) return;
+      roomVisible++;
+      var row = document.createElement('div');
+      row.className = 'task' + (isDone ? ' done' : '');
+      var cb = document.createElement('input');
+      cb.type = 'checkbox'; cb.checked = isDone;
+      cb.addEventListener('change', function() { state[key] = cb.checked; save(); render(); });
+      var txt = document.createElement('span');
+      txt.className = 'task-text'; txt.textContent = t.text;
+      var ownerLabel = document.createElement('span');
+      ownerLabel.className = 'task-owner owner-' + t.owner;
+      ownerLabel.textContent = t.owner === 'both' ? 'J + M' : t.owner === 'jay' ? 'Jay' : 'Melissa';
+      row.appendChild(cb); row.appendChild(txt); row.appendChild(ownerLabel);
+      body.appendChild(row);
+    });
+    roomDiv.appendChild(body);
+    if (roomVisible > 0 || currentFilter === 'all') {
+      if (roomDone === roomTotal && roomTotal > 0) roomDiv.classList.add('collapsed');
+      container.appendChild(roomDiv);
+    }
+  });
+  document.getElementById('stat-done').textContent = doneTasks;
+  document.getElementById('stat-remaining').textContent = totalTasks - doneTasks;
+  var pct = totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0;
+  document.getElementById('stat-pct').textContent = pct + '%';
+  document.getElementById('progress-fill').style.width = pct + '%';
+}
+
+// 4. FILTERS
+document.querySelectorAll('.filter-btn').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    document.querySelectorAll('.filter-btn').forEach(function(b) { b.classList.remove('active'); });
+    btn.classList.add('active');
+    currentFilter = btn.getAttribute('data-filter');
+    render();
+  });
+});
+
+// 5. THEME TOGGLE
+(function () {
+  var btn = document.getElementById('theme-toggle');
+  var glyph = document.getElementById('theme-glyph');
+  var label = document.getElementById('theme-label');
+  if (!btn || !window.KnoxTheme) return;
+  function r() {
+    var mode = window.KnoxTheme.get();
+    if (mode === 'auto') { glyph.textContent = '◐'; label.textContent = 'AUTO'; }
+    else if (mode === 'light') { glyph.textContent = '☀'; label.textContent = 'LIGHT'; }
+    else { glyph.textContent = '☾'; label.textContent = 'DARK'; }
+  }
+  window.renderThemeButton = r;
+  btn.addEventListener('click', function() { window.KnoxTheme.cycle(); });
+  r(); setInterval(r, 60000);
+})();
+
+// 6. PASSWORD GATE (must be after render is defined)
 var HASH = "184369c284dfc25d6901ebf21c1952b8f4a692c1830dc68ef3169b91fb0eafbf";
 
 async function sha256(str) {
   var buf = new TextEncoder().encode(str);
   var hash = await crypto.subtle.digest("SHA-256", buf);
   return Array.from(new Uint8Array(hash)).map(function(b) { return b.toString(16).padStart(2, "0"); }).join("");
+}
+
+function showApp() {
+  document.getElementById("gate").style.display = "none";
+  document.getElementById("app").style.display = "block";
+  render();
 }
 
 async function unlock() {
@@ -317,319 +437,17 @@ async function unlock() {
   }
 }
 
-function showApp() {
-  document.getElementById("gate").style.display = "none";
-  document.getElementById("app").style.display = "block";
-  render();
-}
-
 document.getElementById("gate-btn").addEventListener("click", unlock);
 document.getElementById("pw").addEventListener("keydown", function(e) {
   if (e.key === "Enter") unlock();
 });
 
+// 7. AUTO-AUTH CHECK (last)
 if (localStorage.getItem("hideaway-auth") === "1") {
   showApp();
 } else {
   document.getElementById("pw").focus();
 }
-
-// --- DATA ---
-var ROOMS = [
-  {
-    id: 'guest-thalias', title: "Guest Room (Thalia's)",
-    tasks: [
-      { text: "Duvet cover to cleaners", owner: "melissa" },
-      { text: "Remove cup hooks from ceiling", owner: "jay" },
-      { text: "Plug holes and paint walls", owner: "jay" },
-      { text: "Fix or defer wedding cake table", owner: "jay" },
-      { text: "Remove closet hooks", owner: "jay" },
-      { text: "Paint woodwork doors (entry door and left closet door)", owner: "jay" },
-      { text: "Donate clothes from closet", owner: "both" }
-    ]
-  },
-  {
-    id: 'guest-2', title: "Guest Room 2",
-    tasks: [
-      { text: "Closet: add door bumpers and paint interior", owner: "jay" },
-      { text: "Clean out closet (sort technology, cameras, gear)", owner: "jay" },
-      { text: "Buy ceiling fan with light (room has no other light per code)", owner: "jay" },
-      { text: "Donate clothes from closet", owner: "both" }
-    ]
-  },
-  {
-    id: 'guest-bath', title: "Guest Bath",
-    tasks: [
-      { text: "Scour shower thoroughly", owner: "jay" },
-      { text: "Reuse one master bath light fixture here if practical", owner: "jay" }
-    ]
-  },
-  {
-    id: 'office-jay', title: "Jay's Office",
-    tasks: [
-      { text: "Buy ceiling fan with light (room needs switched lighting)", owner: "jay" },
-      { text: "Generally de-junk (leave desk where it is)", owner: "jay" },
-      { text: "Consider reducing to one monitor", owner: "jay" },
-      { text: "Take down Elvis", owner: "jay" },
-      { text: "Move blue chair to desk corner", owner: "jay" }
-    ]
-  },
-  {
-    id: 'office-melissa', title: "Melissa's Office",
-    tasks: [
-      { text: "Take down whiteboard", owner: "melissa" },
-      { text: "Generally de-junk, make look nice and artistic", owner: "melissa" },
-      { text: "Install original light fixture (on hand)", owner: "melissa" },
-      { text: "Hire Three Monkeys to take down existing difficult light", owner: "melissa" }
-    ]
-  },
-  {
-    id: 'kitchen', title: "Kitchen",
-    tasks: [
-      { text: "Remove and cap pendant lights (measure before removing)", owner: "jay" },
-      { text: "Look for extra chains in garage that came with lights", owner: "jay" },
-      { text: "Splice wires as needed", owner: "jay" },
-      { text: "De-junk coffee bar, remove extra plugs, clean up", owner: "jay" },
-      { text: "Coffee bar lights: keep as-is (decided)", owner: "jay" }
-    ]
-  },
-  {
-    id: 'family-room', title: "Family Room",
-    tasks: [
-      { text: "Buy new ceiling fan and change out existing", owner: "jay" },
-      { text: "Take down rear speakers and subwoofer", owner: "jay" },
-      { text: "Put away both interior cameras", owner: "jay" }
-    ]
-  },
-  {
-    id: 'foyer-dining', title: "Foyer & Dining Room",
-    tasks: [
-      { text: "Foyer: install original light fixture (on hand)", owner: "jay" },
-      { text: "Dining room: install original light fixture (on hand)", owner: "jay" },
-      { text: "Entryway: confirmed fine, no action needed", owner: "jay" }
-    ]
-  },
-  {
-    id: 'master-bed', title: "Master Bedroom & Closet",
-    tasks: [
-      { text: "Leave fan in master bedroom as-is", owner: "jay" },
-      { text: "Get rid of at least 30% of Jay's clothing", owner: "jay" },
-      { text: "Clean up boxes and old shoes in closet", owner: "jay" },
-      { text: "Declutter closet overall", owner: "jay" },
-      { text: "Assess wall hole behind furniture (leave for now)", owner: "jay" }
-    ]
-  },
-  {
-    id: 'master-bath', title: "Master Bath",
-    tasks: [
-      { text: "Install original light fixtures in master bath (x2, on hand)", owner: "melissa" },
-      { text: "Declutter cabinetry inside", owner: "melissa" }
-    ]
-  },
-  {
-    id: 'laundry-powder', title: "Laundry & Powder Bath",
-    tasks: [
-      { text: "Declutter laundry cabinets", owner: "melissa" },
-      { text: "Replace powder bath light", owner: "jay" },
-      { text: "Declutter linen closet", owner: "melissa" }
-    ]
-  },
-  {
-    id: 'upstairs', title: "Upstairs Landing & Hub",
-    tasks: [
-      { text: "Move big fluffy chair back to ranch", owner: "jay" },
-      { text: "Decide upstairs hub decor (flowers? leave empty?)", owner: "melissa" }
-    ]
-  },
-  {
-    id: 'game-room', title: "Game Room",
-    tasks: [
-      { text: "Remove ceiling light and cap (plenty of other lights)", owner: "jay" },
-      { text: "Pack up liquor, leave a couple bottles", owner: "jay" },
-      { text: "Measure upstairs fridge hole, buy cheap Hisense bar fridge to fit", owner: "jay" },
-      { text: "Unplug nonfunctional mini fridge immediately", owner: "jay" },
-      { text: "Sonos soundbar: leave with house (decided)", owner: "jay" },
-      { text: "TVs stay mounted (decided)", owner: "jay" },
-      { text: "Tidy bags/returns near TV area", owner: "jay" }
-    ]
-  },
-  {
-    id: 'guitar-area', title: "Guitar Area / Upstairs Nook",
-    tasks: [
-      { text: "Remove guitar stuff", owner: "jay" },
-      { text: "Take giant blanket to ranch", owner: "jay" },
-      { text: "Reposition chair in freed corner", owner: "jay" }
-    ]
-  },
-  {
-    id: 'attics', title: "Attics (Both)",
-    tasks: [
-      { text: "Purge kids' artwork and memorabilia (keep selectively)", owner: "both" },
-      { text: "Horse gear: sell (retirement sale), Melissa keeps basic essentials only", owner: "melissa" },
-      { text: "General declutter of main attic", owner: "jay" },
-      { text: "General declutter of horse attic", owner: "melissa" },
-      { text: "Leave workout equipment as-is (shows space is usable)", owner: "jay" },
-      { text: "Call Nathan and Mel about the crib", owner: "jay" }
-    ]
-  },
-  {
-    id: 'garage', title: "Garage",
-    tasks: [
-      { text: "General cleansing, specifically cobwebs", owner: "jay" },
-      { text: "Replace garage lights", owner: "jay" },
-      { text: "Remove all cabinetry from rails (leave rails)", owner: "jay" },
-      { text: "Leave roof rack installed (avoid holes)", owner: "jay" },
-      { text: "Leave fishing pole rack as-is", owner: "jay" },
-      { text: "Sort attic boxes (old computer/monitor boxes for packing or trash)", owner: "jay" },
-      { text: "General declutter", owner: "jay" }
-    ]
-  },
-  {
-    id: 'exterior', title: "Exterior & Yard",
-    tasks: [
-      { text: "Power wash courtyard", owner: "jay" },
-      { text: "Round Up weeds after power washing", owner: "melissa" },
-      { text: "Round Up weeds in gravel areas", owner: "melissa" },
-      { text: "Power wash back deck", owner: "jay" },
-      { text: "Touch up paint on cool deck spots and pillar areas", owner: "jay" },
-      { text: "Remove unwatered pots, downsize plants to tidy appearance", owner: "melissa" },
-      { text: "Clean patio furniture, especially glass tabletops", owner: "melissa" },
-      { text: "Landscape guy: trim all bushes, make backyard show-worthy", owner: "jay" },
-      { text: "Clean out shed area, remove old garden hose, de-junk side of house", owner: "jay" },
-      { text: "Break down composter, take to ranch", owner: "jay" },
-      { text: "Wash windows inside and outside", owner: "both" }
-    ]
-  },
-  {
-    id: 'whole-house', title: "Whole House",
-    tasks: [
-      { text: "Touch up paint throughout (after lighting changes)", owner: "both" },
-      { text: "Review all cabinets in each room, make look nicer and emptier", owner: "both" },
-      { text: "Make comprehensive fan/light list (measure all before removing)", owner: "jay" },
-      { text: "Arlo security system stays with house (confirmed)", owner: "both" }
-    ]
-  },
-  {
-    id: 'sale-prep', title: "Sale Documentation & Strategy",
-    tasks: [
-      { text: "Create upgrade list and sale booklet for buyers", owner: "melissa" },
-      { text: "Document: comfort height toilets, upgraded faucets, built-in fridge, Monogram appliances", owner: "melissa" },
-      { text: "Document: spray foam, pre-wired/plumbed generator, wired/plumbed outdoor kitchen", owner: "melissa" },
-      { text: "Document: game room 7.2 surround sound pre-wire, extensive ethernet/cable, tankless hot water", owner: "melissa" },
-      { text: "Find original list of purchased upgrades", owner: "melissa" },
-      { text: "Finalize optional sale items with pricing: spa (~$20K), safe, Goal Zero battery", owner: "jay" },
-      { text: "Add study furniture + game room entertainment center to furniture sale list", owner: "jay" },
-      { text: "Spa strategy: line-item it separately as negotiation lever", owner: "jay" }
-    ]
-  }
-];
-
-// --- STATE ---
-var state = {};
-try { state = JSON.parse(localStorage.getItem('hideaway-staging') || '{}'); } catch(e) { state = {}; }
-function save() { try { localStorage.setItem('hideaway-staging', JSON.stringify(state)); } catch(e) {} }
-
-var currentFilter = 'all';
-
-// --- RENDER ---
-function render() {
-  var container = document.getElementById('content');
-  container.innerHTML = '';
-  var totalTasks = 0, doneTasks = 0;
-
-  ROOMS.forEach(function(room) {
-    var roomDiv = document.createElement('div');
-    roomDiv.className = 'room';
-    var roomDone = 0, roomTotal = 0, roomVisible = 0;
-
-    room.tasks.forEach(function(t, ti) {
-      var key = room.id + '-' + ti;
-      var isDone = !!state[key];
-      roomTotal++; totalTasks++;
-      if (isDone) { roomDone++; doneTasks++; }
-    });
-
-    var header = document.createElement('div');
-    header.className = 'room-header';
-    header.innerHTML = '<div class="room-title">' + room.title + '</div>' +
-      '<div style="display:flex;align-items:center;gap:12px"><span class="room-count">' + roomDone + ' / ' + roomTotal + '</span><span class="chevron">&#9660;</span></div>';
-    header.addEventListener('click', function() { roomDiv.classList.toggle('collapsed'); });
-    roomDiv.appendChild(header);
-
-    var body = document.createElement('div');
-    body.className = 'room-body';
-
-    room.tasks.forEach(function(t, ti) {
-      var key = room.id + '-' + ti;
-      var isDone = !!state[key];
-      var show = true;
-      if (currentFilter === 'jay' && t.owner !== 'jay' && t.owner !== 'both') show = false;
-      if (currentFilter === 'melissa' && t.owner !== 'melissa' && t.owner !== 'both') show = false;
-      if (currentFilter === 'both' && t.owner !== 'both') show = false;
-      if (currentFilter === 'undone' && isDone) show = false;
-      if (!show) return;
-      roomVisible++;
-
-      var row = document.createElement('div');
-      row.className = 'task' + (isDone ? ' done' : '');
-
-      var cb = document.createElement('input');
-      cb.type = 'checkbox'; cb.checked = isDone;
-      cb.addEventListener('change', function() { state[key] = cb.checked; save(); render(); });
-
-      var txt = document.createElement('span');
-      txt.className = 'task-text'; txt.textContent = t.text;
-
-      var ownerLabel = document.createElement('span');
-      ownerLabel.className = 'task-owner owner-' + t.owner;
-      ownerLabel.textContent = t.owner === 'both' ? 'J + M' : t.owner === 'jay' ? 'Jay' : 'Melissa';
-
-      row.appendChild(cb); row.appendChild(txt); row.appendChild(ownerLabel);
-      body.appendChild(row);
-    });
-
-    roomDiv.appendChild(body);
-    if (roomVisible > 0 || currentFilter === 'all') {
-      if (roomDone === roomTotal && roomTotal > 0) roomDiv.classList.add('collapsed');
-      container.appendChild(roomDiv);
-    }
-  });
-
-  document.getElementById('stat-done').textContent = doneTasks;
-  document.getElementById('stat-remaining').textContent = totalTasks - doneTasks;
-  var pct = totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0;
-  document.getElementById('stat-pct').textContent = pct + '%';
-  document.getElementById('progress-fill').style.width = pct + '%';
-}
-
-// --- FILTERS ---
-document.querySelectorAll('.filter-btn').forEach(function(btn) {
-  btn.addEventListener('click', function() {
-    document.querySelectorAll('.filter-btn').forEach(function(b) { b.classList.remove('active'); });
-    btn.classList.add('active');
-    currentFilter = btn.getAttribute('data-filter');
-    render();
-  });
-});
-
-// --- THEME TOGGLE ---
-(function () {
-  var btn = document.getElementById('theme-toggle');
-  var glyph = document.getElementById('theme-glyph');
-  var label = document.getElementById('theme-label');
-  if (!btn || !window.KnoxTheme) return;
-  function r() {
-    var mode = window.KnoxTheme.get();
-    var eff = document.documentElement.getAttribute('data-theme');
-    if (mode === 'auto') { glyph.textContent = '◐'; label.textContent = 'AUTO'; }
-    else if (mode === 'light') { glyph.textContent = '☀'; label.textContent = 'LIGHT'; }
-    else { glyph.textContent = '☾'; label.textContent = 'DARK'; }
-  }
-  window.renderThemeButton = r;
-  btn.addEventListener('click', function() { window.KnoxTheme.cycle(); });
-  r();
-  setInterval(r, 60000);
-})();
 </script>
 </body>
 </html>
