@@ -549,6 +549,24 @@ body {
   text-align: center;
   cursor: pointer;
 }
+
+/* ── FORGE: Cardio + Daily Core ── */
+.day-type.cardio { color: var(--green); }
+.mode-toggle { display:flex; gap:8px; margin-bottom:12px; }
+.mode-btn { flex:1; padding:11px 0; border:1px solid var(--border); border-radius:10px; background:var(--bg); color:var(--muted); font-size:0.9rem; font-weight:700; cursor:pointer; text-align:center; }
+.mode-btn.active { border-color: var(--green); background: rgba(52,211,153,0.15); color: var(--green); }
+.core-card.done { border-color: rgba(52,211,153,0.4); }
+.core-head { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.core-eyebrow { font-size:0.65rem; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; color:var(--dim); }
+.core-name { font-size:1.05rem; font-weight:700; color:var(--heading); margin-top:2px; }
+.core-toggle { flex-shrink:0; padding:9px 14px; border:1px solid var(--border); border-radius:10px; background:var(--card2); color:var(--text); font-size:0.8rem; font-weight:700; cursor:pointer; }
+.core-toggle.done { background:rgba(52,211,153,0.15); border-color:var(--green); color:var(--green); }
+.core-moves { margin-top:10px; display:flex; flex-direction:column; gap:5px; }
+.core-move { font-size:0.85rem; color:var(--text); padding:7px 11px; background:var(--bg); border-radius:8px; }
+.so-type.cardio { background: rgba(52,211,153,0.15); color: var(--green); }
+.week-progress { display:flex; gap:6px; margin:12px 0 10px; }
+.wp-dot { flex:1; height:7px; border-radius:4px; background:var(--border); }
+.wp-dot.done { background:var(--green); }
 </style>
 </head>
 <body>
@@ -704,215 +722,211 @@ if (sessionStorage.getItem('ri_auth')==='1') {
 
 <script>
 // ═══════════════════════════════════════════
-// PROGRAM DATA — All 12 Weeks
+// PROGRAM DATA — FORGE · 8-Week Fat-Loss Block
 // ═══════════════════════════════════════════
 
 const PROGRAM = {
-  // Schedule: Tue=strength, Thu=ruck, Fri=strength, Sat=ruck
-  // 0=Sun, 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat
-  trainingDays: { 2: 'strengthA', 4: 'ruckA', 5: 'strengthB', 6: 'ruckB' },
-  restDays: { 0: 'Active recovery — walk, stretch, zone out', 1: 'Small Group — walk to hit 8K steps', 3: 'Rest — walk to hit 8K steps' },
+  totalWeeks: 8,
+  // Flexible cadence: 4 sessions per week, done ANY days. The app shows the
+  // next undone session. This order is the default rotation, not a rule.
+  weekOrder: ['strengthA', 'cardioA', 'strengthB', 'cardioB'],
 
   phases: [
-    { name: 'Foundation', weeks: [1,2,3,4], color: '#4a9eff' },
-    { name: 'Build', weeks: [5,6,7,8], color: '#f59e0b' },
-    { name: 'Push', weeks: [9,10,11,12], color: '#ef4444' },
+    { name: 'Reset', weeks: [1,2],   color: '#4a9eff' },
+    { name: 'Burn',  weeks: [3,4,5], color: '#f59e0b' },
+    { name: 'Forge', weeks: [6,7,8], color: '#ef4444' },
+  ],
+
+  // 4 bodyweight core circuits — no equipment, do anywhere. Rotate daily.
+  core: [
+    { name: 'Core A · Anti-Extension', duration: '10-12 min', note: 'Brace like someone\'s about to poke your gut. Quality over speed.',
+      moves: ['Forearm Plank — 45s', 'Dead Bug — 10/side', 'Hollow Hold — 30s', 'Side Plank — 30s/side', 'Glute Bridge — 20 reps', '↻ 3 rounds · ~30s rest'] },
+    { name: 'Core B · Rotation', duration: '10-12 min', note: 'Control the twist, no flailing. Exhale hard on every crunch.',
+      moves: ['Bicycle Crunch — 20/side', 'Russian Twist — 20/side', 'Side Plank Reach-Through — 10/side', 'Mountain Climbers — 30s', 'Flutter Kicks — 30s', '↻ 3 rounds · ~30s rest'] },
+    { name: 'Core C · Anti-Rotation', duration: '10-12 min', note: 'Stay square — hips don\'t rock. Slow and deliberate beats fast and sloppy.',
+      moves: ['Bird Dog — 10/side', 'Plank Shoulder Taps — 20', 'Glute Bridge March — 10/side', 'Side Plank — 40s/side', 'Bird Dog Hold — 20s/side', '↻ 3 rounds · ~30s rest'] },
+    { name: 'Core D · Dynamic', duration: '12-15 min', note: 'Lower back stays glued to the floor on every rep. No yanking the neck.',
+      moves: ['Hollow Rock — 20', 'Reverse Crunch — 15', 'Flutter Kicks — 40s', 'Plank Up-Down — 10', 'V-Up or Tuck-Up — 12', '↻ 3 rounds · ~30s rest'] },
   ],
 
   workouts: {
-    // ── PHASE 1 ──
+    // ───────────── PHASE 1 · RESET (Wk 1-2) ─────────────
     strengthA_1: {
-      name: 'Upper Push/Pull',
+      name: 'Upper · Push/Pull',
       type: 'strength',
-      duration: '50-55 min',
+      duration: '40-45 min',
       exercises: [
-        { name: 'Dumbbell Bench Press', sets: 3, reps: '8-10', rest: 90, note: 'Control eccentric (3 sec down). Start moderate.' },
-        { name: 'Cable Row', sets: 3, reps: '10-12', rest: 90, note: 'Squeeze at contraction. Full stretch on return.' },
-        { name: 'Overhead Press (DB)', sets: 3, reps: '8-10', rest: 90, note: 'Standing if comfortable, seated if not.' },
-        { name: 'Lat Pulldown', sets: 3, reps: '10-12', rest: 75, note: 'Wide grip, lean back slightly. No momentum.' },
-        { name: 'Face Pulls', sets: 3, reps: '15', rest: 60, note: 'Light weight, high reps. Shoulder health.' },
-        { name: 'DB Curl / Tri Pushdown', sets: 2, reps: '12 each', rest: 60, note: 'Superset. Don\'t overthink weight.' },
+        { name: 'DB Bench Press', sets: 3, reps: '10-12', rest: 75, note: 'Detrained restart — start lighter than your ego wants. Leave 2-3 reps in reserve.' },
+        { name: 'Seated Cable Row', sets: 3, reps: '10-12', rest: 75, note: 'Squeeze, full stretch. Rebuild the mind-muscle link.' },
+        { name: 'DB Overhead Press', sets: 3, reps: '10-12', rest: 75, note: 'Seated, supported. Controlled tempo.' },
+        { name: 'Lat Pulldown', sets: 3, reps: '12', rest: 60, note: 'Wide grip, no momentum.' },
+        { name: 'DB Lateral Raise', sets: 2, reps: '15', rest: 45, note: 'Light. Shoulder health and width.' },
+        { name: 'Push-ups (AMRAP)', sets: 2, reps: 'AMRAP', rest: 45, note: 'Finisher. As many clean reps as possible. Knees if needed.' },
       ]
     },
-    strengthA_2: null, // same as _1
-    strengthA_3: null,
-    strengthA_4: { // deload
-      name: 'Upper Push/Pull (Deload)',
-      type: 'strength',
-      duration: '35-40 min',
-      exercises: [
-        { name: 'Dumbbell Bench Press', sets: 2, reps: '10', rest: 90, note: 'Drop weight 20%. Focus on form.' },
-        { name: 'Cable Row', sets: 2, reps: '12', rest: 75, note: 'Light, controlled.' },
-        { name: 'Overhead Press (DB)', sets: 2, reps: '10', rest: 75, note: 'Easy.' },
-        { name: 'Lat Pulldown', sets: 2, reps: '12', rest: 60, note: 'Light.' },
-        { name: 'Face Pulls', sets: 2, reps: '15', rest: 45, note: 'Shoulder health.' },
-      ]
-    },
+    strengthA_2: null,
     strengthB_1: {
-      name: 'Lower + Core',
+      name: 'Lower · Squat/Hinge + Carry',
       type: 'strength',
-      duration: '50-55 min',
+      duration: '40-45 min',
       exercises: [
-        { name: 'Goblet Squat', sets: 3, reps: '10-12', rest: 90, note: 'Depth over weight. Build the pattern.' },
-        { name: 'Romanian Deadlift (DB)', sets: 3, reps: '8-10', rest: 90, note: 'Hinge, don\'t squat. Feel hamstrings.' },
-        { name: 'Walking Lunges', sets: 3, reps: '10/leg', rest: 75, note: 'BW or light DBs. Stability first.' },
-        { name: 'Leg Press', sets: 3, reps: '12', rest: 90, note: 'Moderate weight, full ROM.' },
-        { name: 'Farmer\'s Carry', sets: 3, reps: '40 yd', rest: 60, note: 'Heavy as grip allows. Ruck prep.' },
-        { name: 'Plank Hold', sets: 3, reps: '30-45s', rest: 45, note: 'Brace hard. Quality > duration.' },
+        { name: 'Goblet Squat', sets: 3, reps: '10-12', rest: 75, note: 'Depth over weight. Re-groove the pattern.' },
+        { name: 'DB Romanian Deadlift', sets: 3, reps: '10-12', rest: 75, note: 'Hinge, feel the hamstrings. Flat back.' },
+        { name: 'Walking Lunge', sets: 2, reps: '10/leg', rest: 60, note: 'Bodyweight or light DBs. Stability first.' },
+        { name: 'Leg Press', sets: 3, reps: '12-15', rest: 75, note: 'Full ROM, moderate load.' },
+        { name: 'Farmer\'s Carry', sets: 3, reps: '40 yd', rest: 60, note: 'Heavy-ish. Grip and trunk. Walk tall.' },
+        { name: 'Incline Walk Finisher', sets: 1, reps: '5 min', rest: 0, note: 'Treadmill 10-12% incline, brisk. Or 50 jumping jacks.' },
       ]
     },
     strengthB_2: null,
-    strengthB_3: null,
-    strengthB_4: {
-      name: 'Lower + Core (Deload)',
+    cardioA_1: { name: 'Row Intervals', type: 'cardio', mode: 'row', duration: '22 min',
+      rowTarget: '4 min easy warm-up → 6 × (1 min hard / 1.5 min easy) → 3 min cool. Hard = RPE 7, HR ~75-80%.',
+      ruckTarget: 'Cool-day alt: 30 min ruck, 6 × (1 min brisk pickup / 2 min steady).', ruckWeight: '20-30 lbs',
+      note: 'Hydrow. Indoor beats the Houston heat — big burn, easy on the joints.', exercises: [] },
+    cardioA_2: { name: 'Row Intervals', type: 'cardio', mode: 'row', duration: '24 min',
+      rowTarget: '4 min warm-up → 7 × (1 min hard / 1.5 min easy) → 3 min cool. One more round than last week.',
+      ruckTarget: 'Cool-day alt: 32 min ruck with brisk pickups.', ruckWeight: '20-30 lbs',
+      note: 'Hold your splits. Same intensity, a touch more volume.', exercises: [] },
+    cardioB_1: { name: 'Steady Burn', type: 'cardio', mode: 'row', duration: '30 min',
+      rowTarget: '30 min steady Zone 2 row. RPE 5-6 — nose-breathing, could hold a conversation.',
+      ruckTarget: '30-35 min Zone 2 ruck, flat route. Upright posture, engaged core.', ruckWeight: '30 lbs',
+      note: 'Fat-burn pace. Row when it\'s hot, ruck when it\'s cool or you\'re at Boerne.', exercises: [] },
+    cardioB_2: { name: 'Steady Burn', type: 'cardio', mode: 'row', duration: '35 min',
+      rowTarget: '35 min steady Zone 2 row. Lock the pace, add 5 minutes.',
+      ruckTarget: '35-40 min Zone 2 ruck, flat.', ruckWeight: '30 lbs',
+      note: 'Duration creep. Same easy effort, more time on the engine.', exercises: [] },
+
+    // ───────────── PHASE 2 · BURN (Wk 3-5) ─────────────
+    strengthA_3: {
+      name: 'Upper · Push/Pull (Density)',
       type: 'strength',
-      duration: '35-40 min',
+      duration: '45-50 min',
       exercises: [
-        { name: 'Goblet Squat', sets: 2, reps: '10', rest: 75, note: 'Light. Move well.' },
-        { name: 'Romanian Deadlift (DB)', sets: 2, reps: '10', rest: 75, note: 'Light.' },
-        { name: 'Walking Lunges', sets: 2, reps: '8/leg', rest: 60, note: 'Bodyweight.' },
-        { name: 'Plank Hold', sets: 2, reps: '30s', rest: 45, note: 'Easy.' },
+        { name: 'DB Bench Press', sets: 4, reps: '8-10', rest: 60, note: 'Shorter rest = more density. Add weight when you hit 10s on all sets.' },
+        { name: 'Chest-Supported Row', sets: 4, reps: '10-12', rest: 60, note: 'Match pulling to pushing.' },
+        { name: 'DB Overhead Press', sets: 3, reps: '8-10', rest: 60, note: 'Heavier than Reset phase.' },
+        { name: 'Lat Pulldown', sets: 3, reps: '10-12', rest: 60, note: 'Controlled negatives.' },
+        { name: 'Superset: Lateral Raise + DB Curl', sets: 3, reps: '12-15', rest: 45, note: 'Back-to-back, minimal rest.' },
+        { name: 'Row Sprint Finisher', sets: 5, reps: '30s on / 30s off', rest: 0, note: 'Hydrow. 5 min all-out intervals. Afterburn.' },
       ]
     },
-    ruckA_1: {
-      name: 'Steady State Zone 2',
-      type: 'ruck',
-      duration: '30 min',
-      ruckWeight: '30 lbs',
-      ruckTarget: '30 min at conversational pace',
-      note: 'Zone 2 = HR 120-135 bpm. If you can\'t hold a conversation at 30 lbs, slow your pace.',
-      exercises: []
-    },
-    ruckA_2: { name: 'Steady State Zone 2', type: 'ruck', duration: '35 min', ruckWeight: '30 lbs', ruckTarget: '35 min — same weight, add time', note: 'Don\'t speed up. Add time.', exercises: [] },
-    ruckA_3: { name: 'Steady State Zone 2', type: 'ruck', duration: '40 min', ruckWeight: '30 lbs', ruckTarget: '40 min — lock in the pattern', note: 'Duration push. Own this weight.', exercises: [] },
-    ruckA_4: { name: 'Recovery Walk', type: 'ruck', duration: '25 min', ruckWeight: 'None', ruckTarget: '25 min easy walk. No pack.', note: 'Deload week. Let adaptation happen.', exercises: [] },
-
-    ruckB_1: { name: 'Long Ruck', type: 'ruck', duration: '40 min', ruckWeight: '30 lbs', ruckTarget: '40 min flat route', note: 'Focus on form: upright torso, engaged core.', exercises: [] },
-    ruckB_2: { name: 'Long Ruck', type: 'ruck', duration: '45 min', ruckWeight: '30 lbs', ruckTarget: '45 min — add hills', note: 'Introduce 1-2 gradual hills.', exercises: [] },
-    ruckB_3: { name: 'Long Ruck', type: 'ruck', duration: '50 min', ruckWeight: '30 lbs', ruckTarget: '50 min — hills + pace push on flats', note: 'Push pace slightly on flat sections.', exercises: [] },
-    ruckB_4: { name: 'Recovery Walk', type: 'ruck', duration: '30 min', ruckWeight: 'None', ruckTarget: '30 min easy. No pack.', note: 'Deload. Walk with purpose but don\'t push.', exercises: [] },
-
-    // ── PHASE 2 ──
-    strengthA_5: {
-      name: 'Upper Push/Pull (Build)',
+    strengthA_4: null, strengthA_5: null,
+    strengthB_3: {
+      name: 'Lower · Squat/Hinge (Density)',
       type: 'strength',
-      duration: '55-60 min',
+      duration: '45-50 min',
       exercises: [
-        { name: 'Barbell Bench Press', sets: 4, reps: '6-8', rest: 120, note: 'Graduate to barbell. Add 5 lbs/week when all reps hit.' },
-        { name: 'Barbell Row (or T-Bar)', sets: 4, reps: '8-10', rest: 90, note: 'Match pressing volume with pulling.' },
-        { name: 'DB Overhead Press', sets: 3, reps: '8-10', rest: 90, note: 'Increase weight from Phase 1.' },
-        { name: 'Weighted Pull-up / Lat Pull', sets: 3, reps: '8-10', rest: 90, note: '8+ pullups? Start adding weight.' },
-        { name: 'Cable Lateral Raise', sets: 3, reps: '12-15', rest: 60, note: 'Light, controlled.' },
-        { name: 'Assault Bike / Rower', sets: 5, reps: '30s on / 30s off', rest: 0, note: 'FINISHER. 5 min total. All-out.' },
+        { name: 'Goblet or Barbell Squat', sets: 4, reps: '8-10', rest: 75, note: 'Step up the load. Depth honest.' },
+        { name: 'DB or Barbell RDL', sets: 4, reps: '8-10', rest: 75, note: 'Load the hinge progressively.' },
+        { name: 'Bulgarian Split Squat', sets: 3, reps: '8-10/leg', rest: 60, note: 'Humbling. Great for single-leg strength and burn.' },
+        { name: 'Leg Curl', sets: 3, reps: '12', rest: 45, note: 'Slow eccentric.' },
+        { name: 'Farmer\'s Carry', sets: 3, reps: '60 yd', rest: 45, note: 'Heavier and longer than Reset.' },
+        { name: 'Row Sprint Finisher', sets: 5, reps: '30s on / 30s off', rest: 0, note: 'Hydrow. 5 min. Empty the tank.' },
       ]
     },
-    strengthA_6: null, strengthA_7: null,
+    strengthB_4: null, strengthB_5: null,
+    cardioA_3: { name: 'Row Intervals', type: 'cardio', mode: 'row', duration: '26 min',
+      rowTarget: '4 min warm-up → 8 × (1 min hard / 1 min easy) → 4 min cool. Work:rest now 1:1.',
+      ruckTarget: 'Cool-day alt: 35 min ruck, 8 × 1 min hill or pace surges.', ruckWeight: '30 lbs',
+      note: 'Tighter rest. This is the fat-loss heart of the block.', exercises: [] },
+    cardioA_4: { name: 'Row Intervals', type: 'cardio', mode: 'row', duration: '28 min',
+      rowTarget: '4 min warm-up → 6 × (250m hard / 90s easy) → cool. Pick a split target and defend it.',
+      ruckTarget: 'Cool-day alt: 38 min ruck with surges.', ruckWeight: '30 lbs',
+      note: 'Distance intervals. Chase a 500m split and hold it.', exercises: [] },
+    cardioA_5: { name: 'Row Intervals (Pyramid)', type: 'cardio', mode: 'row', duration: '30 min',
+      rowTarget: '5 min warm-up → 1-2-3-2-1 min hard (equal easy between) → cool. Peak effort on the 3.',
+      ruckTarget: 'Cool-day alt: 40 min ruck, pyramid pace surges.', ruckWeight: '30 lbs',
+      note: 'Pyramid keeps it mentally fresh. Push the middle.', exercises: [] },
+    cardioB_3: { name: 'Steady Burn', type: 'cardio', mode: 'row', duration: '40 min',
+      rowTarget: '40 min steady Zone 2 row. RPE 6.',
+      ruckTarget: '40-45 min Zone 2 ruck. Add a gradual hill or two.', ruckWeight: '30 lbs',
+      note: 'Longer aerobic base = bigger fat-burn engine.', exercises: [] },
+    cardioB_4: { name: 'Steady Burn', type: 'cardio', mode: 'row', duration: '42 min',
+      rowTarget: '42 min steady Zone 2 row, last 5 min a slight push.',
+      ruckTarget: '45 min Zone 2 ruck, hills.', ruckWeight: '30 lbs',
+      note: 'Hold posture as fatigue sets in.', exercises: [] },
+    cardioB_5: { name: 'Steady Burn', type: 'cardio', mode: 'row', duration: '45 min',
+      rowTarget: '45 min Zone 2 row. Negative split — second half slightly faster.',
+      ruckTarget: '45-50 min Zone 2 ruck, rolling route.', ruckWeight: '30 lbs',
+      note: 'Peak steady volume for the Burn phase.', exercises: [] },
+
+    // ───────────── PHASE 3 · FORGE (Wk 6-8) ─────────────
+    strengthA_6: {
+      name: 'Upper · Push/Pull (Strength)',
+      type: 'strength',
+      duration: '45-50 min',
+      exercises: [
+        { name: 'Barbell or DB Bench Press', sets: 4, reps: '6-8', rest: 90, note: 'Heavier, lower reps — hold muscle while you cut.' },
+        { name: 'Barbell or Chest-Supported Row', sets: 4, reps: '6-8', rest: 90, note: 'Strong pull. Match the press.' },
+        { name: 'DB Overhead Press', sets: 3, reps: '8', rest: 75, note: 'Press heavy, brace hard.' },
+        { name: 'Weighted Pull-up or Lat Pull', sets: 3, reps: '8', rest: 75, note: 'Add load if you can.' },
+        { name: 'Superset: Lateral Raise + Face Pull', sets: 3, reps: '15', rest: 45, note: 'Shoulder health and caps.' },
+        { name: 'Row Sprint Finisher', sets: 6, reps: '30s on / 30s off', rest: 0, note: 'Hydrow. 6 min. Hardest finisher yet.' },
+      ]
+    },
+    strengthA_7: null,
     strengthA_8: {
-      name: 'Upper Push/Pull (Deload)',
+      name: 'Upper · Consolidate',
       type: 'strength',
       duration: '35-40 min',
       exercises: [
-        { name: 'Barbell Bench Press', sets: 2, reps: '8', rest: 90, note: 'Drop weight 20%.' },
-        { name: 'Barbell Row', sets: 2, reps: '10', rest: 75, note: 'Light.' },
-        { name: 'DB Overhead Press', sets: 2, reps: '10', rest: 75, note: 'Easy.' },
-        { name: 'Lat Pulldown', sets: 2, reps: '12', rest: 60, note: 'Light.' },
+        { name: 'DB Bench Press', sets: 3, reps: '8', rest: 75, note: 'Final week — solid, not max. Groove it.' },
+        { name: 'Cable Row', sets: 3, reps: '10', rest: 60, note: 'Quality reps.' },
+        { name: 'DB Overhead Press', sets: 2, reps: '10', rest: 60, note: 'Moderate.' },
+        { name: 'Lat Pulldown', sets: 2, reps: '12', rest: 60, note: 'Pump.' },
+        { name: 'Push-ups (AMRAP)', sets: 2, reps: 'AMRAP', rest: 45, note: 'Compare to Week 1. Proof you\'re back.' },
       ]
     },
-    strengthB_5: {
-      name: 'Lower + Core (Build)',
+    strengthB_6: {
+      name: 'Lower · Squat/Hinge (Strength)',
       type: 'strength',
-      duration: '55-60 min',
+      duration: '45-50 min',
       exercises: [
-        { name: 'Barbell Back Squat', sets: 4, reps: '6-8', rest: 120, note: 'Graduate from goblet. Depth > weight.' },
-        { name: 'Barbell Romanian Deadlift', sets: 4, reps: '8-10', rest: 90, note: 'Barbell now. Load progressively.' },
-        { name: 'Bulgarian Split Squat', sets: 3, reps: '8/leg', rest: 75, note: 'Humbling but effective.' },
-        { name: 'Leg Curl', sets: 3, reps: '12', rest: 60, note: 'Slow eccentric.' },
-        { name: 'Farmer\'s Carry', sets: 3, reps: '60 yd', rest: 60, note: 'Heavier and longer than Phase 1.' },
-        { name: 'Ab Wheel Rollout', sets: 3, reps: '10-12', rest: 45, note: 'Progress from planks to dynamic core.' },
-        { name: 'Sled Push / Stairclimber', sets: 4, reps: '45s on / 45s off', rest: 0, note: 'FINISHER. 6 min total.' },
+        { name: 'Barbell Back Squat', sets: 4, reps: '6-8', rest: 90, note: 'Heaviest of the block. Depth and control.' },
+        { name: 'Barbell or Trap-Bar Deadlift', sets: 4, reps: '6-8', rest: 90, note: 'Hinge strength. Brace, don\'t round.' },
+        { name: 'Walking Lunge (loaded)', sets: 3, reps: '10/leg', rest: 75, note: 'Heavier DBs.' },
+        { name: 'Leg Curl', sets: 3, reps: '10-12', rest: 45, note: 'Hamstrings honest.' },
+        { name: 'Farmer\'s Carry', sets: 3, reps: '80 yd', rest: 45, note: 'Heaviest carry. Trunk and grip.' },
+        { name: 'Row Sprint Finisher', sets: 6, reps: '30s on / 30s off', rest: 0, note: 'Hydrow. 6 min.' },
       ]
     },
-    strengthB_6: null, strengthB_7: null,
+    strengthB_7: null,
     strengthB_8: {
-      name: 'Lower + Core (Deload)',
+      name: 'Lower · Consolidate',
       type: 'strength',
       duration: '35-40 min',
       exercises: [
-        { name: 'Barbell Back Squat', sets: 2, reps: '8', rest: 90, note: 'Drop 20%.' },
-        { name: 'Barbell RDL', sets: 2, reps: '10', rest: 75, note: 'Light.' },
-        { name: 'Walking Lunges', sets: 2, reps: '8/leg', rest: 60, note: 'Bodyweight.' },
-        { name: 'Plank', sets: 2, reps: '30s', rest: 45, note: 'Easy.' },
+        { name: 'Goblet or Back Squat', sets: 3, reps: '8', rest: 75, note: 'Final week — clean reps, moderate load.' },
+        { name: 'DB RDL', sets: 3, reps: '10', rest: 60, note: 'Feel it, don\'t grind it.' },
+        { name: 'Walking Lunge', sets: 2, reps: '10/leg', rest: 60, note: 'Bodyweight.' },
+        { name: 'Farmer\'s Carry', sets: 2, reps: '60 yd', rest: 45, note: 'Strong finish.' },
+        { name: 'Plank', sets: 2, reps: '60s', rest: 30, note: 'Done. You showed up for 8 weeks.' },
       ]
     },
-    ruckA_5: { name: 'Steady State (Build)', type: 'ruck', duration: '45 min', ruckWeight: '30 lbs', ruckTarget: '45 min — you own 30, dominate it', note: 'Duration push.', exercises: [] },
-    ruckA_6: { name: 'Steady State (Build)', type: 'ruck', duration: '50 min', ruckWeight: '30 lbs', ruckTarget: '50 min — pace consistency', note: 'Add time. Focus on pace.', exercises: [] },
-    ruckA_7: { name: 'Steady State (Build)', type: 'ruck', duration: '45 min', ruckWeight: '35-40 lbs*', ruckTarget: '45 min — weight bump', note: 'Add filler plate or water bottles.', exercises: [] },
-    ruckA_8: { name: 'Recovery Walk', type: 'ruck', duration: '30 min', ruckWeight: 'None', ruckTarget: '30 min easy. No pack.', note: 'Recovery week.', exercises: [] },
-    ruckB_5: { name: 'Ruck + Circuit', type: 'ruck', duration: '50-55 min', ruckWeight: '30 lbs', ruckTarget: '35 min ruck → 3 rounds: 10 push-ups, 10 air squats, 10 ruck swings', note: 'Circuit immediately after ruck.', exercises: [] },
-    ruckB_6: { name: 'Ruck + Circuit', type: 'ruck', duration: '55-60 min', ruckWeight: '30 lbs', ruckTarget: '40 min ruck → 4 rounds: 10 push-ups, 10 goblet squats (ruck), 30s plank', note: 'More volume.', exercises: [] },
-    ruckB_7: { name: 'Ruck + Circuit', type: 'ruck', duration: '60-65 min', ruckWeight: '35-40 lbs*', ruckTarget: '40 min ruck → 3 rounds: 8 burpees, 12 ruck rows, 10 lunges/leg', note: 'Heavier pack + circuit.', exercises: [] },
-    ruckB_8: { name: 'Recovery Walk', type: 'ruck', duration: '25 min', ruckWeight: 'None', ruckTarget: '25 min easy. No pack, no circuit.', note: 'Deload.', exercises: [] },
-
-    // ── PHASE 3 ──
-    strengthA_9: {
-      name: 'Upper (Peak)',
-      type: 'strength',
-      duration: '55-60 min',
-      exercises: [
-        { name: 'Barbell Bench Press', sets: 4, reps: '5-6', rest: 150, note: 'Heavier. Chase a 5RM PR by Week 12.' },
-        { name: 'Weighted Pull-up / Heavy Lat Pull', sets: 4, reps: '6-8', rest: 120, note: 'Pull heavy. Match your press.' },
-        { name: 'Incline DB Press', sets: 3, reps: '8-10', rest: 90, note: 'Angle change for upper chest.' },
-        { name: 'Chest-Supported Row', sets: 3, reps: '10-12', rest: 75, note: 'Isolate the back. No cheating.' },
-        { name: 'DB Overhead Press', sets: 3, reps: '8-10', rest: 90, note: 'Standing. Brace hard.' },
-        { name: 'Face Pulls + Band Pull-Aparts', sets: 3, reps: '15 each', rest: 45, note: 'Superset. Shoulder health.' },
-        { name: 'Rower / Ski Erg', sets: 6, reps: '30s on / 30s off', rest: 0, note: 'FINISHER. 6 min. Max effort.' },
-      ]
-    },
-    strengthA_10: null, strengthA_11: null,
-    strengthA_12: {
-      name: 'Upper — TEST WEEK',
-      type: 'strength',
-      duration: '45-50 min',
-      exercises: [
-        { name: 'Barbell Bench Press — 5RM TEST', sets: 5, reps: 'Work to 5RM', rest: 180, note: 'Warm up: bar x10, 50% x5, 70% x3, 85% x2, then go for 5RM.' },
-        { name: 'Weighted Pull-up / Lat Pull — 5RM TEST', sets: 4, reps: 'Work to 5RM', rest: 150, note: 'Same warm-up protocol.' },
-        { name: 'DB Overhead Press', sets: 3, reps: '8', rest: 90, note: 'Moderate. Save energy for tests.' },
-        { name: 'Face Pulls', sets: 2, reps: '15', rest: 45, note: 'Shoulder health.' },
-      ]
-    },
-    strengthB_9: {
-      name: 'Lower + Core (Peak)',
-      type: 'strength',
-      duration: '55-60 min',
-      exercises: [
-        { name: 'Barbell Back Squat', sets: 4, reps: '5-6', rest: 150, note: 'Go for a 5RM PR by Week 12.' },
-        { name: 'Trap Bar Deadlift', sets: 4, reps: '5-6', rest: 150, note: 'New movement. The king.' },
-        { name: 'Walking Lunges (loaded)', sets: 3, reps: '10/leg', rest: 75, note: 'Heavy DBs or barbell.' },
-        { name: 'Leg Curl', sets: 3, reps: '10-12', rest: 60, note: 'Hamstrings honest.' },
-        { name: 'Farmer\'s Carry', sets: 3, reps: '80 yd', rest: 60, note: 'Heaviest yet.' },
-        { name: 'Hanging Leg Raise', sets: 3, reps: '10-12', rest: 45, note: 'Or knee raise if needed.' },
-      ]
-    },
-    strengthB_10: null, strengthB_11: null,
-    strengthB_12: {
-      name: 'Lower — TEST WEEK',
-      type: 'strength',
-      duration: '45-50 min',
-      exercises: [
-        { name: 'Barbell Back Squat — 5RM TEST', sets: 5, reps: 'Work to 5RM', rest: 180, note: 'Warm up: bar x10, 50% x5, 70% x3, 85% x2, then 5RM.' },
-        { name: 'Trap Bar Deadlift — 5RM TEST', sets: 5, reps: 'Work to 5RM', rest: 180, note: 'Same warm-up. Record everything.' },
-        { name: 'Walking Lunges', sets: 2, reps: '8/leg', rest: 60, note: 'Light. Save legs.' },
-        { name: 'Plank', sets: 2, reps: '45s', rest: 45, note: 'Done.' },
-      ]
-    },
-    ruckA_9: { name: 'Tempo Ruck', type: 'ruck', duration: '45 min', ruckWeight: '30 lbs', ruckTarget: '15 min zone 2 → 15 min push → 15 min zone 2', note: 'Push pace = HR 140-155 bpm.', exercises: [] },
-    ruckA_10: { name: 'Tempo Ruck', type: 'ruck', duration: '50 min', ruckWeight: '35-40 lbs*', ruckTarget: '10 min Z2 → 20 min push → 10 min Z2 → 10 min push', note: 'Weight bump + tempo.', exercises: [] },
-    ruckA_11: { name: 'Tempo Ruck', type: 'ruck', duration: '50 min', ruckWeight: '40-45 lbs*', ruckTarget: 'Same as Wk 10, heavier pack', note: 'Heaviest tempo ruck.', exercises: [] },
-    ruckA_12: { name: '4-Mile Time Trial', type: 'ruck', duration: 'TBD', ruckWeight: '30 lbs', ruckTarget: '4 miles — best effort, record time', note: 'BENCHMARK. Base plate weight. All out.', exercises: [] },
-    ruckB_9: { name: 'Long Ruck (Peak)', type: 'ruck', duration: '60 min', ruckWeight: '35-40 lbs*', ruckTarget: '60 min with hills', note: 'Push duration.', exercises: [] },
-    ruckB_10: { name: 'Long Ruck (Peak)', type: 'ruck', duration: '60 min', ruckWeight: '40-45 lbs*', ruckTarget: '60 min — heaviest long ruck yet', note: 'Maintain posture.', exercises: [] },
-    ruckB_11: { name: 'Long Ruck (Peak)', type: 'ruck', duration: '70 min', ruckWeight: '40-45 lbs*', ruckTarget: '70 min — peak volume ruck', note: 'This is the hard one.', exercises: [] },
-    ruckB_12: { name: '5-Mile Benchmark', type: 'ruck', duration: 'TBD', ruckWeight: '45 lbs*', ruckTarget: '5 miles — full send, record time', note: 'BENCHMARK. Record time + RPE.', exercises: [] },
+    cardioA_6: { name: 'Row Intervals', type: 'cardio', mode: 'row', duration: '30 min',
+      rowTarget: '5 min warm-up → 8 × (1 min hard / 45s easy) → cool. Rest shrinks again.',
+      ruckTarget: 'Cool-day alt: 40 min ruck, 8 × 1 min hard surges.', ruckWeight: '30-35 lbs',
+      note: 'Forge intensity. Splits should beat Week 3.', exercises: [] },
+    cardioA_7: { name: 'Row Intervals (4×4)', type: 'cardio', mode: 'row', duration: '32 min',
+      rowTarget: '5 min warm-up → 4 × (4 min hard / 2 min easy) → cool. Classic engine builder.',
+      ruckTarget: 'Cool-day alt: 45 min ruck, 4 × 4 min hard climbs.', ruckWeight: '30-35 lbs',
+      note: 'Longer hard blocks. Pace so all four match.', exercises: [] },
+    cardioA_8: { name: '2K Row Test', type: 'cardio', mode: 'row', duration: '~12 min',
+      rowTarget: 'BENCHMARK: 2000m for time. Warm up well, then full effort. Record time + avg split.',
+      ruckTarget: 'Ruck-alt benchmark: 2-mile ruck for time at 30 lbs. Record it.', ruckWeight: '30 lbs',
+      note: 'Your Week-8 proof. Beat this when the next block ends.', exercises: [] },
+    cardioB_6: { name: 'Steady Burn', type: 'cardio', mode: 'row', duration: '48 min',
+      rowTarget: '48 min Zone 2 row. Smooth, strong, controlled.',
+      ruckTarget: '50 min Zone 2 ruck, rolling hills.', ruckWeight: '30-35 lbs',
+      note: 'Longest steady effort yet.', exercises: [] },
+    cardioB_7: { name: 'Steady Burn', type: 'cardio', mode: 'row', duration: '50 min',
+      rowTarget: '50 min Zone 2 row. Peak aerobic volume.',
+      ruckTarget: '55-60 min Zone 2 ruck — make it the weekend Boerne long one if you can.', ruckWeight: '30-35 lbs',
+      note: 'If the weather breaks, take this one outside.', exercises: [] },
+    cardioB_8: { name: 'Steady + Flush', type: 'cardio', mode: 'row', duration: '40 min',
+      rowTarget: '40 min easy-moderate row. Final week — flush, don\'t crush.',
+      ruckTarget: '40-45 min easy ruck. Enjoy it. You earned the restart.', ruckWeight: '30 lbs',
+      note: 'Bring it home. Then plan the next 8 weeks heavier.', exercises: [] },
   }
 };
 
@@ -960,21 +974,107 @@ function getWeekNumber(date) {
 }
 
 function getPhase(week) {
-  if (week <= 4) return PROGRAM.phases[0];
-  if (week <= 8) return PROGRAM.phases[1];
-  return PROGRAM.phases[2];
+  for (const p of PROGRAM.phases) {
+    if (p.weeks.includes(week)) return p;
+  }
+  return week < PROGRAM.phases[0].weeks[0] ? PROGRAM.phases[0] : PROGRAM.phases[PROGRAM.phases.length - 1];
 }
 
+
 function getDayWorkout(date) {
-  const dow = date.getDay();
   const week = getWeekNumber(date);
-  if (week < 1 || week > 12) return null;
-  const type = PROGRAM.trainingDays[dow];
-  if (!type) return { type: 'rest', message: PROGRAM.restDays[dow] || 'Rest day' };
-  const workout = resolveWorkout(type, week);
-  if (!workout) return { type: 'rest', message: 'Rest day' };
-  return { ...workout, week, slotType: type };
+  if (week < 1 || week > PROGRAM.totalWeeks) return null;
+  const ds = dateStr(date);
+  // If this date already has a logged/started session, show that slot.
+  const log = getLog(ds);
+  if (log && log.slot) {
+    const w = resolveWorkout(log.slot, week);
+    if (w) return { ...w, week, slotType: log.slot, logged: true };
+  }
+  // Flexible cadence: show the next undone session for the week.
+  const slot = nextSlotForWeek(week);
+  if (!slot) return { type: 'weekdone', week, message: 'All 4 sessions done this week. Take a bonus row/ruck or rest — daily core still counts.' };
+  const workout = resolveWorkout(slot, week);
+  if (!workout) return { type: 'rest', message: 'Rest day', week };
+  return { ...workout, week, slotType: slot };
 }
+
+// ─── Flexible-cadence helpers ───
+let activeInfo = null;
+function logHasData(log) {
+  if (!log) return false;
+  if (log.type === 'strength') {
+    const ex = log.exercises || {};
+    for (const k in ex) { if (ex[k].sets && Object.keys(ex[k].sets).length) return true; }
+    return false;
+  }
+  return !!(log.duration || log.distance || log.watts);
+}
+function loggedSlotsForWeek(week) {
+  const logs = (getState().logs) || {};
+  const done = new Set();
+  for (const ds in logs) {
+    const log = logs[ds];
+    if (!log || !log.slot) continue;
+    if (!logHasData(log)) continue;
+    if (getWeekNumber(new Date(ds + 'T12:00:00')) === week) done.add(log.slot);
+  }
+  return done;
+}
+function nextSlotForWeek(week) {
+  const done = loggedSlotsForWeek(week);
+  for (const slot of PROGRAM.weekOrder) { if (!done.has(slot)) return slot; }
+  return null;
+}
+function weekProgress(week) {
+  const done = loggedSlotsForWeek(week);
+  return { done: done.size, total: PROGRAM.weekOrder.length, slots: done };
+}
+function startNewBlock() {
+  setStartDate(dateStr(new Date()));
+  viewDate = new Date();
+  renderToday();
+  renderHeader();
+}
+
+// ─── Daily core helpers ───
+function getCoreLog(ds) { return (getState().core || {})[ds] || null; }
+function saveCoreLog(ds, data) {
+  const s = getState();
+  if (!s.core) s.core = {};
+  if (data === null) { delete s.core[ds]; } else { s.core[ds] = data; }
+  saveState(s);
+  debouncedSync();
+}
+function coreRoutineForDate(date) {
+  const list = PROGRAM.core || [];
+  if (!list.length) return null;
+  const start = getStartDate();
+  let idx;
+  if (start) {
+    const a = new Date(start); a.setHours(0,0,0,0);
+    const b = new Date(date); b.setHours(0,0,0,0);
+    idx = Math.round((b - a) / 86400000);
+  } else {
+    const b = new Date(date); b.setHours(0,0,0,0);
+    idx = Math.round(b.getTime() / 86400000);
+  }
+  idx = ((idx % list.length) + list.length) % list.length;
+  return { ...list[idx], index: idx };
+}
+function coreStreak() {
+  const core = getState().core || {};
+  let streak = 0;
+  const d = new Date(); d.setHours(0,0,0,0);
+  if (!(core[dateStr(d)] && core[dateStr(d)].done)) d.setDate(d.getDate() - 1);
+  for (let i = 0; i < 400; i++) {
+    const ds = dateStr(d);
+    if (core[ds] && core[ds].done) { streak++; d.setDate(d.getDate() - 1); }
+    else break;
+  }
+  return streak;
+}
+
 
 // Log data
 function getLog(dateStr) {
@@ -1199,29 +1299,25 @@ function navToToday() {
 function openSwap() {
   const ds = dateStr(viewDate);
   const week = getWeekNumber(viewDate);
-  const clampedWeek = Math.max(1, Math.min(12, week));
-  const phase = getPhase(clampedWeek);
+  const clampedWeek = Math.max(1, Math.min(PROGRAM.totalWeeks, week));
 
-  // Build list of available workouts for current week
   const options = [];
-  const types = ['strengthA', 'strengthB', 'ruckA', 'ruckB'];
-  types.forEach(type => {
+  PROGRAM.weekOrder.forEach(type => {
     const workout = resolveWorkout(type, clampedWeek);
-    if (workout) {
-      options.push({ type, workout, week: clampedWeek });
-    }
+    if (workout) options.push({ type, workout, week: clampedWeek });
   });
 
-  // Also offer adjacent weeks if desired
   let html = '';
   options.forEach(opt => {
-    const typeLabel = opt.workout.type === 'ruck' ? 'ruck' : 'strength';
+    const isCardio = opt.workout.type === 'cardio' || opt.workout.type === 'ruck' || opt.workout.type === 'row';
+    const typeLabel = isCardio ? 'cardio' : 'strength';
+    const detail = isCardio ? (opt.workout.duration + ' • row / ruck') : (opt.workout.duration + ' • ' + (opt.workout.exercises ? opt.workout.exercises.length : 0) + ' exercises');
     html += `
     <div class="swap-option" onclick="selectSwap('${ds}','${opt.type}',${opt.week})">
       <span class="so-type ${typeLabel}">${typeLabel}</span>
       <div class="so-info">
         <div class="so-name">${opt.workout.name}</div>
-        <div class="so-detail">${opt.workout.duration} • Week ${opt.week}</div>
+        <div class="so-detail">${detail}</div>
       </div>
     </div>`;
   });
@@ -1229,6 +1325,8 @@ function openSwap() {
   document.getElementById('swapOptions').innerHTML = html;
   document.getElementById('swapModal').classList.add('open');
 }
+
+
 function closeSwap() {
   document.getElementById('swapModal').classList.remove('open');
 }
@@ -1262,20 +1360,23 @@ function renderHeader() {
   }
   const today = new Date();
   const week = getWeekNumber(today);
+  const TW = PROGRAM.totalWeeks;
   if (week < 1) {
     document.getElementById('headerSub').textContent = `Program starts ${new Date(startDate).toLocaleDateString('en-US', {month:'short',day:'numeric'})}`;
     document.getElementById('headerBadge').innerHTML = '';
     return;
   }
-  if (week > 12) {
-    document.getElementById('headerSub').textContent = 'Program complete!';
+  if (week > TW) {
+    document.getElementById('headerSub').textContent = 'Block complete — time to reload!';
     document.getElementById('headerBadge').innerHTML = '<span class="badge badge-green">DONE</span>';
     return;
   }
   const phase = getPhase(week);
-  document.getElementById('headerSub').textContent = `Week ${week} of 12`;
-  document.getElementById('headerBadge').innerHTML = `<span class="week-phase" style="background:${phase.color}22;color:${phase.color}">Phase ${PROGRAM.phases.indexOf(phase)+1}: ${phase.name}</span>`;
+  const prog = weekProgress(week);
+  document.getElementById('headerSub').textContent = `Week ${week} of ${TW} · ${prog.done}/${prog.total} sessions this week`;
+  document.getElementById('headerBadge').innerHTML = `<span class="week-phase" style="background:${phase.color}22;color:${phase.color}">${phase.name}</span>`;
 }
+
 
 function renderToday() {
   renderHeader();
@@ -1287,7 +1388,7 @@ function renderToday() {
       <div class="empty-state" style="margin-top:60px;">
         <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
         <p style="font-size:1rem;color:var(--heading);margin-top:16px;font-weight:600;">Set Your Start Date</p>
-        <p>Go to Settings and pick the Monday your program begins.</p>
+        <p>Go to Settings and pick today to start the FORGE block.</p>
       </div>`;
     return;
   }
@@ -1298,7 +1399,6 @@ function renderToday() {
   const isToday = ds === realToday;
   const week = getWeekNumber(d);
 
-  // Date navigation bar
   const dayLabel = isToday ? 'Today' : d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
   let dateNavHtml = `
     <div class="date-nav">
@@ -1310,59 +1410,68 @@ function renderToday() {
       <button class="date-nav-btn" onclick="navDay(1)">›</button>
     </div>`;
 
-  // Check for swap override
+  // Out of program range
+  if (week < 1 || week > PROGRAM.totalWeeks) {
+    if (week > PROGRAM.totalWeeks) {
+      container.innerHTML = dateNavHtml + `
+        <div class="card" style="margin-top:8px;text-align:center;">
+          <div class="day-type" style="color:var(--green);">Block Complete</div>
+          <div class="day-name">8 weeks, done.</div>
+          <div class="day-desc">Bank a benchmark, then forge the next block — heavier.</div>
+          <button class="btn btn-primary" style="margin-top:14px;" onclick="startNewBlock()">Start New 8-Week Block — Today</button>
+        </div>`;
+    } else {
+      container.innerHTML = dateNavHtml + `<div class="empty-state"><p>Block hasn't started yet.</p></div>`;
+    }
+    appendCoreCard(ds, d);
+    return;
+  }
+
+  // Swap override wins
   const swap = getSwapOverride(ds);
   let info;
   if (swap) {
     const workout = resolveWorkout(swap.slotType, swap.week);
-    if (workout) {
-      info = { ...workout, week: swap.week, slotType: swap.slotType, swapped: true };
-    } else {
-      info = getDayWorkout(d);
-    }
+    info = workout ? { ...workout, week: swap.week, slotType: swap.slotType, swapped: true } : getDayWorkout(d);
   } else {
     info = getDayWorkout(d);
   }
 
-  if (!info || week < 1 || week > 12) {
-    const msg = week > 12 ? 'Program complete! Time to benchmark.' : 'Program hasn\'t started yet.';
-    container.innerHTML = dateNavHtml + `<div class="empty-state"><p>${msg}</p></div>`;
-    return;
-  }
-
-  if (info.type === 'rest' && !swap) {
+  if (info && info.type === 'weekdone') {
     container.innerHTML = dateNavHtml + `
-      <div class="card" style="margin-top:8px;">
-        <div class="day-type rest">Rest Day</div>
-        <div class="day-name">${d.toLocaleDateString('en-US', {weekday:'long'})}</div>
+      <div class="card" style="margin-top:8px;text-align:center;">
+        <div class="day-type cardio">Week ${info.week} Complete</div>
+        <div class="day-name">All 4 sessions done 💪</div>
         <div class="day-desc">${info.message}</div>
-        <div style="margin-top:16px;padding:14px;background:var(--bg);border-radius:10px;">
-          <div style="font-size:0.8rem;color:var(--dim);text-transform:uppercase;font-weight:600;margin-bottom:4px;">Daily Target</div>
-          <div style="font-size:1.3rem;font-weight:700;color:var(--green);">8,000 steps</div>
-          <div style="font-size:0.8rem;color:var(--muted);margin-top:4px;">Walk after dinner. Take calls on foot.</div>
-        </div>
       </div>
-      <div class="swap-bar">
-        <span></span>
-        <button class="swap-btn" onclick="openSwap()">🔄 Do a Different Workout</button>
-      </div>`;
+      <div class="swap-bar"><span></span><button class="swap-btn" onclick="openSwap()">＋ Bonus Session</button></div>`;
+    appendCoreCard(ds, d);
+    if (ouraData) renderReadinessCard();
     return;
   }
 
-  const isRuck = info.type === 'ruck';
+  if (!info) {
+    container.innerHTML = dateNavHtml + `<div class="empty-state"><p>Rest day — daily core still counts.</p></div>`;
+    appendCoreCard(ds, d);
+    return;
+  }
+
+  activeInfo = info;
+  const isCardio = info.type === 'cardio' || info.type === 'ruck' || info.type === 'row';
   const log = getLog(ds) || {};
-  const typeClass = isRuck ? 'ruck' : 'strength';
+  const typeClass = isCardio ? 'cardio' : 'strength';
+  const prog = weekProgress(week);
 
   let swapNote = '';
   if (info.swapped) {
-    swapNote = `<div style="font-size:0.75rem;color:var(--yellow);margin-top:4px;">🔄 Swapped workout <button style="background:none;border:none;color:var(--dim);font-size:0.7rem;text-decoration:underline;cursor:pointer;" onclick="clearSwapOverride('${ds}');renderToday();">Reset</button></div>`;
+    swapNote = `<div style="font-size:0.75rem;color:var(--yellow);margin-top:4px;">🔄 Swapped <button style="background:none;border:none;color:var(--dim);font-size:0.7rem;text-decoration:underline;cursor:pointer;" onclick="clearSwapOverride('${ds}');renderToday();">Reset</button></div>`;
   }
 
   let html = dateNavHtml + `
     <div style="margin-top:8px;">
-      <div class="day-type ${typeClass}">${isRuck ? 'Ruck Day' : 'Strength Day'}</div>
+      <div class="day-type ${typeClass}">${isCardio ? 'Cardio' : 'Strength'} · ${prog.done}/${prog.total} this week</div>
       <div class="day-name">${info.name}</div>
-      <div class="day-desc">${info.duration} • Week ${info.week || week}</div>
+      <div class="day-desc">${info.duration} • Week ${info.week || week} • ${getPhase(week).name}</div>
       ${swapNote}
     </div>
     <div class="swap-bar">
@@ -1370,42 +1479,61 @@ function renderToday() {
       <button class="swap-btn" onclick="openSwap()">🔄 Swap Workout</button>
     </div>`;
 
-  if (isRuck) {
-    html += renderRuckView(info, log, ds);
+  if (isCardio) {
+    html += renderCardioView(info, log, ds);
   } else {
     html += renderStrengthView(info, log, ds);
   }
 
   container.innerHTML = html;
   attachEventListeners(ds, info);
-  // Show readiness card if data loaded
+  appendCoreCard(ds, d);
   if (ouraData) renderReadinessCard();
 }
 
-function renderRuckView(info, log, ds) {
+
+function renderCardioView(info, log, ds) {
+  const mode = (log && log.mode) ? log.mode : (info.mode || 'row');
+  const isRuck = mode === 'ruck';
+  const allowRow = !!info.rowTarget;
+  const allowRuck = !!info.ruckTarget;
+  const target = isRuck ? (info.ruckTarget || info.rowTarget) : (info.rowTarget || info.ruckTarget);
+
+  let toggle = '';
+  if (allowRow && allowRuck) {
+    toggle = `
+      <div class="mode-toggle">
+        <button class="mode-btn ${!isRuck ? 'active' : ''}" onclick="setCardioMode('${ds}','row')">🚣 Row</button>
+        <button class="mode-btn ${isRuck ? 'active' : ''}" onclick="setCardioMode('${ds}','ruck')">🎒 Ruck</button>
+      </div>`;
+  }
+
   return `
     <div class="card" style="margin-top:12px;">
-      <div style="font-size:0.9rem;font-weight:600;color:var(--heading);margin-bottom:8px;">Today's Ruck</div>
+      ${toggle}
       <div style="padding:14px;background:var(--bg);border-radius:10px;margin-bottom:12px;">
-        <div style="font-size:1.1rem;color:var(--green);font-weight:600;">${info.ruckTarget}</div>
-        <div style="font-size:0.85rem;color:var(--muted);margin-top:4px;">Pack: ${info.ruckWeight}</div>
+        <div style="font-size:1.02rem;color:var(--green);font-weight:600;line-height:1.45;">${target}</div>
+        ${isRuck && info.ruckWeight ? `<div style="font-size:0.85rem;color:var(--muted);margin-top:6px;">Pack: ${info.ruckWeight}</div>` : ''}
       </div>
       ${info.note ? `<div class="ex-note">${info.note}</div>` : ''}
 
-      <div class="section-title" style="margin-top:16px;">Log Your Ruck</div>
+      <div class="section-title" style="margin-top:16px;">Log It</div>
       <div class="ruck-fields">
         <div>
           <label>Duration (min)</label>
           <input class="set-input ruck-log" data-field="duration" type="number" inputmode="numeric" placeholder="—" value="${log.duration||''}">
         </div>
         <div>
-          <label>Distance (mi)</label>
-          <input class="set-input ruck-log" data-field="distance" type="number" inputmode="decimal" step="0.1" placeholder="—" value="${log.distance||''}">
+          <label>${isRuck ? 'Distance (mi)' : 'Distance (m)'}</label>
+          <input class="set-input ruck-log" data-field="distance" type="number" inputmode="decimal" step="${isRuck ? '0.1' : '50'}" placeholder="—" value="${log.distance||''}">
         </div>
-        <div>
+        ${isRuck ? `<div>
           <label>Pack Weight (lbs)</label>
           <input class="set-input ruck-log" data-field="weight" type="number" inputmode="numeric" placeholder="—" value="${log.weight||''}">
-        </div>
+        </div>` : `<div>
+          <label>Avg Watts</label>
+          <input class="set-input ruck-log" data-field="watts" type="number" inputmode="numeric" placeholder="—" value="${log.watts||''}">
+        </div>`}
         <div>
           <label>Avg HR (bpm)</label>
           <input class="set-input ruck-log" data-field="hr" type="number" inputmode="numeric" placeholder="—" value="${log.hr||''}">
@@ -1413,7 +1541,7 @@ function renderRuckView(info, log, ds) {
       </div>
       <div class="rpe-label">Effort (RPE)</div>
       <div class="rpe-row">
-        ${[5,6,7,8,9,10].map(n => `<button class="rpe-btn ruck-rpe ${log.rpe==n?'selected':''}" data-rpe="${n}">${n}</button>`).join('')}
+        ${[4,5,6,7,8,9,10].map(n => `<button class="rpe-btn ruck-rpe ${log.rpe==n?'selected':''}" data-rpe="${n}">${n}</button>`).join('')}
       </div>
       <div style="margin-top:12px;">
         <label style="font-size:0.7rem;font-weight:600;color:var(--dim);text-transform:uppercase;display:block;margin-bottom:4px;">Notes</label>
@@ -1421,6 +1549,49 @@ function renderRuckView(info, log, ds) {
       </div>
     </div>`;
 }
+
+function setCardioMode(ds, mode) {
+  const info = activeInfo || {};
+  const log = getLog(ds) || { type: info.type || 'cardio', workout: info.name, slot: info.slotType, week: info.week };
+  log.mode = mode;
+  if (!log.slot && info.slotType) { log.slot = info.slotType; log.week = info.week; log.type = info.type; log.workout = info.name; }
+  saveLog(ds, log);
+  renderToday();
+}
+
+function appendCoreCard(ds, date) {
+  const container = document.getElementById('todayContent');
+  if (!container) return;
+  const existing = document.getElementById('coreCard');
+  if (existing) existing.remove();
+  const routine = coreRoutineForDate(date);
+  if (!routine) return;
+  const log = getCoreLog(ds);
+  const done = !!(log && log.done);
+  const card = document.createElement('div');
+  card.id = 'coreCard';
+  card.className = 'card core-card' + (done ? ' done' : '');
+  card.style.marginTop = '14px';
+  card.innerHTML = `
+    <div class="core-head">
+      <div>
+        <div class="core-eyebrow">Daily Core · ${routine.duration} · anywhere</div>
+        <div class="core-name">${routine.name}</div>
+      </div>
+      <button class="core-toggle ${done ? 'done' : ''}" id="coreToggleBtn">${done ? '✓ Done' : 'Mark Done'}</button>
+    </div>
+    <div class="core-moves">${routine.moves.map(m => `<div class="core-move">${m}</div>`).join('')}</div>
+    ${routine.note ? `<div class="ex-note" style="margin-top:8px;">${routine.note}</div>` : ''}`;
+  container.appendChild(card);
+  document.getElementById('coreToggleBtn').addEventListener('click', () => {
+    const cur = getCoreLog(ds);
+    if (cur && cur.done) { saveCoreLog(ds, null); }
+    else { saveCoreLog(ds, { done: true, routine: routine.name, ts: Date.now() }); }
+    appendCoreCard(ds, date);
+    renderHeader();
+  });
+}
+
 
 function renderStrengthView(info, log, ds) {
   // Get previous workout data for suggestions
@@ -1489,14 +1660,23 @@ function toggleExercise(i) {
   detail.classList.toggle('open');
 }
 
+function ensureLog(ds, info) {
+  let log = getLog(ds);
+  if (!log) log = { type: info.type, workout: info.name };
+  if (info.slotType && !log.slot) log.slot = info.slotType;
+  if (info.week && !log.week) log.week = info.week;
+  if (!log.workout) log.workout = info.name;
+  if (!log.type) log.type = info.type;
+  return log;
+}
+
 function attachEventListeners(ds, info) {
   // Auto-fill suggested weight on focus
   document.querySelectorAll('.set-log[data-suggested]').forEach(input => {
     input.addEventListener('focus', function() {
       if (!this.value && this.dataset.suggested) {
         this.value = this.dataset.suggested;
-        // Trigger save
-        const log = getLog(ds) || { type: 'strength', workout: info.name };
+        const log = ensureLog(ds, info);
         if (!log.exercises) log.exercises = {};
         const exIdx = this.dataset.ex;
         const setIdx = this.dataset.set;
@@ -1512,7 +1692,7 @@ function attachEventListeners(ds, info) {
   // Strength set logging
   document.querySelectorAll('.set-log').forEach(input => {
     input.addEventListener('change', () => {
-      const log = getLog(ds) || { type: 'strength', workout: info.name };
+      const log = ensureLog(ds, info);
       if (!log.exercises) log.exercises = {};
       const exIdx = input.dataset.ex;
       const setIdx = input.dataset.set;
@@ -1521,22 +1701,22 @@ function attachEventListeners(ds, info) {
       if (!log.exercises[exIdx].sets[setIdx]) log.exercises[exIdx].sets[setIdx] = {};
       log.exercises[exIdx].sets[setIdx][field] = input.value;
       saveLog(ds, log);
-      // Update check marks
       renderToday();
     });
   });
 
-  // Ruck logging
+  // Cardio (row/ruck) logging
   document.querySelectorAll('.ruck-log').forEach(input => {
     input.addEventListener('change', () => {
-      const log = getLog(ds) || { type: 'ruck', workout: info.name };
+      const log = ensureLog(ds, info);
       log[input.dataset.field] = input.value;
       saveLog(ds, log);
+      renderHeader();
     });
   });
   document.querySelectorAll('.ruck-rpe').forEach(btn => {
     btn.addEventListener('click', () => {
-      const log = getLog(ds) || { type: 'ruck', workout: info.name };
+      const log = ensureLog(ds, info);
       log.rpe = btn.dataset.rpe;
       saveLog(ds, log);
       document.querySelectorAll('.ruck-rpe').forEach(b => b.classList.remove('selected'));
@@ -1547,61 +1727,68 @@ function attachEventListeners(ds, info) {
   const notesEl = document.querySelector('.session-notes, .ruck-notes');
   if (notesEl) {
     notesEl.addEventListener('change', () => {
-      const log = getLog(ds) || { type: info.type, workout: info.name };
+      const log = ensureLog(ds, info);
       log.notes = notesEl.value;
       saveLog(ds, log);
     });
   }
 }
 
+
 function renderWeek() {
   renderHeader();
   const container = document.getElementById('weekContent');
-  const today = new Date();
-  const todayDs = dateStr(today);
-  // Get start of current week (Sunday)
-  const startOfWeek = new Date(today);
-  startOfWeek.setDate(today.getDate() - today.getDay());
+  const startDate = getStartDate();
+  if (!startDate) { container.innerHTML = '<div class="empty-state"><p>Set your start date in Settings.</p></div>'; return; }
+  const week = getWeekNumber(new Date());
+  const TW = PROGRAM.totalWeeks;
 
-  let html = '';
-  for (let i = 0; i < 7; i++) {
-    const d = new Date(startOfWeek);
-    d.setDate(startOfWeek.getDate() + i);
-    const ds = dateStr(d);
-    const isToday = ds === todayDs;
-    const info = getDayWorkout(d);
-    const log = getLog(ds);
-
-    let typeName = 'Rest';
-    let detail = '';
-    let statusClass = 'upcoming';
-
-    if (info && info.type !== 'rest') {
-      typeName = info.name;
-      detail = `${info.duration} • ${info.type === 'ruck' ? info.ruckWeight : info.exercises.length + ' exercises'}`;
-      if (log) {
-        const hasData = info.type === 'ruck' ? (log.duration || log.distance) : Object.keys(log.exercises || {}).length > 0;
-        statusClass = hasData ? 'complete' : 'upcoming';
-      }
-    } else if (info) {
-      detail = info.message || info.type;
-    }
-
-    html += `
-    <div class="week-day ${isToday ? 'today' : ''}" onclick="navigateToDay('${ds}')">
-      <div class="wd-date">
-        <div class="wd-dow">${d.toLocaleDateString('en-US',{weekday:'short'})}</div>
-        <div class="wd-num">${d.getDate()}</div>
-      </div>
-      <div class="wd-info">
-        <div class="wd-type">${typeName}</div>
-        <div class="wd-detail">${detail}</div>
-      </div>
-      ${info && info.type !== 'rest' ? `<div class="wd-status ${statusClass}"></div>` : ''}
-    </div>`;
+  if (week < 1 || week > TW) {
+    container.innerHTML = `<div class="empty-state"><p>${week > TW ? 'Block complete — start the next 8 from the Today tab.' : 'Block hasn\'t started yet.'}</p></div>`;
+    return;
   }
+
+  const done = loggedSlotsForWeek(week);
+  const phase = getPhase(week);
+  let html = `<div class="card" style="margin-bottom:14px;">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+      <div>
+        <div class="core-eyebrow">Week ${week} of ${TW} · ${phase.name}</div>
+        <div style="font-size:1.4rem;font-weight:700;color:var(--heading);margin-top:2px;">${done.size}/${PROGRAM.weekOrder.length} sessions</div>
+      </div>
+      <div style="text-align:right;">
+        <div class="core-eyebrow">Core streak</div>
+        <div style="font-size:1.4rem;font-weight:700;color:var(--green);margin-top:2px;">${coreStreak()} 🔥</div>
+      </div>
+    </div>
+    <div class="week-progress">${PROGRAM.weekOrder.map(s => `<div class="wp-dot ${done.has(s) ? 'done' : ''}"></div>`).join('')}</div>
+    <div style="font-size:0.75rem;color:var(--dim);">Do these 4 any days this week. Tap one to start it today.</div>
+  </div>`;
+
+  PROGRAM.weekOrder.forEach(slot => {
+    const w = resolveWorkout(slot, week);
+    if (!w) return;
+    const isCardio = w.type === 'cardio' || w.type === 'ruck' || w.type === 'row';
+    const isDone = done.has(slot);
+    const detail = isCardio ? (w.duration + ' • row / ruck') : (w.duration + ' • ' + (w.exercises ? w.exercises.length : 0) + ' exercises');
+    html += `
+    <div class="week-day" onclick="swapTodayTo('${slot}',${week})">
+      <div class="wd-date"><div class="wd-dow">${isCardio ? 'CARD' : 'LIFT'}</div><div class="wd-num">${isDone ? '✓' : '·'}</div></div>
+      <div class="wd-info"><div class="wd-type">${w.name}</div><div class="wd-detail">${detail}</div></div>
+      <div class="wd-status ${isDone ? 'complete' : 'upcoming'}"></div>
+    </div>`;
+  });
+
   container.innerHTML = html;
 }
+
+function swapTodayTo(slot, week) {
+  const ds = dateStr(new Date());
+  saveSwapOverride(ds, slot, week);
+  viewDate = new Date();
+  showPage('Today');
+}
+
 
 function navigateToDay(ds) {
   viewDate = new Date(ds + 'T12:00:00');
@@ -1612,33 +1799,26 @@ function renderHistory() {
   renderHeader();
   const state = getState();
   const logs = state.logs || {};
+  const core = state.core || {};
   const entries = Object.entries(logs).sort((a,b) => b[0].localeCompare(a[0]));
 
-  // Stats
-  let totalWorkouts = entries.length;
-  let totalRucks = 0;
-  let totalStrength = 0;
-  let currentStreak = 0;
-
+  let totalCardio = 0, totalStrength = 0;
   entries.forEach(([ds, log]) => {
-    if (log.type === 'ruck') totalRucks++;
-    else totalStrength++;
+    if (log.type === 'strength') totalStrength++;
+    else totalCardio++;
   });
 
-  // Calculate streak (consecutive weeks with 4+ workouts)
   const statsHtml = `
     <div class="stats-grid">
-      <div class="stat-box"><div class="stat-num">${totalWorkouts}</div><div class="stat-label">Total Sessions</div></div>
+      <div class="stat-box"><div class="stat-num">${entries.length}</div><div class="stat-label">Sessions</div></div>
       <div class="stat-box"><div class="stat-num">${totalStrength}</div><div class="stat-label">Strength</div></div>
-      <div class="stat-box"><div class="stat-num">${totalRucks}</div><div class="stat-label">Rucks</div></div>
-      <div class="stat-box"><div class="stat-num">${getWeekNumber(new Date()) || '—'}</div><div class="stat-label">Current Week</div></div>
+      <div class="stat-box"><div class="stat-num">${totalCardio}</div><div class="stat-label">Cardio</div></div>
+      <div class="stat-box"><div class="stat-num">${coreStreak()} 🔥</div><div class="stat-label">Core Streak</div></div>
     </div>`;
-
   document.getElementById('statsContent').innerHTML = statsHtml;
 
-  // History entries
   if (entries.length === 0) {
-    document.getElementById('historyContent').innerHTML = '<div class="empty-state"><p>No workouts logged yet. Get after it.</p></div>';
+    document.getElementById('historyContent').innerHTML = '<div class="empty-state"><p>No workouts logged yet. Day 1 starts now.</p></div>';
     return;
   }
 
@@ -1647,23 +1827,24 @@ function renderHistory() {
     const d = new Date(ds + 'T12:00:00');
     const dateLabel = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
     let stats = '';
-    if (log.type === 'ruck') {
-      const parts = [];
-      if (log.duration) parts.push(`${log.duration} min`);
-      if (log.distance) parts.push(`${log.distance} mi`);
-      if (log.weight) parts.push(`${log.weight} lbs`);
-      if (log.rpe) parts.push(`RPE ${log.rpe}`);
-      stats = parts.join(' • ');
-    } else {
+    if (log.type === 'strength') {
       const exCount = Object.keys(log.exercises || {}).length;
       let totalSets = 0;
       Object.values(log.exercises || {}).forEach(ex => { totalSets += Object.keys(ex.sets || {}).length; });
-      stats = `${exCount} exercises • ${totalSets} sets logged`;
+      stats = `${exCount} exercises • ${totalSets} sets`;
+    } else {
+      const parts = [];
+      if (log.mode) parts.push(log.mode === 'ruck' ? '🎒 ruck' : '🚣 row');
+      if (log.duration) parts.push(`${log.duration} min`);
+      if (log.distance) parts.push(`${log.distance}${log.mode === 'ruck' ? ' mi' : ' m'}`);
+      if (log.weight) parts.push(`${log.weight} lbs`);
+      if (log.rpe) parts.push(`RPE ${log.rpe}`);
+      stats = parts.join(' • ');
     }
-
+    const coreTag = (core[ds] && core[ds].done) ? ' · core ✓' : '';
     histHtml += `
     <div class="history-entry">
-      <div class="he-date">${dateLabel}</div>
+      <div class="he-date">${dateLabel}${coreTag}</div>
       <div class="he-title">${log.workout || log.type}</div>
       <div class="he-stats">${stats}</div>
       ${log.notes ? `<div style="font-size:0.8rem;color:var(--muted);font-style:italic;margin-top:4px;">"${log.notes}"</div>` : ''}
@@ -1672,15 +1853,18 @@ function renderHistory() {
   document.getElementById('historyContent').innerHTML = histHtml;
 }
 
+
 function renderSettings() {
   renderHeader();
   const startDate = getStartDate();
   document.getElementById('startDateInput').value = startDate || '';
+  const TW = PROGRAM.totalWeeks;
   const week = startDate ? getWeekNumber(new Date()) : 0;
-  document.getElementById('currentWeekDisplay').textContent = week > 0 && week <= 12 ? `Week ${week}` : week > 12 ? 'Complete' : '—';
-  const phase = week > 0 && week <= 12 ? getPhase(week) : null;
-  document.getElementById('currentPhaseDisplay').textContent = phase ? `${phase.name} (${PROGRAM.phases.indexOf(phase)+1}/3)` : '—';
+  document.getElementById('currentWeekDisplay').textContent = week > 0 && week <= TW ? `Week ${week} of ${TW}` : week > TW ? 'Complete' : '—';
+  const phase = week > 0 && week <= TW ? getPhase(week) : null;
+  document.getElementById('currentPhaseDisplay').textContent = phase ? phase.name : '—';
 }
+
 
 // Settings events
 document.getElementById('startDateInput').addEventListener('change', function() {
@@ -1789,6 +1973,8 @@ async function restoreFromCloud() {
     if (local.startDate && !merged.startDate) {
       merged.startDate = local.startDate;
     }
+    if (local.core) merged.core = { ...(data.core || {}), ...local.core };
+    if (local.swaps) merged.swaps = { ...(data.swaps || {}), ...local.swaps };
 
     saveState(merged);
     const logCount = Object.keys(merged.logs || {}).length;
