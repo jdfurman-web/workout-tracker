@@ -567,6 +567,9 @@ body {
 .week-progress { display:flex; gap:6px; margin:12px 0 10px; }
 .wp-dot { flex:1; height:7px; border-radius:4px; background:var(--border); }
 .wp-dot.done { background:var(--green); }
+.core-status { flex-shrink:0; font-size:0.85rem; font-weight:700; color:var(--dim); padding:7px 12px; border:1px solid var(--border); border-radius:10px; min-width:48px; text-align:center; }
+.core-status.done { color:var(--green); border-color:var(--green); background:rgba(52,211,153,0.12); }
+.core-round-btn { max-width:none; }
 </style>
 </head>
 <body>
@@ -1062,14 +1065,15 @@ function coreRoutineForDate(date) {
   idx = ((idx % list.length) + list.length) % list.length;
   return { ...list[idx], index: idx };
 }
+function coreDidDay(c) { return !!(c && (c.done || (c.rounds || 0) >= 1)); }
 function coreStreak() {
   const core = getState().core || {};
   let streak = 0;
   const d = new Date(); d.setHours(0,0,0,0);
-  if (!(core[dateStr(d)] && core[dateStr(d)].done)) d.setDate(d.getDate() - 1);
+  if (!coreDidDay(core[dateStr(d)])) d.setDate(d.getDate() - 1);
   for (let i = 0; i < 400; i++) {
     const ds = dateStr(d);
-    if (core[ds] && core[ds].done) { streak++; d.setDate(d.getDate() - 1); }
+    if (coreDidDay(core[ds])) { streak++; d.setDate(d.getDate() - 1); }
     else break;
   }
   return streak;
@@ -1566,8 +1570,11 @@ function appendCoreCard(ds, date) {
   if (existing) existing.remove();
   const routine = coreRoutineForDate(date);
   if (!routine) return;
-  const log = getCoreLog(ds);
-  const done = !!(log && log.done);
+  const log = getCoreLog(ds) || {};
+  const rounds = log.rounds != null ? log.rounds : (log.done ? 3 : 0);
+  const note = log.note || '';
+  const done = rounds > 0;
+  const statusLabel = done ? (rounds >= 3 ? '✓ ' + rounds + '/3' : rounds + '/3') : '—';
   const card = document.createElement('div');
   card.id = 'coreCard';
   card.className = 'card core-card' + (done ? ' done' : '');
@@ -1578,18 +1585,43 @@ function appendCoreCard(ds, date) {
         <div class="core-eyebrow">Daily Core · ${routine.duration} · anywhere</div>
         <div class="core-name">${routine.name}</div>
       </div>
-      <button class="core-toggle ${done ? 'done' : ''}" id="coreToggleBtn">${done ? '✓ Done' : 'Mark Done'}</button>
+      <div class="core-status ${done ? 'done' : ''}">${statusLabel}</div>
     </div>
     <div class="core-moves">${routine.moves.map(m => `<div class="core-move">${m}</div>`).join('')}</div>
-    ${routine.note ? `<div class="ex-note" style="margin-top:8px;">${routine.note}</div>` : ''}`;
+    ${routine.note ? `<div class="ex-note" style="margin-top:8px;">${routine.note}</div>` : ''}
+    <div class="rpe-label">Rounds completed (of 3)</div>
+    <div class="rpe-row" id="coreRounds">
+      ${[1,2,3].map(n => `<button class="rpe-btn core-round-btn ${rounds>=n?'selected':''}" data-rounds="${n}">${n}</button>`).join('')}
+    </div>
+    <div style="margin-top:12px;">
+      <label style="font-size:0.7rem;font-weight:600;color:var(--dim);text-transform:uppercase;display:block;margin-bottom:4px;">Core Notes</label>
+      <textarea class="notes-input core-notes" placeholder="How'd it feel? Mods, skips, anything to remember.">${note}</textarea>
+    </div>`;
   container.appendChild(card);
-  document.getElementById('coreToggleBtn').addEventListener('click', () => {
-    const cur = getCoreLog(ds);
-    if (cur && cur.done) { saveCoreLog(ds, null); }
-    else { saveCoreLog(ds, { done: true, routine: routine.name, ts: Date.now() }); }
-    appendCoreCard(ds, date);
-    renderHeader();
+  card.querySelectorAll('.core-round-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const cur = getCoreLog(ds) || {};
+      const curRounds = cur.rounds != null ? cur.rounds : (cur.done ? 3 : 0);
+      const n = parseInt(btn.dataset.rounds);
+      const newRounds = (curRounds === n) ? n - 1 : n; // tap the active count again to step down/clear
+      if (newRounds <= 0) {
+        if (cur.note) { saveCoreLog(ds, { rounds: 0, done: false, routine: routine.name, note: cur.note, ts: Date.now() }); }
+        else { saveCoreLog(ds, null); }
+      } else {
+        saveCoreLog(ds, { rounds: newRounds, done: true, routine: routine.name, note: cur.note || '', ts: Date.now() });
+      }
+      appendCoreCard(ds, date);
+      renderHeader();
+    });
   });
+  const cn = card.querySelector('.core-notes');
+  if (cn) {
+    cn.addEventListener('change', () => {
+      const cur = getCoreLog(ds) || {};
+      const curRounds = cur.rounds != null ? cur.rounds : (cur.done ? 3 : 0);
+      saveCoreLog(ds, { rounds: curRounds, done: curRounds > 0, routine: routine.name, note: cn.value, ts: cur.ts || Date.now() });
+    });
+  }
 }
 
 
@@ -1841,7 +1873,8 @@ function renderHistory() {
       if (log.rpe) parts.push(`RPE ${log.rpe}`);
       stats = parts.join(' • ');
     }
-    const coreTag = (core[ds] && core[ds].done) ? ' · core ✓' : '';
+    const cc = core[ds];
+    const coreTag = coreDidDay(cc) ? (cc.rounds != null ? ' · core ' + cc.rounds + '/3' : ' · core ✓') : '';
     histHtml += `
     <div class="history-entry">
       <div class="he-date">${dateLabel}${coreTag}</div>
