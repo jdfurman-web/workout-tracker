@@ -1290,6 +1290,10 @@ function clearSwapOverride(ds) {
   const s = getState();
   if (s.swaps) { delete s.swaps[ds]; saveState(s); }
 }
+function setCoreOnly(ds) {
+  saveSwapOverride(ds, 'coreonly', getWeekNumber(viewDate));
+  renderToday();
+}
 
 function navDay(offset) {
   viewDate.setDate(viewDate.getDate() + offset);
@@ -1433,6 +1437,21 @@ function renderToday() {
 
   // Swap override wins
   const swap = getSwapOverride(ds);
+
+  // Core-only day: rest from lifting/cardio, just the core work
+  if (swap && swap.slotType === 'coreonly') {
+    container.innerHTML = dateNavHtml + `
+      <div class="card" style="margin-top:8px;text-align:center;">
+        <div class="day-type" style="color:var(--yellow);">Core-Only Day</div>
+        <div class="day-name">Rest from lifting & cardio</div>
+        <div class="day-desc">No full session today — just the core work below. Recovery is part of the plan.</div>
+        <button class="swap-btn" style="margin-top:8px;" onclick="clearSwapOverride('${ds}');renderToday();">Undo — show my workout</button>
+      </div>`;
+    appendCoreCard(ds, d);
+    if (ouraData) renderReadinessCard();
+    return;
+  }
+
   let info;
   if (swap) {
     const workout = resolveWorkout(swap.slotType, swap.week);
@@ -1479,7 +1498,7 @@ function renderToday() {
       ${swapNote}
     </div>
     <div class="swap-bar">
-      <span></span>
+      <button class="swap-btn" onclick="setCoreOnly('${ds}')">🧘 Core-Only Day</button>
       <button class="swap-btn" onclick="openSwap()">🔄 Swap Workout</button>
     </div>`;
 
