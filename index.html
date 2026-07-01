@@ -590,9 +590,9 @@ body {
   <div id="lockErr" style="color:#ef4444;font-size:0.8rem;margin-top:10px;opacity:0;">Wrong passcode</div>
 </div>
 <script>
-// SHA-256 hash of passcode — change by updating the hash below
-// Default passcode: ruck2026
-const PASS_HASH = 'a1b8e3f7c9d2e4f6a0b1c3d5e7f9a2b4c6d8e0f1a3b5c7d9e1f2a4b6c8d0e2';
+// SHA-256 hash of passcode — never store the passcode itself in source.
+// To change: run  echo -n 'newpass' | sha256sum  and paste the hash.
+const PASS_HASH = '5c76497ce6f915dd94720896e039740afc287225c5986fcc21a1c22a8e9f395f';
 async function sha256(msg) {
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(msg));
   return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
@@ -600,7 +600,7 @@ async function sha256(msg) {
 async function checkPass() {
   const val = document.getElementById('lockPass').value;
   const hash = await sha256(val);
-  if (val === 'ruck2026') { // Simple check — swap to hash comparison for stronger security
+  if (hash === PASS_HASH) {
     sessionStorage.setItem('ri_auth','1');
     document.getElementById('lockScreen').style.display='none';
   } else {
@@ -673,7 +673,7 @@ if (sessionStorage.getItem('ri_auth')==='1') {
   </div>
   <div class="section-title">Cloud Sync</div>
   <div class="card">
-    <div style="font-size:0.85rem;color:var(--muted);margin-bottom:10px;">Sync workout data so Knox can include lift details in your weekly wellness digest. Data syncs to a private file in the workout-tracker repo.</div>
+    <div style="font-size:0.85rem;color:var(--muted);margin-bottom:10px;">Sync workout data so Knox can include lift details in your weekly wellness digest. Data syncs to <code>data/ruck-iron-data.json</code> in the workout-tracker repo (public until the private-repo migration — see Knox).</div>
   </div>
   <div style="display:flex;gap:8px;">
     <button class="btn btn-secondary" onclick="syncToCloud()" id="syncBtn" style="flex:1;background:rgba(52,211,153,0.15);color:var(--green);border-color:rgba(52,211,153,0.3);">
@@ -689,7 +689,7 @@ if (sessionStorage.getItem('ri_auth')==='1') {
   <button class="btn btn-secondary" onclick="exportData()">Export All Data (JSON)</button>
   <button class="btn btn-danger" onclick="confirmClear()">Clear All Data</button>
   <div style="text-align:center;margin-top:24px;">
-    <p style="font-size:0.75rem;color:var(--dim);">Ruck + Iron v2.2</p>
+    <p style="font-size:0.75rem;color:var(--dim);">Ruck + Iron v2.3 · 2026-07-01</p>
     <p style="font-size:0.75rem;color:var(--dim);">Built by Knox for Jay Furman</p>
   </div>
 </div>
@@ -761,7 +761,7 @@ const PROGRAM = {
       exercises: [
         { name: 'DB Bench Press', sets: 3, reps: '10-12', rest: 75, note: 'Detrained restart — start lighter than your ego wants. Leave 2-3 reps in reserve.' },
         { name: 'Seated Cable Row', sets: 3, reps: '10-12', rest: 75, note: 'Squeeze, full stretch. Rebuild the mind-muscle link.' },
-        { name: 'DB Overhead Press', sets: 3, reps: '10-12', rest: 75, note: 'Seated, supported. Controlled tempo.' },
+        { name: 'High-Incline DB Press', sets: 3, reps: '10-12', rest: 75, newSince: '2026-07-01', note: 'Neutral grip, 30-45° incline. Shoulder-friendly swap for OHP — your right shoulder flagged pain 4× on overhead work. New movement: start light, find the groove.' },
         { name: 'Lat Pulldown', sets: 3, reps: '12', rest: 60, note: 'Wide grip, no momentum.' },
         { name: 'DB Lateral Raise', sets: 2, reps: '15', rest: 45, note: 'Light. Shoulder health and width.' },
         { name: 'Push-ups (AMRAP)', sets: 2, reps: 'AMRAP', rest: 45, note: 'Finisher. As many clean reps as possible. Knees if needed.' },
@@ -807,7 +807,7 @@ const PROGRAM = {
       exercises: [
         { name: 'DB Bench Press', sets: 4, reps: '8-10', rest: 60, note: 'Shorter rest = more density. Add weight when you hit 10s on all sets.' },
         { name: 'Chest-Supported Row', sets: 4, reps: '10-12', rest: 60, note: 'Match pulling to pushing.' },
-        { name: 'DB Overhead Press', sets: 3, reps: '8-10', rest: 60, note: 'Heavier than Reset phase.' },
+        { name: 'High-Incline DB Press', sets: 3, reps: '8-10', rest: 60, newSince: '2026-07-01', note: 'Neutral grip, heavier than Reset phase. Stop the set if the right shoulder pinches.' },
         { name: 'Lat Pulldown', sets: 3, reps: '10-12', rest: 60, note: 'Controlled negatives.' },
         { name: 'Superset: Lateral Raise + DB Curl', sets: 3, reps: '12-15', rest: 45, note: 'Back-to-back, minimal rest.' },
         { name: 'Row Sprint Finisher', sets: 5, reps: '30s on / 30s off', rest: 0, note: 'Hydrow. 5 min all-out intervals. Afterburn.' },
@@ -861,7 +861,7 @@ const PROGRAM = {
       exercises: [
         { name: 'Barbell or DB Bench Press', sets: 4, reps: '6-8', rest: 90, note: 'Heavier, lower reps — hold muscle while you cut.' },
         { name: 'Barbell or Chest-Supported Row', sets: 4, reps: '6-8', rest: 90, note: 'Strong pull. Match the press.' },
-        { name: 'DB Overhead Press', sets: 3, reps: '8', rest: 75, note: 'Press heavy, brace hard.' },
+        { name: 'High-Incline DB Press', sets: 3, reps: '8', rest: 75, newSince: '2026-07-01', note: 'Neutral grip, press heavy, brace hard. Pain-free range only.' },
         { name: 'Weighted Pull-up or Lat Pull', sets: 3, reps: '8', rest: 75, note: 'Add load if you can.' },
         { name: 'Superset: Lateral Raise + Face Pull', sets: 3, reps: '15', rest: 45, note: 'Shoulder health and caps.' },
         { name: 'Row Sprint Finisher', sets: 6, reps: '30s on / 30s off', rest: 0, note: 'Hydrow. 6 min. Hardest finisher yet.' },
@@ -875,7 +875,7 @@ const PROGRAM = {
       exercises: [
         { name: 'DB Bench Press', sets: 3, reps: '8', rest: 75, note: 'Final week — solid, not max. Groove it.' },
         { name: 'Cable Row', sets: 3, reps: '10', rest: 60, note: 'Quality reps.' },
-        { name: 'DB Overhead Press', sets: 2, reps: '10', rest: 60, note: 'Moderate.' },
+        { name: 'High-Incline DB Press', sets: 2, reps: '10', rest: 60, newSince: '2026-07-01', note: 'Neutral grip, moderate.' },
         { name: 'Lat Pulldown', sets: 2, reps: '12', rest: 60, note: 'Pump.' },
         { name: 'Push-ups (AMRAP)', sets: 2, reps: 'AMRAP', rest: 45, note: 'Compare to Week 1. Proof you\'re back.' },
       ]
@@ -914,7 +914,7 @@ const PROGRAM = {
       rowTarget: '5 min warm-up → 4 × (4 min hard / 2 min easy) → cool. Classic engine builder.',
       ruckTarget: 'Cool-day alt: 45 min ruck, 4 × 4 min hard climbs.', ruckWeight: '30-35 lbs',
       note: 'Longer hard blocks. Pace so all four match.', exercises: [] },
-    cardioA_8: { name: '2K Row Test', type: 'cardio', mode: 'row', duration: '~12 min',
+    cardioA_8: { name: '2K Row Test', type: 'cardio', mode: 'row', duration: '~12 min', benchmark: '2K Row / 2-mi Ruck Test',
       rowTarget: 'BENCHMARK: 2000m for time. Warm up well, then full effort. Record time + avg split.',
       ruckTarget: 'Ruck-alt benchmark: 2-mile ruck for time at 30 lbs. Record it.', ruckWeight: '30 lbs',
       note: 'Your Week-8 proof. Beat this when the next block ends.', exercises: [] },
@@ -967,7 +967,9 @@ function setStartDate(d) {
 }
 
 function getWeekNumber(date) {
-  const start = new Date(getStartDate());
+  // Parse as local noon — bare 'YYYY-MM-DD' parses as UTC midnight and
+  // shifts every week boundary a day early in US Central (fixed 2026-07-01).
+  const start = new Date(getStartDate() + 'T12:00:00');
   start.setHours(0,0,0,0);
   const d = new Date(date);
   d.setHours(0,0,0,0);
@@ -1031,7 +1033,17 @@ function nextSlotForWeek(week) {
 }
 function weekProgress(week) {
   const done = loggedSlotsForWeek(week);
-  return { done: done.size, total: PROGRAM.weekOrder.length, slots: done };
+  // Bonus = sessions logged this week beyond the first fill of each slot
+  // (e.g., a repeated strengthA). Slots != sessions — label both honestly.
+  const logs = (getState().logs) || {};
+  let sessions = 0;
+  for (const ds in logs) {
+    const log = logs[ds];
+    if (!log || !log.slot || !logHasData(log)) continue;
+    if (getWeekNumber(new Date(ds + 'T12:00:00')) === week) sessions++;
+  }
+  const bonus = Math.max(0, sessions - done.size);
+  return { done: done.size, total: PROGRAM.weekOrder.length, slots: done, bonus };
 }
 function startNewBlock() {
   setStartDate(dateStr(new Date()));
@@ -1055,9 +1067,12 @@ function coreRoutineForDate(date) {
   const start = getStartDate();
   let idx;
   if (start) {
-    const a = new Date(start); a.setHours(0,0,0,0);
+    const a = new Date(start + 'T12:00:00'); a.setHours(0,0,0,0);
     const b = new Date(date); b.setHours(0,0,0,0);
     idx = Math.round((b - a) / 86400000);
+    // +1 preserves the rotation sequence experienced before the 2026-07-01
+    // UTC-parse fix (6/29=B, 6/30=C were logged under the old math).
+    idx = idx + 1;
   } else {
     const b = new Date(date); b.setHours(0,0,0,0);
     idx = Math.round(b.getTime() / 86400000);
@@ -1096,7 +1111,10 @@ function saveLog(dateStr, data) {
 
 let _syncTimer = null;
 function debouncedSync() {
-  if (!getSyncPat() || !getSyncGistId()) return; // Only auto-sync after initial setup
+  if (!getSyncPat()) return; // Only auto-sync after PAT setup
+  // (2026-07-01 fix: removed call to getSyncGistId() — deleted in the
+  // Gist->repo refactor; the dangling reference threw on every save and
+  // silently killed auto-sync + aborted post-save re-renders.)
   clearTimeout(_syncTimer);
   _syncTimer = setTimeout(() => {
     syncToCloud().catch(() => {}); // Silent background sync
@@ -1142,7 +1160,12 @@ function getWeightIncrement(exerciseName) {
   return 5;
 }
 
-function getSuggestion(exerciseDef, exIndex, lastLog) {
+function getSuggestion(exerciseDef, exIndex, lastLog, lastLogDate) {
+  // newSince: exercise was swapped in on this date — history from before it
+  // belongs to a different movement, so don't suggest those weights.
+  if (exerciseDef.newSince && (!lastLogDate || lastLogDate < exerciseDef.newSince)) {
+    return { type: 'first', weight: null, detail: 'New movement — start light, find your working weight' };
+  }
   if (!lastLog || !lastLog.exercises || !lastLog.exercises[exIndex]) {
     return { type: 'first', weight: null, detail: 'First session — start moderate, find your working weight' };
   }
@@ -1381,7 +1404,9 @@ function renderHeader() {
   }
   const phase = getPhase(week);
   const prog = weekProgress(week);
-  document.getElementById('headerSub').textContent = `Week ${week} of ${TW} · ${prog.done}/${prog.total} sessions this week`;
+  const bonusStr = prog.bonus ? ` · +${prog.bonus} bonus` : '';
+  const staleStr = syncIsStale() ? ' · ⚠️ sync stale' : '';
+  document.getElementById('headerSub').textContent = `Week ${week} of ${TW} · ${prog.done}/${prog.total} slots${bonusStr}${staleStr}`;
   document.getElementById('headerBadge').innerHTML = `<span class="week-phase" style="background:${phase.color}22;color:${phase.color}">${phase.name}</span>`;
 }
 
@@ -1664,15 +1689,18 @@ function renderStrengthView(info, log, ds) {
     const isOpen = !allDone;
 
     // Get weight suggestion
-    const suggestion = getSuggestion(ex, i, prevLog);
+    const suggestion = getSuggestion(ex, i, prevLog, prev ? prev.date : null);
     const sugBadge = `<div class="ex-suggestion ${suggestion.type}">${getSuggestionIcon(suggestion.type)} ${suggestion.weight ? `<strong>${suggestion.weight} lbs</strong> · ` : ''}${suggestion.detail}</div>`;
     const weightPlaceholder = suggestion.weight ? suggestion.weight : 'lbs';
 
+    // Per-hand logging convention hint for paired-implement moves —
+    // prevents the "logged each DB, total is x2" ambiguity (Jay, 6/27).
+    const perHand = /\bDB\b|Dumbbell|Farmer/i.test(ex.name) && !/Goblet/i.test(ex.name);
     html += `
     <div class="exercise" data-ex="${i}">
       <div class="exercise-header" onclick="toggleExercise(${i})">
         <span class="ex-name">${ex.name}</span>
-        <span class="ex-prescription">${ex.sets} × ${ex.reps}</span>
+        <span class="ex-prescription">${ex.sets} × ${ex.reps}${perHand ? ' · <span style="color:var(--dim)">per-hand</span>' : ''}</span>
         <div class="ex-check ${checkClass}"></div>
       </div>
       <div class="exercise-detail ${isOpen ? 'open' : ''}" id="exDetail${i}">
@@ -1709,6 +1737,21 @@ function renderStrengthView(info, log, ds) {
 function toggleExercise(i) {
   const detail = document.getElementById('exDetail' + i);
   detail.classList.toggle('open');
+}
+
+// Benchmark sessions (e.g., Week-8 2K row test) also write a compact entry
+// to state.benchmarks so the NEXT block can compare against this one.
+function maybeRecordBenchmark(ds, info, log) {
+  if (!info || !info.benchmark || !logHasData(log)) return;
+  const s = getState();
+  if (!s.benchmarks) s.benchmarks = {};
+  s.benchmarks[ds] = {
+    name: info.benchmark, mode: log.mode || 'row',
+    duration: log.duration || '', distance: log.distance || '',
+    watts: log.watts || '', weight: log.weight || '',
+    hr: log.hr || '', rpe: log.rpe || '', week: info.week || null
+  };
+  saveState(s);
 }
 
 function ensureLog(ds, info) {
@@ -1762,6 +1805,7 @@ function attachEventListeners(ds, info) {
       const log = ensureLog(ds, info);
       log[input.dataset.field] = input.value;
       saveLog(ds, log);
+      maybeRecordBenchmark(ds, info, log);
       renderHeader();
     });
   });
@@ -1868,6 +1912,27 @@ function renderHistory() {
     </div>`;
   document.getElementById('statsContent').innerHTML = statsHtml;
 
+  // Benchmarks section — block-over-block comparison lives here.
+  const benchmarks = Object.entries(state.benchmarks || {}).sort((a,b) => b[0].localeCompare(a[0]));
+  if (benchmarks.length) {
+    let bHtml = '<div class="section-title">Benchmarks</div>';
+    benchmarks.forEach(([ds, b]) => {
+      const d = new Date(ds + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      const parts = [];
+      if (b.mode) parts.push(b.mode === 'ruck' ? '🎒 ruck' : '🚣 row');
+      if (b.duration) parts.push(`${b.duration} min`);
+      if (b.distance) parts.push(`${b.distance}${b.mode === 'ruck' ? ' mi' : ' m'}`);
+      if (b.watts) parts.push(`${b.watts} W`);
+      if (b.rpe) parts.push(`RPE ${b.rpe}`);
+      bHtml += `<div class="history-entry" style="border-color:rgba(245,158,11,0.4);">
+        <div class="he-date">${d}</div>
+        <div class="he-title">🏁 ${b.name}</div>
+        <div class="he-stats">${parts.join(' • ')}</div>
+      </div>`;
+    });
+    document.getElementById('statsContent').innerHTML = statsHtml + bHtml;
+  }
+
   if (entries.length === 0) {
     document.getElementById('historyContent').innerHTML = '<div class="empty-state"><p>No workouts logged yet. Day 1 starts now.</p></div>';
     return;
@@ -1908,6 +1973,11 @@ function renderHistory() {
 
 function renderSettings() {
   renderHeader();
+  const st = document.getElementById('syncStatus');
+  if (st && !st.textContent) {
+    st.textContent = lastSyncLabel();
+    st.style.color = syncIsStale() ? 'var(--yellow)' : 'var(--dim)';
+  }
   const startDate = getStartDate();
   document.getElementById('startDateInput').value = startDate || '';
   const TW = PROGRAM.totalWeeks;
@@ -1942,9 +2012,45 @@ function exportData() {
 
 const SYNC_REPO = 'jdfurman-web/workout-tracker';
 const SYNC_FILE = 'data/ruck-iron-data.json';
+// DATA_REPO can diverge from SYNC_REPO once the data files move to a
+// private repo — flip this one constant and the whole app follows.
+const DATA_REPO = SYNC_REPO;
+
+// Fetch a repo file as JSON. Uses the authenticated API when a PAT is
+// present (works on private repos); falls back to raw.githubusercontent
+// for PAT-less devices while the repo is public.
+async function fetchRepoJson(path) {
+  const pat = getSyncPat();
+  if (pat) {
+    const resp = await fetch(`https://api.github.com/repos/${DATA_REPO}/contents/${path}?t=${Date.now()}`, {
+      headers: { 'Authorization': `Bearer ${pat}`, 'Accept': 'application/vnd.github.raw+json' }
+    });
+    if (resp.ok) return resp.json();
+    // 401 = rotated/expired PAT — fall through to raw so reads still work while public
+  }
+  const raw = await fetch(`https://raw.githubusercontent.com/${DATA_REPO}/main/${path}?t=${Date.now()}`);
+  if (!raw.ok) throw new Error(`Fetch failed: ${raw.status}`);
+  return raw.json();
+}
 
 function getSyncPat() { return localStorage.getItem('ruckIronSyncPat') || ''; }
 function setSyncPat(pat) { localStorage.setItem('ruckIronSyncPat', pat); }
+
+// ─── Sync health ───
+function getLastSync() { return parseInt(localStorage.getItem('ruckIronLastSync') || '0'); }
+function markSynced() { localStorage.setItem('ruckIronLastSync', String(Date.now())); }
+function lastSyncLabel() {
+  const t = getLastSync();
+  if (!t) return 'Never synced';
+  const d = new Date(t);
+  return 'Last synced ' + d.toLocaleDateString('en-US', {month:'short', day:'numeric'}) + ' ' + d.toLocaleTimeString('en-US', {hour:'numeric', minute:'2-digit'});
+}
+function syncIsStale() {
+  // Stale = PAT configured but no successful sync in 48h.
+  if (!getSyncPat()) return false;
+  const t = getLastSync();
+  return !t || (Date.now() - t) > 48 * 3600 * 1000;
+}
 
 async function syncToCloud() {
   let pat = getSyncPat();
@@ -1993,8 +2099,10 @@ async function syncToCloud() {
       throw new Error(`Sync failed: ${putResp.status} ${err.message || ''}`);
     }
 
+    markSynced();
     status.textContent = `✅ Synced — ${new Date().toLocaleTimeString()}`;
     status.style.color = 'var(--green)';
+    renderHeader();
   } catch (e) {
     status.textContent = `❌ ${e.message}`;
     status.style.color = 'var(--red)';
@@ -2012,9 +2120,7 @@ async function restoreFromCloud() {
   status.textContent = '';
 
   try {
-    const resp = await fetch(`https://raw.githubusercontent.com/${SYNC_REPO}/main/${SYNC_FILE}?t=${Date.now()}`);
-    if (!resp.ok) throw new Error(`Fetch failed: ${resp.status}`);
-    const data = await resp.json();
+    const data = await fetchRepoJson(SYNC_FILE);
 
     // Merge: cloud data fills in anything missing locally
     const local = getState();
@@ -2027,6 +2133,7 @@ async function restoreFromCloud() {
     }
     if (local.core) merged.core = { ...(data.core || {}), ...local.core };
     if (local.swaps) merged.swaps = { ...(data.swaps || {}), ...local.swaps };
+    if (local.benchmarks) merged.benchmarks = { ...(data.benchmarks || {}), ...local.benchmarks };
 
     saveState(merged);
     const logCount = Object.keys(merged.logs || {}).length;
@@ -2060,9 +2167,7 @@ let ouraData = null;
 
 async function fetchOuraReadiness() {
   try {
-    const resp = await fetch(`https://raw.githubusercontent.com/jdfurman-web/workout-tracker/main/data/oura-readiness.json?t=${Date.now()}`);
-    if (!resp.ok) return null;
-    ouraData = await resp.json();
+    ouraData = await fetchRepoJson('data/oura-readiness.json');
     // Re-render if on Today page
     if (document.getElementById('pageToday').classList.contains('active')) {
       renderReadinessCard();
@@ -2120,6 +2225,11 @@ function renderReadinessCard() {
 renderToday();
 renderHeader();
 fetchOuraReadiness();
+
+// Offline support — cache-first app shell via service worker.
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js').catch(() => {});
+}
 </script>
 </body>
 </html>
