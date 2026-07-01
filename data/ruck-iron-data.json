@@ -1,0 +1,1086 @@
+{
+  "startDate": "2026-06-25",
+  "logs": {
+    "2026-03-28": {
+      "type": "ruck",
+      "workout": "Long Ruck",
+      "duration": "52",
+      "distance": "1.89",
+      "weight": "30",
+      "hr": "121",
+      "rpe": "7"
+    },
+    "2026-03-31": {
+      "type": "strength",
+      "workout": "Upper Push/Pull",
+      "exercises": {
+        "0": {
+          "sets": {
+            "0": {
+              "weight": "32.5",
+              "reps": "12"
+            },
+            "1": {
+              "weight": "32.5",
+              "reps": "12"
+            },
+            "2": {
+              "weight": "32.5",
+              "reps": "12"
+            }
+          }
+        },
+        "1": {
+          "sets": {
+            "0": {
+              "weight": "42.5",
+              "reps": "10"
+            },
+            "1": {
+              "weight": "42.5",
+              "reps": "12"
+            },
+            "2": {
+              "weight": "42.5",
+              "reps": "12"
+            }
+          }
+        },
+        "2": {
+          "sets": {
+            "0": {
+              "weight": "25",
+              "reps": "10"
+            },
+            "1": {
+              "weight": "20",
+              "reps": "10"
+            },
+            "2": {
+              "reps": "10",
+              "weight": "20"
+            }
+          }
+        },
+        "3": {
+          "sets": {
+            "0": {
+              "weight": "125",
+              "reps": "12"
+            },
+            "1": {
+              "weight": "125",
+              "reps": "12"
+            },
+            "2": {
+              "weight": "125",
+              "reps": "12"
+            }
+          }
+        },
+        "4": {
+          "sets": {
+            "0": {
+              "weight": "27.5",
+              "reps": "15"
+            },
+            "1": {
+              "weight": "27.5",
+              "reps": "15"
+            },
+            "2": {
+              "reps": "15",
+              "weight": "27.5"
+            }
+          }
+        },
+        "5": {
+          "sets": {
+            "0": {
+              "weight": "27.5",
+              "reps": "15"
+            },
+            "1": {
+              "weight": "27.5",
+              "reps": "15"
+            }
+          }
+        }
+      }
+    },
+    "2026-04-04": {
+      "type": "strength",
+      "workout": "Lower + Core",
+      "exercises": {
+        "0": {
+          "sets": {
+            "0": {
+              "weight": "35",
+              "reps": "12"
+            },
+            "1": {
+              "weight": "35",
+              "reps": "12"
+            },
+            "2": {
+              "weight": "35",
+              "reps": "12"
+            }
+          }
+        },
+        "1": {
+          "sets": {
+            "0": {
+              "weight": "50",
+              "reps": "10"
+            },
+            "1": {
+              "weight": "50",
+              "reps": "10"
+            },
+            "2": {
+              "weight": "50",
+              "reps": "10"
+            }
+          }
+        },
+        "2": {
+          "sets": {
+            "0": {
+              "weight": "0",
+              "reps": "10"
+            },
+            "1": {
+              "weight": "0",
+              "reps": "10"
+            }
+          }
+        },
+        "3": {
+          "sets": {
+            "0": {
+              "weight": "110",
+              "reps": "12"
+            },
+            "1": {
+              "weight": "130",
+              "reps": "12"
+            },
+            "2": {
+              "weight": "130",
+              "reps": "12"
+            }
+          }
+        },
+        "5": {
+          "sets": {
+            "0": {
+              "weight": "0",
+              "reps": "45"
+            },
+            "1": {
+              "weight": "0",
+              "reps": "45"
+            },
+            "2": {
+              "weight": "0",
+              "reps": "45"
+            }
+          }
+        }
+      },
+      "notes": "Lifetime Tulsa. Swapped Farmer's Carry for Calf Raise machine 3x12@150. Walking Lunges 2 sets instead of 3 (BW)."
+    },
+    "2026-04-07": {
+      "type": "strength",
+      "workout": "Upper Push/Pull",
+      "exercises": {
+        "0": {
+          "sets": {
+            "0": {
+              "reps": "10",
+              "weight": "35",
+              "rpe": "5"
+            },
+            "1": {
+              "weight": "35",
+              "reps": "10",
+              "rpe": "7"
+            },
+            "2": {
+              "reps": "10",
+              "weight": "35",
+              "rpe": "8"
+            }
+          }
+        },
+        "1": {
+          "sets": {
+            "0": {
+              "weight": "42.5",
+              "reps": "12",
+              "rpe": "6"
+            },
+            "1": {
+              "weight": "42.5",
+              "reps": "12",
+              "rpe": "6"
+            },
+            "2": {
+              "weight": "42.5",
+              "reps": "12",
+              "rpe": "7"
+            }
+          }
+        },
+        "2": {
+          "sets": {
+            "0": {
+              "weight": "25",
+              "reps": "8",
+              "rpe": "6"
+            },
+            "1": {
+              "weight": "25",
+              "reps": "8",
+              "rpe": "8"
+            },
+            "2": {
+              "weight": "25",
+              "reps": "8",
+              "rpe": "9"
+            }
+          }
+        },
+        "3": {
+          "sets": {
+            "0": {
+              "weight": "145",
+              "reps": "10",
+              "rpe": "6"
+            },
+            "1": {
+              "weight": "145",
+              "reps": "10",
+              "rpe": "7"
+            },
+            "2": {
+              "weight": "145",
+              "reps": "10",
+              "rpe": "9"
+            }
+          }
+        },
+        "4": {
+          "sets": {
+            "0": {
+              "weight": "32.5",
+              "reps": "15",
+              "rpe": "6"
+            },
+            "1": {
+              "weight": "32.5",
+              "reps": "15",
+              "rpe": "7"
+            },
+            "2": {
+              "weight": "32.5",
+              "reps": "15",
+              "rpe": "8"
+            }
+          }
+        },
+        "5": {
+          "sets": {
+            "0": {
+              "weight": "20",
+              "reps": "12"
+            },
+            "1": {
+              "weight": "0",
+              "reps": "0"
+            }
+          }
+        }
+      },
+      "notes": "OH press - right shoulder hitchy and some pain"
+    },
+    "2026-04-11": {
+      "type": "ruck",
+      "workout": "Long Ruck",
+      "duration": "49",
+      "distance": "2.6",
+      "weight": "30",
+      "hr": "115",
+      "rpe": "8"
+    },
+    "2026-04-18": {
+      "type": "strength",
+      "workout": "Upper Push/Pull (Deload)",
+      "exercises": {
+        "0": {
+          "sets": {
+            "0": {
+              "weight": "30",
+              "rpe": "5"
+            },
+            "1": {
+              "weight": "40",
+              "rpe": "8"
+            }
+          }
+        },
+        "1": {
+          "sets": {
+            "0": {
+              "weight": "50",
+              "reps": "12",
+              "rpe": "5"
+            },
+            "1": {
+              "weight": "70",
+              "reps": "8",
+              "rpe": "9"
+            }
+          }
+        },
+        "2": {
+          "sets": {
+            "0": {
+              "weight": "20",
+              "rpe": "5",
+              "reps": "10"
+            },
+            "1": {
+              "weight": "25",
+              "reps": "10",
+              "rpe": "8"
+            }
+          }
+        },
+        "3": {
+          "sets": {
+            "0": {
+              "weight": "125",
+              "rpe": "7",
+              "reps": "12"
+            },
+            "1": {
+              "weight": "145",
+              "reps": "12",
+              "rpe": "9"
+            }
+          }
+        },
+        "4": {
+          "sets": {
+            "0": {
+              "weight": "27.5",
+              "reps": "15",
+              "rpe": "4"
+            },
+            "1": {
+              "weight": "37.5",
+              "reps": "15",
+              "rpe": "7"
+            }
+          }
+        }
+      },
+      "notes": "Right shoulder pin pain on OH press"
+    },
+    "2026-04-24": {
+      "type": "ruck",
+      "workout": "Steady State (Build)",
+      "duration": "67",
+      "distance": "3.6",
+      "weight": "30",
+      "hr": "137",
+      "rpe": "8",
+      "notes": "Solid.  RPE 8"
+    },
+    "2026-04-25": {
+      "type": "strength",
+      "workout": "Upper Push/Pull (Build)",
+      "exercises": {
+        "0": {
+          "sets": {
+            "0": {
+              "weight": "75",
+              "reps": "8",
+              "rpe": "6"
+            },
+            "1": {
+              "weight": "75",
+              "reps": "8",
+              "rpe": "6"
+            },
+            "2": {
+              "weight": "75",
+              "reps": "8",
+              "rpe": "8"
+            },
+            "3": {
+              "weight": "75",
+              "reps": "8",
+              "rpe": "8"
+            }
+          }
+        },
+        "1": {
+          "sets": {
+            "0": {
+              "weight": "70",
+              "reps": "8",
+              "rpe": "7"
+            },
+            "1": {
+              "weight": "70",
+              "reps": "8",
+              "rpe": "7"
+            },
+            "2": {
+              "weight": "70",
+              "reps": "8",
+              "rpe": "8"
+            },
+            "3": {
+              "weight": "70",
+              "reps": "8",
+              "rpe": "8"
+            }
+          }
+        },
+        "2": {
+          "sets": {
+            "0": {
+              "weight": "30",
+              "reps": "8",
+              "rpe": "8"
+            },
+            "1": {
+              "weight": "30",
+              "reps": "8",
+              "rpe": "8"
+            },
+            "2": {
+              "weight": "30",
+              "reps": "7",
+              "rpe": "9"
+            }
+          }
+        },
+        "3": {
+          "sets": {
+            "0": {
+              "weight": "165",
+              "reps": "8",
+              "rpe": "7"
+            },
+            "1": {
+              "weight": "185",
+              "reps": "8",
+              "rpe": "9"
+            },
+            "2": {
+              "weight": "185",
+              "reps": "5",
+              "rpe": "9"
+            }
+          }
+        },
+        "4": {
+          "sets": {
+            "0": {
+              "weight": "10",
+              "reps": "12",
+              "rpe": "6"
+            },
+            "1": {
+              "weight": "13",
+              "reps": "7",
+              "rpe": "9"
+            },
+            "2": {
+              "weight": "10",
+              "reps": "7",
+              "rpe": "9"
+            }
+          }
+        },
+        "5": {
+          "sets": {
+            "0": {
+              "reps": "30",
+              "rpe": "7"
+            },
+            "1": {
+              "reps": "30",
+              "rpe": "8"
+            },
+            "2": {
+              "reps": "30",
+              "rpe": "8"
+            },
+            "3": {
+              "reps": "30",
+              "rpe": "9"
+            },
+            "4": {
+              "reps": "30",
+              "rpe": "9"
+            }
+          }
+        }
+      },
+      "notes": "Right shoulder hates OH press. "
+    },
+    "2026-05-15": {
+      "type": "ruck",
+      "workout": "Recovery Walk",
+      "duration": "51",
+      "distance": "1.2",
+      "weight": "30",
+      "hr": "122",
+      "rpe": "8"
+    },
+    "2026-05-16": {
+      "type": "strength",
+      "workout": "Upper Push/Pull (Deload)",
+      "exercises": {
+        "0": {
+          "sets": {
+            "0": {
+              "weight": "115",
+              "reps": "8",
+              "rpe": "8"
+            },
+            "1": {
+              "weight": "115",
+              "reps": "8",
+              "rpe": "8"
+            }
+          }
+        },
+        "1": {
+          "sets": {
+            "0": {
+              "weight": "50",
+              "reps": "10",
+              "rpe": "6"
+            },
+            "1": {
+              "weight": "50",
+              "reps": "12",
+              "rpe": "8"
+            }
+          }
+        },
+        "2": {
+          "sets": {
+            "0": {
+              "reps": "12",
+              "rpe": "7",
+              "weight": "22.5"
+            },
+            "1": {
+              "weight": "22.5",
+              "reps": "12",
+              "rpe": "8"
+            }
+          }
+        },
+        "3": {
+          "sets": {
+            "0": {
+              "weight": "130",
+              "reps": "12",
+              "rpe": "8"
+            },
+            "1": {
+              "weight": "130",
+              "reps": "12",
+              "rpe": "8"
+            }
+          }
+        }
+      },
+      "notes": "Lat pulldown was done on Technogym “vertical traction” machine"
+    },
+    "2026-05-19": {
+      "type": "ruck",
+      "workout": "Recovery Walk",
+      "duration": "63",
+      "distance": "3.2",
+      "weight": "30",
+      "hr": "103",
+      "rpe": "8"
+    },
+    "2026-05-22": {
+      "type": "ruck",
+      "workout": "Long Ruck (Peak)",
+      "duration": "58",
+      "distance": "3.1",
+      "weight": "30",
+      "hr": "135",
+      "rpe": "9"
+    },
+    "2026-05-25": {
+      "type": "ruck",
+      "workout": "Tempo Ruck",
+      "duration": "60",
+      "distance": "1.8",
+      "weight": "30",
+      "hr": "112"
+    },
+    "2026-05-31": {
+      "type": "ruck",
+      "workout": "Long Ruck (Peak)",
+      "duration": "65",
+      "distance": "3.2",
+      "weight": "30",
+      "hr": "119",
+      "rpe": "8"
+    },
+    "2026-06-25": {
+      "type": "strength",
+      "workout": "Upper · Push/Pull",
+      "slot": "strengthA",
+      "week": 1,
+      "exercises": {
+        "0": {
+          "sets": {
+            "0": {
+              "weight": "30",
+              "reps": "12",
+              "rpe": "7"
+            },
+            "1": {
+              "weight": "30",
+              "reps": "12",
+              "rpe": "7"
+            },
+            "2": {
+              "rpe": "8",
+              "weight": "30",
+              "reps": "12"
+            }
+          }
+        },
+        "1": {
+          "sets": {
+            "0": {
+              "weight": "50",
+              "reps": "12",
+              "rpe": "7"
+            },
+            "1": {
+              "weight": "50",
+              "reps": "12",
+              "rpe": "7"
+            },
+            "2": {
+              "weight": "50",
+              "reps": "12",
+              "rpe": "8"
+            }
+          }
+        },
+        "2": {
+          "sets": {
+            "0": {
+              "weight": "20",
+              "reps": "12",
+              "rpe": "7"
+            },
+            "1": {
+              "weight": "20",
+              "reps": "12",
+              "rpe": "8"
+            },
+            "2": {
+              "weight": "20",
+              "reps": "12",
+              "rpe": "9"
+            }
+          }
+        },
+        "3": {
+          "sets": {
+            "0": {
+              "weight": "105",
+              "reps": "12",
+              "rpe": "5"
+            },
+            "1": {
+              "weight": "145",
+              "reps": "12",
+              "rpe": "8"
+            },
+            "2": {
+              "weight": "145",
+              "reps": "12",
+              "rpe": "9"
+            }
+          }
+        },
+        "4": {
+          "sets": {
+            "0": {
+              "weight": "15",
+              "reps": "12",
+              "rpe": "7"
+            },
+            "1": {
+              "weight": "15",
+              "reps": "15",
+              "rpe": "8"
+            }
+          }
+        },
+        "5": {
+          "sets": {
+            "0": {
+              "weight": "0",
+              "reps": "6",
+              "rpe": "7"
+            },
+            "1": {
+              "weight": "0",
+              "reps": "6",
+              "rpe": "8"
+            }
+          }
+        }
+      },
+      "notes": "Core B only 2 rounds"
+    },
+    "2026-06-27": {
+      "type": "strength",
+      "workout": "Lower · Squat/Hinge + Carry",
+      "slot": "strengthB",
+      "week": 1,
+      "exercises": {
+        "0": {
+          "sets": {
+            "0": {
+              "weight": "40",
+              "reps": "12",
+              "rpe": "7"
+            },
+            "1": {
+              "weight": "40",
+              "reps": "12",
+              "rpe": "7"
+            },
+            "2": {
+              "weight": "40",
+              "rpe": "7",
+              "reps": "12"
+            }
+          }
+        },
+        "1": {
+          "sets": {
+            "0": {
+              "weight": "15",
+              "reps": "12",
+              "rpe": "5"
+            },
+            "1": {
+              "weight": "25",
+              "reps": "12",
+              "rpe": "7"
+            },
+            "2": {
+              "weight": "25",
+              "reps": "12",
+              "rpe": "7"
+            }
+          }
+        },
+        "2": {
+          "sets": {
+            "0": {
+              "weight": "15",
+              "reps": "10",
+              "rpe": "7"
+            },
+            "1": {
+              "weight": "15",
+              "reps": "10",
+              "rpe": "8"
+            }
+          }
+        },
+        "3": {
+          "sets": {
+            "0": {
+              "weight": "200",
+              "reps": "12",
+              "rpe": "7"
+            },
+            "1": {
+              "weight": "200",
+              "reps": "12",
+              "rpe": "8"
+            },
+            "2": {
+              "weight": "200",
+              "reps": "12",
+              "rpe": "8"
+            }
+          }
+        },
+        "4": {
+          "sets": {
+            "0": {
+              "weight": "44",
+              "reps": "60",
+              "rpe": "5"
+            },
+            "1": {
+              "weight": "44",
+              "reps": "60",
+              "rpe": "6"
+            },
+            "2": {
+              "weight": "44",
+              "reps": "60",
+              "rpe": "6"
+            }
+          }
+        },
+        "5": {
+          "sets": {
+            "0": {
+              "reps": "5",
+              "weight": "5",
+              "rpe": "8"
+            }
+          }
+        }
+      },
+      "notes": "All weights were kettle or dumbbells and logged weight was each weight so total is x 2"
+    },
+    "2026-06-29": {
+      "type": "cardio",
+      "workout": "Row Intervals",
+      "slot": "cardioA",
+      "week": 1,
+      "duration": "20",
+      "distance": "4398",
+      "watts": "146",
+      "rpe": "9",
+      "notes": "Good. Tough but haven’t rowed in months. "
+    },
+    "2026-06-30": {
+      "type": "strength",
+      "workout": "Upper · Push/Pull",
+      "slot": "strengthA",
+      "week": 1,
+      "exercises": {
+        "0": {
+          "sets": {
+            "0": {
+              "weight": "35",
+              "reps": "12",
+              "rpe": "5"
+            },
+            "1": {
+              "weight": "35",
+              "reps": "12",
+              "rpe": "7"
+            },
+            "2": {
+              "weight": "35",
+              "reps": "12",
+              "rpe": "8"
+            }
+          }
+        },
+        "1": {
+          "sets": {
+            "0": {
+              "weight": "80",
+              "reps": "12",
+              "rpe": "5"
+            },
+            "1": {
+              "weight": "100",
+              "reps": "12",
+              "rpe": "7"
+            },
+            "2": {
+              "weight": "100",
+              "reps": "12",
+              "rpe": "8"
+            }
+          }
+        },
+        "2": {
+          "sets": {
+            "0": {
+              "weight": "25",
+              "reps": "12",
+              "rpe": "6"
+            },
+            "1": {
+              "weight": "25",
+              "reps": "12",
+              "rpe": "8"
+            },
+            "2": {
+              "weight": "25",
+              "reps": "9",
+              "rpe": "10"
+            }
+          }
+        },
+        "3": {
+          "sets": {
+            "0": {
+              "weight": "110",
+              "reps": "12",
+              "rpe": "8"
+            },
+            "1": {
+              "weight": "110",
+              "reps": "8",
+              "rpe": "10"
+            },
+            "2": {
+              "weight": "100",
+              "reps": "9",
+              "rpe": "9"
+            }
+          }
+        },
+        "4": {
+          "sets": {
+            "0": {
+              "weight": "15",
+              "reps": "15",
+              "rpe": "8"
+            },
+            "1": {
+              "weight": "15",
+              "reps": "19",
+              "rpe": "9"
+            }
+          }
+        },
+        "5": {
+          "sets": {
+            "0": {
+              "weight": "0",
+              "reps": "7",
+              "rpe": "8"
+            },
+            "1": {
+              "weight": "0",
+              "reps": "5",
+              "rpe": "9"
+            }
+          }
+        }
+      },
+      "notes": "Pushups - body weight using dumbbell for hands knuckle style. "
+    }
+  },
+  "swaps": {
+    "2026-04-18": {
+      "slotType": "strengthA",
+      "week": 4
+    },
+    "2026-04-24": {
+      "slotType": "ruckA",
+      "week": 5
+    },
+    "2026-04-25": {
+      "slotType": "strengthA",
+      "week": 5
+    },
+    "2026-05-15": {
+      "slotType": "ruckA",
+      "week": 8
+    },
+    "2026-05-16": {
+      "slotType": "strengthA",
+      "week": 8
+    },
+    "2026-05-19": {
+      "slotType": "ruckA",
+      "week": 8
+    },
+    "2026-05-22": {
+      "slotType": "ruckB",
+      "week": 9
+    },
+    "2026-05-25": {
+      "slotType": "ruckA",
+      "week": 9
+    },
+    "2026-05-31": {
+      "slotType": "ruckB",
+      "week": 10
+    },
+    "2026-06-12": {
+      "slotType": "ruckA",
+      "week": 12
+    },
+    "2026-06-26": {
+      "slotType": "coreonly",
+      "week": 1
+    },
+    "2026-06-27": {
+      "slotType": "strengthB",
+      "week": 1
+    },
+    "2026-06-28": {
+      "slotType": "coreonly",
+      "week": 1
+    },
+    "2026-06-30": {
+      "slotType": "strengthA",
+      "week": 1
+    }
+  },
+  "core": {
+    "2026-06-25": {
+      "rounds": 1,
+      "done": true,
+      "routine": "Core B · Rotation",
+      "note": "",
+      "ts": 1782434602160
+    },
+    "2026-06-26": {
+      "rounds": 2,
+      "done": true,
+      "routine": "Core C · Anti-Rotation",
+      "note": "2 rounds hard",
+      "ts": 1782526567407
+    },
+    "2026-06-27": {
+      "rounds": 2,
+      "done": true,
+      "routine": "Core D · Dynamic",
+      "note": "",
+      "ts": 1782574880105
+    },
+    "2026-06-29": {
+      "rounds": 3,
+      "done": true,
+      "routine": "Core B · Rotation",
+      "note": "Did 3 rounds ",
+      "ts": 1782778103702
+    },
+    "2026-06-30": {
+      "rounds": 2,
+      "done": true,
+      "routine": "Core C · Anti-Rotation",
+      "note": "Skipped shoulder taps / shoulders shot after lifts. ",
+      "ts": 1782857670744
+    }
+  }
+}
