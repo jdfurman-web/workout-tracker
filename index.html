@@ -673,7 +673,7 @@ if (sessionStorage.getItem('ri_auth')==='1') {
   </div>
   <div class="section-title">Cloud Sync</div>
   <div class="card">
-    <div style="font-size:0.85rem;color:var(--muted);margin-bottom:10px;">Sync workout data so Knox can include lift details in your weekly wellness digest. Data syncs to <code>data/ruck-iron-data.json</code> in the workout-tracker repo (public until the private-repo migration — see Knox).</div>
+    <div style="font-size:0.85rem;color:var(--muted);margin-bottom:10px;">Sync workout data so Knox can include lift details in your weekly wellness digest. Data syncs to <code>data/ruck-iron-data.json</code> in the <b>private</b> workout-data repo (PAT required).</div>
   </div>
   <div style="display:flex;gap:8px;">
     <button class="btn btn-secondary" onclick="syncToCloud()" id="syncBtn" style="flex:1;background:rgba(52,211,153,0.15);color:var(--green);border-color:rgba(52,211,153,0.3);">
@@ -689,7 +689,7 @@ if (sessionStorage.getItem('ri_auth')==='1') {
   <button class="btn btn-secondary" onclick="exportData()">Export All Data (JSON)</button>
   <button class="btn btn-danger" onclick="confirmClear()">Clear All Data</button>
   <div style="text-align:center;margin-top:24px;">
-    <p style="font-size:0.75rem;color:var(--dim);">Ruck + Iron v2.3 · 2026-07-01</p>
+    <p style="font-size:0.75rem;color:var(--dim);">Ruck + Iron v2.3.1 · 2026-07-01</p>
     <p style="font-size:0.75rem;color:var(--dim);">Built by Knox for Jay Furman</p>
   </div>
 </div>
@@ -2010,10 +2010,10 @@ function exportData() {
 // CLOUD SYNC (GitHub Gist)
 // ═══════════════════════════════════════════
 
-const SYNC_REPO = 'jdfurman-web/workout-tracker';
+const SYNC_REPO = 'jdfurman-web/workout-data'; // PRIVATE — data migrated 2026-07-01
 const SYNC_FILE = 'data/ruck-iron-data.json';
-// DATA_REPO can diverge from SYNC_REPO once the data files move to a
-// private repo — flip this one constant and the whole app follows.
+// Reads and writes both target the private data repo. The app itself
+// still deploys from the public workout-tracker Pages repo.
 const DATA_REPO = SYNC_REPO;
 
 // Fetch a repo file as JSON. Uses the authenticated API when a PAT is
