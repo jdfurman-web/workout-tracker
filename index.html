@@ -763,7 +763,7 @@ if (sessionStorage.getItem('ri_auth')==='1') {
   <button class="btn btn-secondary" onclick="exportData()">Export All Data (JSON)</button>
   <button class="btn btn-danger" onclick="confirmClear()">Clear All Data</button>
   <div style="text-align:center;margin-top:24px;">
-    <p style="font-size:0.75rem;color:var(--dim);">Ruck + Iron v2.4.1 · 2026-07-18</p>
+    <p style="font-size:0.75rem;color:var(--dim);">Ruck + Iron v2.4.2 · 2026-07-18</p>
     <p style="font-size:0.75rem;color:var(--dim);">Built by Knox for Jay Furman</p>
   </div>
 </div>
@@ -1191,7 +1191,7 @@ function debouncedSync() {
   // silently killed auto-sync + aborted post-save re-renders.)
   clearTimeout(_syncTimer);
   _syncTimer = setTimeout(() => {
-    syncToCloud().catch(() => {}); // Silent background sync
+    syncToCloud(true).catch(() => {}); // Silent background sync (auto=true: clobber-guard blocks silently)
   }, 30000); // Sync 30s after last change
 }
 
@@ -2189,10 +2189,20 @@ function syncIsStale() {
   return !t || (Date.now() - t) > 48 * 3600 * 1000;
 }
 
-async function syncToCloud() {
+// Pure decision: block upload when the cloud clearly has more history than
+// this device (fresh install / stale device). Auto-sync blocks silently;
+// manual Sync Up asks the user. Born 2026-07-18 after an empty fresh
+// install overwrote 24 cloud workouts.
+function shouldBlockUpload(cloudLogs, localLogs, auto) {
+  if (cloudLogs <= localLogs) return 'allow';
+  return auto ? 'block' : 'ask';
+}
+
+async function syncToCloud(auto) {
   let pat = getSyncPat();
   if (!pat) {
-    pat = prompt('Enter your GitHub PAT (fine-grained, Contents read/write on workout-tracker repo).\nStored locally on your device only.');
+    if (auto) return;
+    pat = prompt('Enter your GitHub PAT (fine-grained, Contents read/write on the workout-data repo).\nStored locally on your device only.');
     if (!pat) return;
     setSyncPat(pat);
   }
@@ -2211,13 +2221,26 @@ async function syncToCloud() {
       'Accept': 'application/vnd.github+json'
     };
 
-    // Check if file exists (get SHA for update)
+    // Check if file exists (get SHA for update) + clobber guard
     let sha = null;
     const getResp = await fetch(`https://api.github.com/repos/${SYNC_REPO}/contents/${SYNC_FILE}`, { headers });
     if (getResp.status === 401) { setSyncPat(''); throw new Error('Invalid PAT — cleared, try again'); }
     if (getResp.ok) {
       const existing = await getResp.json();
       sha = existing.sha;
+      try {
+        const cloud = JSON.parse(atob((existing.content || '').replace(/\s/g, '')));
+        const cloudLogs = Object.keys(cloud.logs || {}).length;
+        const localLogs = Object.keys(getState().logs || {}).length;
+        const verdict = shouldBlockUpload(cloudLogs, localLogs, !!auto);
+        if (verdict === 'block') { throw new Error(`Auto-sync paused — cloud has ${cloudLogs} workouts, this device has ${localLogs}. Tap Restore first.`); }
+        if (verdict === 'ask' && !confirm(`⚠️ Cloud has ${cloudLogs} workouts; this device has ${localLogs}.\n\nSync Up will OVERWRITE the cloud copy. Fresh install? Cancel and tap Restore instead.`)) {
+          throw new Error('Sync cancelled — tap Restore to pull cloud data first');
+        }
+      } catch (e) {
+        if (e instanceof SyntaxError) { /* content unavailable or unparsable — proceed */ }
+        else throw e;
+      }
     }
 
     // Create or update file
