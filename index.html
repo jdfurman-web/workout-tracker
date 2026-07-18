@@ -596,6 +596,10 @@ body {
     style="margin-top:12px;background:#4a9eff;color:white;border:none;border-radius:12px;padding:12px 32px;font-size:1rem;font-weight:700;cursor:pointer;width:240px;">
     Unlock
   </button>
+  <button id="faceIdBtn" onclick="faceIdUnlock()"
+    style="display:none;margin-top:10px;background:#1a1d28;color:#e2e8f0;border:1px solid #2a2d3a;border-radius:12px;padding:12px 32px;font-size:1rem;font-weight:700;cursor:pointer;width:240px;">
+    &#128100; Unlock with Face ID
+  </button>
   <div id="lockErr" style="color:#ef4444;font-size:0.8rem;margin-top:10px;opacity:0;">Wrong passcode</div>
 </div>
 <script>
@@ -606,12 +610,59 @@ async function sha256(msg) {
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(msg));
   return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
 }
+function unlock() {
+  sessionStorage.setItem('ri_auth','1');
+  document.getElementById('lockScreen').style.display='none';
+}
+
+// ── Face ID / biometric unlock (WebAuthn platform authenticator) ──
+// Device-local convenience lock, not server auth: success just drops the
+// lock screen — real data protection is the private repo + PAT.
+const WA_KEY = 'riFaceIdCred';
+function waSupported() {
+  return !!(window.PublicKeyCredential && navigator.credentials && navigator.credentials.create);
+}
+function waEnrolled() { return !!localStorage.getItem(WA_KEY); }
+function waB64(buf) { return btoa(String.fromCharCode.apply(null, new Uint8Array(buf))); }
+function waUnB64(s) { return Uint8Array.from(atob(s), function(c){ return c.charCodeAt(0); }); }
+
+async function enrollFaceId() {
+  if (!waSupported()) return false;
+  try {
+    const cred = await navigator.credentials.create({ publicKey: {
+      challenge: crypto.getRandomValues(new Uint8Array(32)),
+      rp: { name: 'Ruck + Iron', id: location.hostname },
+      user: { id: new TextEncoder().encode('jay-ruckiron'), name: 'jay', displayName: 'Jay' },
+      pubKeyCredParams: [{ type: 'public-key', alg: -7 }, { type: 'public-key', alg: -257 }],
+      authenticatorSelection: { authenticatorAttachment: 'platform', userVerification: 'required', residentKey: 'preferred' },
+      timeout: 60000,
+    }});
+    localStorage.setItem(WA_KEY, waB64(cred.rawId));
+    return true;
+  } catch(e) { return false; }
+}
+
+async function faceIdUnlock() {
+  if (!waEnrolled()) return false;
+  try {
+    await navigator.credentials.get({ publicKey: {
+      challenge: crypto.getRandomValues(new Uint8Array(32)),
+      allowCredentials: [{ type: 'public-key', id: waUnB64(localStorage.getItem(WA_KEY)) }],
+      userVerification: 'required',
+      timeout: 60000,
+    }});
+    unlock();
+    return true;
+  } catch(e) { return false; }
+}
+
+function removeFaceId() { localStorage.removeItem(WA_KEY); }
+
 async function checkPass() {
   const val = document.getElementById('lockPass').value;
   const hash = await sha256(val);
   if (hash === PASS_HASH) {
-    sessionStorage.setItem('ri_auth','1');
-    document.getElementById('lockScreen').style.display='none';
+    unlock();
   } else {
     document.getElementById('lockErr').style.opacity='1';
     document.getElementById('lockPass').value='';
@@ -621,6 +672,10 @@ async function checkPass() {
 // Auto-unlock if already authenticated this session
 if (sessionStorage.getItem('ri_auth')==='1') {
   document.getElementById('lockScreen').style.display='none';
+} else if (waEnrolled()) {
+  document.getElementById('faceIdBtn').style.display = 'block';
+  // Silent auto-attempt — some browsers require a tap (gesture); the button covers that case.
+  faceIdUnlock();
 }
 </script>
 
@@ -694,11 +749,21 @@ if (sessionStorage.getItem('ri_auth')==='1') {
   </div>
   <div id="syncStatus" style="font-size:0.75rem;color:var(--dim);text-align:center;margin-top:6px;"></div>
 
+  <div class="section-title">Security</div>
+  <div class="card">
+    <div class="setting-row" style="border:none;">
+      <span class="setting-label">Face ID unlock</span>
+      <span class="setting-value" id="faceIdStatus">&mdash;</span>
+    </div>
+    <button class="btn btn-secondary" id="faceIdToggleBtn" onclick="toggleFaceIdSetting()">Enable Face ID</button>
+    <div style="font-size:0.75rem;color:var(--dim);margin-top:8px;">Uses this device's Face ID / biometrics via a passkey. Passcode always works as fallback.</div>
+  </div>
+
   <div class="section-title">Data</div>
   <button class="btn btn-secondary" onclick="exportData()">Export All Data (JSON)</button>
   <button class="btn btn-danger" onclick="confirmClear()">Clear All Data</button>
   <div style="text-align:center;margin-top:24px;">
-    <p style="font-size:0.75rem;color:var(--dim);">Ruck + Iron v2.4 · 2026-07-18</p>
+    <p style="font-size:0.75rem;color:var(--dim);">Ruck + Iron v2.4.1 · 2026-07-18</p>
     <p style="font-size:0.75rem;color:var(--dim);">Built by Knox for Jay Furman</p>
   </div>
 </div>
@@ -2026,8 +2091,25 @@ function renderHistory() {
 }
 
 
+async function toggleFaceIdSetting() {
+  if (waEnrolled()) {
+    removeFaceId();
+  } else {
+    const ok = await enrollFaceId();
+    if (!ok) alert('Face ID setup didn\'t complete — this device may not support it, or the prompt was cancelled.');
+  }
+  renderSettings();
+}
+
 function renderSettings() {
   renderHeader();
+  const fs = document.getElementById('faceIdStatus');
+  const fb = document.getElementById('faceIdToggleBtn');
+  if (fs && fb) {
+    if (!waSupported()) { fs.textContent = 'Not supported on this device'; fb.style.display = 'none'; }
+    else if (waEnrolled()) { fs.textContent = 'Enabled ✓'; fb.textContent = 'Remove Face ID'; fb.style.display = 'block'; }
+    else { fs.textContent = 'Off'; fb.textContent = 'Enable Face ID'; fb.style.display = 'block'; }
+  }
   const st = document.getElementById('syncStatus');
   if (st && !st.textContent) {
     st.textContent = lastSyncLabel();
