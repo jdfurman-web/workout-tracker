@@ -354,6 +354,11 @@ body {
 .timer-bar.active { display: flex; }
 .timer-time { font-size: 1.6rem; font-weight: 700; color: var(--heading); font-variant-numeric: tabular-nums; }
 .timer-label { font-size: 0.75rem; color: var(--muted); }
+.timer-bar.flash { animation: timerFlash 0.6s ease-in-out 4; }
+@keyframes timerFlash {
+  0%, 100% { background: rgba(26,29,40,0.97); }
+  50% { background: rgba(74,158,255,0.5); }
+}
 .timer-dismiss {
   padding: 6px 16px;
   background: var(--card2);
@@ -550,6 +555,10 @@ body {
   cursor: pointer;
 }
 
+/* ── Form-check links (Grok) ── */
+.form-link { text-decoration: none; font-size: 0.8rem; padding: 2px 6px; opacity: 0.7; }
+.form-link:active { opacity: 1; }
+
 /* ── FORGE: Cardio + Daily Core ── */
 .day-type.cardio { color: var(--green); }
 .mode-toggle { display:flex; gap:8px; margin-bottom:12px; }
@@ -689,7 +698,7 @@ if (sessionStorage.getItem('ri_auth')==='1') {
   <button class="btn btn-secondary" onclick="exportData()">Export All Data (JSON)</button>
   <button class="btn btn-danger" onclick="confirmClear()">Clear All Data</button>
   <div style="text-align:center;margin-top:24px;">
-    <p style="font-size:0.75rem;color:var(--dim);">Ruck + Iron v2.3.1 · 2026-07-01</p>
+    <p style="font-size:0.75rem;color:var(--dim);">Ruck + Iron v2.4 · 2026-07-18</p>
     <p style="font-size:0.75rem;color:var(--dim);">Built by Knox for Jay Furman</p>
   </div>
 </div>
@@ -1245,10 +1254,23 @@ function getSuggestionIcon(type) {
 let timerInterval = null;
 let timerEnd = 0;
 let audioCtx = null;
+let timerChimed = false;
 
 function playChime() {
+  // iOS suspends the AudioContext on screen-lock/background — starting
+  // oscillators on a suspended context is silent (Jay bug 2026-07-18).
+  // Resume first when needed; vibration + visual flash are the fallback cues.
   try {
     if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') {
+      audioCtx.resume().catch(() => {}).finally(playChimeTones);
+      return;
+    }
+    playChimeTones();
+  } catch(e) {}
+}
+function playChimeTones() {
+  try {
     // Three-tone ascending chime
     const notes = [523.25, 659.25, 783.99]; // C5, E5, G5
     notes.forEach((freq, i) => {
@@ -1267,10 +1289,18 @@ function playChime() {
 }
 
 function startTimer(seconds) {
-  // Unlock audio context on user gesture (iOS requirement)
-  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  if (audioCtx.state === 'suspended') audioCtx.resume();
+  // Unlock audio INSIDE the user gesture (iOS): create + resume + play a
+  // 1-sample silent buffer. Without the buffer play, iOS often re-suspends
+  // and the end-of-timer chime never sounds.
+  try {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    const b = audioCtx.createBuffer(1, 1, 22050);
+    const s = audioCtx.createBufferSource();
+    s.buffer = b; s.connect(audioCtx.destination); s.start(0);
+  } catch(e) {}
   clearInterval(timerInterval);
+  timerChimed = false;
   timerEnd = Date.now() + seconds * 1000;
   document.getElementById('timerBar').classList.add('active');
   updateTimer();
@@ -1284,14 +1314,30 @@ function updateTimer() {
   if (remaining <= 0) {
     clearInterval(timerInterval);
     document.getElementById('timerDisplay').textContent = 'GO!';
-    playChime();
-    if (navigator.vibrate) navigator.vibrate([200, 100, 200, 100, 200]);
+    if (!timerChimed) {
+      timerChimed = true;
+      playChime();
+      if (navigator.vibrate) navigator.vibrate([200, 100, 200, 100, 200]);
+      // Visual cue for muted-switch / denied-audio cases
+      const bar = document.getElementById('timerBar');
+      bar.classList.add('flash');
+      setTimeout(() => bar.classList.remove('flash'), 2600);
+    }
   }
 }
 function dismissTimer() {
   clearInterval(timerInterval);
   document.getElementById('timerBar').classList.remove('active');
 }
+// iOS throttles/kills intervals in the background. On return, settle the
+// timer immediately so an elapsed timer still chimes — late beats never.
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' &&
+      document.getElementById('timerBar').classList.contains('active')) {
+    if (Date.now() < timerEnd) timerInterval = setInterval(updateTimer, 250);
+    updateTimer();
+  }
+});
 
 // ═══════════════════════════════════════════
 // DATE NAVIGATION + WORKOUT SWAP
@@ -1631,7 +1677,9 @@ function appendCoreCard(ds, date) {
       </div>
       <div class="core-status ${done ? 'done' : ''}">${statusLabel}</div>
     </div>
-    <div class="core-moves">${routine.moves.map(m => `<div class="core-move">${m}</div>`).join('')}</div>
+    <div class="core-moves">${routine.moves.map(m => m.startsWith('\u21bb')
+      ? `<div class="core-move">${m}</div>`
+      : `<div class="core-move" style="display:flex;justify-content:space-between;align-items:center;">${m} <a class="form-link" href="${grokFormUrl(m)}" target="_blank" rel="noopener" title="Form check on Grok">🎥</a></div>`).join('')}</div>
     ${routine.note ? `<div class="ex-note" style="margin-top:8px;">${routine.note}</div>` : ''}
     <div class="rpe-label">Rounds completed (of 3)</div>
     <div class="rpe-row" id="coreRounds">
@@ -1699,7 +1747,7 @@ function renderStrengthView(info, log, ds) {
     html += `
     <div class="exercise" data-ex="${i}">
       <div class="exercise-header" onclick="toggleExercise(${i})">
-        <span class="ex-name">${ex.name}</span>
+        <span class="ex-name">${ex.name} <a class="form-link" href="${grokFormUrl(ex.name)}" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="Form check on Grok">🎥</a></span>
         <span class="ex-prescription">${ex.sets} × ${ex.reps}${perHand ? ' · <span style="color:var(--dim)">per-hand</span>' : ''}</span>
         <div class="ex-check ${checkClass}"></div>
       </div>
@@ -1732,6 +1780,13 @@ function renderStrengthView(info, log, ds) {
       <label style="font-size:0.7rem;font-weight:600;color:var(--dim);text-transform:uppercase;display:block;margin-bottom:4px;">Session Notes</label>
       <textarea class="notes-input session-notes" placeholder="How'd it feel? Anything to remember?">${log.notes||''}</textarea>
     </div>`;
+}
+
+// Form-check link: opens Grok (app via universal link on iPhone, web
+// otherwise) with a prefilled form-coaching prompt for the movement.
+function grokFormUrl(name) {
+  const clean = String(name).replace(/\s*\(.*?\)/g, '').replace(/superset:\s*/i, '').replace(/\u2014.*$/, '').trim();
+  return 'https://grok.com/?q=' + encodeURIComponent('Show proper form for the ' + clean + ' gym exercise: setup, key cues, and common mistakes. Keep it brief.');
 }
 
 function toggleExercise(i) {
