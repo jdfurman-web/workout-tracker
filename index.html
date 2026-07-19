@@ -763,7 +763,7 @@ if (sessionStorage.getItem('ri_auth')==='1') {
   <button class="btn btn-secondary" onclick="exportData()">Export All Data (JSON)</button>
   <button class="btn btn-danger" onclick="confirmClear()">Clear All Data</button>
   <div style="text-align:center;margin-top:24px;">
-    <p style="font-size:0.75rem;color:var(--dim);">Ruck + Iron v2.4.2 · 2026-07-18</p>
+    <p style="font-size:0.75rem;color:var(--dim);">Ruck + Iron v2.4.3 · 2026-07-18</p>
     <p style="font-size:0.75rem;color:var(--dim);">Built by Knox for Jay Furman</p>
   </div>
 </div>
@@ -2163,11 +2163,11 @@ async function fetchRepoJson(path) {
       headers: { 'Authorization': `Bearer ${pat}`, 'Accept': 'application/vnd.github.raw+json' }
     });
     if (resp.ok) return resp.json();
-    // 401 = rotated/expired PAT — fall through to raw so reads still work while public
+    if (resp.status === 401) { setSyncPat(''); throw new Error('PAT invalid or expired — cleared. Tap again and re-enter it.'); }
+    throw new Error(`Data fetch failed: ${resp.status} (check PAT has access to the workout-data repo)`);
   }
-  const raw = await fetch(`https://raw.githubusercontent.com/${DATA_REPO}/main/${path}?t=${Date.now()}`);
-  if (!raw.ok) throw new Error(`Fetch failed: ${raw.status}`);
-  return raw.json();
+  // No PAT: data repo is private, so this can only fail — say so plainly.
+  throw new Error('No PAT on this device — tap Restore or Sync Up and enter your GitHub PAT.');
 }
 
 function getSyncPat() { return localStorage.getItem('ruckIronSyncPat') || ''; }
@@ -2198,14 +2198,18 @@ function shouldBlockUpload(cloudLogs, localLogs, auto) {
   return auto ? 'block' : 'ask';
 }
 
-async function syncToCloud(auto) {
+function ensurePat(auto) {
   let pat = getSyncPat();
-  if (!pat) {
-    if (auto) return;
+  if (!pat && !auto) {
     pat = prompt('Enter your GitHub PAT (fine-grained, Contents read/write on the workout-data repo).\nStored locally on your device only.');
-    if (!pat) return;
-    setSyncPat(pat);
+    if (pat) setSyncPat(pat.trim());
   }
+  return getSyncPat();
+}
+
+async function syncToCloud(auto) {
+  const pat = ensurePat(auto);
+  if (!pat) return;
 
   const btn = document.getElementById('syncBtn');
   const status = document.getElementById('syncStatus');
@@ -2273,6 +2277,7 @@ async function syncToCloud(auto) {
 }
 
 async function restoreFromCloud() {
+  ensurePat(false); // private data repo — restore needs the PAT too
   const btn = document.getElementById('restoreBtn');
   const status = document.getElementById('syncStatus');
   btn.disabled = true;
