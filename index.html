@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Ruck+Iron">
@@ -303,7 +303,10 @@ body {
   border: 1px solid var(--border);
   border-radius: 12px;
   margin-bottom: 8px;
+  cursor: pointer;
 }
+.history-entry:active { background: var(--card2); }
+.history-entry .he-hint { font-size: 0.65rem; color: var(--dim); margin-top: 6px; }
 .he-date { font-size: 0.75rem; color: var(--dim); }
 .he-title { font-size: 0.95rem; font-weight: 600; color: var(--heading); }
 .he-stats { font-size: 0.8rem; color: var(--muted); margin-top: 4px; }
@@ -631,7 +634,7 @@ async function enrollFaceId() {
   try {
     const cred = await navigator.credentials.create({ publicKey: {
       challenge: crypto.getRandomValues(new Uint8Array(32)),
-      rp: { name: 'Ruck + Iron', id: location.hostname },
+      rp: { id: 'ruck-iron', name: 'Ruck + Iron', id: location.hostname },
       user: { id: new TextEncoder().encode('jay-ruckiron'), name: 'jay', displayName: 'Jay' },
       pubKeyCredParams: [{ type: 'public-key', alg: -7 }, { type: 'public-key', alg: -257 }],
       authenticatorSelection: { authenticatorAttachment: 'platform', userVerification: 'required', residentKey: 'preferred' },
@@ -763,7 +766,7 @@ if (sessionStorage.getItem('ri_auth')==='1') {
   <button class="btn btn-secondary" onclick="exportData()">Export All Data (JSON)</button>
   <button class="btn btn-danger" onclick="confirmClear()">Clear All Data</button>
   <div style="text-align:center;margin-top:24px;">
-    <p style="font-size:0.75rem;color:var(--dim);">Ruck + Iron v2.4.3 · 2026-07-18</p>
+    <p style="font-size:0.75rem;color:var(--dim);">Ruck + Iron v2.5.0 · 2026-08-08</p>
     <p style="font-size:0.75rem;color:var(--dim);">Built by Knox for Jay Furman</p>
   </div>
 </div>
@@ -809,198 +812,190 @@ const PROGRAM = {
   weekOrder: ['strengthA', 'cardioA', 'strengthB', 'cardioB'],
 
   phases: [
-    { name: 'Reset', weeks: [1,2],   color: '#4a9eff' },
-    { name: 'Burn',  weeks: [3,4,5], color: '#f59e0b' },
-    { name: 'Forge', weeks: [6,7,8], color: '#ef4444' },
+    { id: 'reset', name: 'Reset', weeks: [1,2],   color: '#4a9eff' },
+    { id: 'burn', name: 'Burn',  weeks: [3,4,5], color: '#f59e0b' },
+    { id: 'forge', name: 'Forge', weeks: [6,7,8], color: '#ef4444' },
   ],
 
   // 4 bodyweight core circuits — no equipment, do anywhere. Rotate daily.
   core: [
-    { name: 'Core A · Anti-Extension', duration: '10-12 min', note: 'Brace like someone\'s about to poke your gut. Quality over speed.',
+    { id: 'core-a-anti-extension', name: 'Core A · Anti-Extension', duration: '10-12 min', note: 'Brace like someone\'s about to poke your gut. Quality over speed.',
       moves: ['Forearm Plank — 45s', 'Dead Bug — 10/side', 'Hollow Hold — 30s', 'Side Plank — 30s/side', 'Glute Bridge — 20 reps', '↻ 3 rounds · ~30s rest'] },
-    { name: 'Core B · Rotation', duration: '10-12 min', note: 'Control the twist, no flailing. Exhale hard on every crunch.',
+    { id: 'core-b-rotation', name: 'Core B · Rotation', duration: '10-12 min', note: 'Control the twist, no flailing. Exhale hard on every crunch.',
       moves: ['Bicycle Crunch — 20/side', 'Russian Twist — 20/side', 'Side Plank Reach-Through — 10/side', 'Mountain Climbers — 30s', 'Flutter Kicks — 30s', '↻ 3 rounds · ~30s rest'] },
-    { name: 'Core C · Anti-Rotation', duration: '10-12 min', note: 'Stay square — hips don\'t rock. Slow and deliberate beats fast and sloppy.',
+    { id: 'core-c-anti-rotation', name: 'Core C · Anti-Rotation', duration: '10-12 min', note: 'Stay square — hips don\'t rock. Slow and deliberate beats fast and sloppy.',
       moves: ['Bird Dog — 10/side', 'Plank Shoulder Taps — 20', 'Glute Bridge March — 10/side', 'Side Plank — 40s/side', 'Bird Dog Hold — 20s/side', '↻ 3 rounds · ~30s rest'] },
-    { name: 'Core D · Dynamic', duration: '12-15 min', note: 'Lower back stays glued to the floor on every rep. No yanking the neck.',
+    { id: 'core-d-dynamic', name: 'Core D · Dynamic', duration: '12-15 min', note: 'Lower back stays glued to the floor on every rep. No yanking the neck.',
       moves: ['Hollow Rock — 20', 'Reverse Crunch — 15', 'Flutter Kicks — 40s', 'Plank Up-Down — 10', 'V-Up or Tuck-Up — 12', '↻ 3 rounds · ~30s rest'] },
   ],
 
   workouts: {
     // ───────────── PHASE 1 · RESET (Wk 1-2) ─────────────
-    strengthA_1: {
-      name: 'Upper · Push/Pull',
+    strengthA_1: { id: 'upper-push-pull', name: 'Upper · Push/Pull',
       type: 'strength',
       duration: '40-45 min',
       exercises: [
-        { name: 'DB Bench Press', sets: 3, reps: '10-12', rest: 75, note: 'Detrained restart — start lighter than your ego wants. Leave 2-3 reps in reserve.' },
-        { name: 'Seated Cable Row', sets: 3, reps: '10-12', rest: 75, note: 'Squeeze, full stretch. Rebuild the mind-muscle link.' },
-        { name: 'High-Incline DB Press', sets: 3, reps: '10-12', rest: 75, newSince: '2026-07-01', note: 'Neutral grip, 30-45° incline. Shoulder-friendly swap for OHP — your right shoulder flagged pain 4× on overhead work. New movement: start light, find the groove.' },
-        { name: 'Lat Pulldown', sets: 3, reps: '12', rest: 60, note: 'Wide grip, no momentum.' },
-        { name: 'DB Lateral Raise', sets: 2, reps: '15', rest: 45, note: 'Light. Shoulder health and width.' },
-        { name: 'Push-ups (AMRAP)', sets: 2, reps: 'AMRAP', rest: 45, note: 'Finisher. As many clean reps as possible. Knees if needed.' },
+        { id: 'db-bench-press', name: 'DB Bench Press', sets: 3, reps: '10-12', rest: 75, note: 'Detrained restart — start lighter than your ego wants. Leave 2-3 reps in reserve.' },
+        { id: 'seated-cable-row', name: 'Seated Cable Row', sets: 3, reps: '10-12', rest: 75, note: 'Squeeze, full stretch. Rebuild the mind-muscle link.' },
+        { id: 'high-incline-db-press', name: 'High-Incline DB Press', sets: 3, reps: '10-12', rest: 75, newSince: '2026-07-01', note: 'Neutral grip, 30-45° incline. Shoulder-friendly swap for OHP — your right shoulder flagged pain 4× on overhead work. New movement: start light, find the groove.' },
+        { id: 'lat-pulldown', name: 'Lat Pulldown', sets: 3, reps: '12', rest: 60, note: 'Wide grip, no momentum.' },
+        { id: 'db-lateral-raise', name: 'DB Lateral Raise', sets: 2, reps: '15', rest: 45, note: 'Light. Shoulder health and width.' },
+        { id: 'push-ups-amrap', name: 'Push-ups (AMRAP)', sets: 2, reps: 'AMRAP', rest: 45, note: 'Finisher. As many clean reps as possible. Knees if needed.' },
       ]
     },
     strengthA_2: null,
-    strengthB_1: {
-      name: 'Lower · Squat/Hinge + Carry',
+    strengthB_1: { id: 'lower-squat-hinge-carry', name: 'Lower · Squat/Hinge + Carry',
       type: 'strength',
       duration: '40-45 min',
       exercises: [
-        { name: 'Goblet Squat', sets: 3, reps: '10-12', rest: 75, note: 'Depth over weight. Re-groove the pattern.' },
-        { name: 'DB Romanian Deadlift', sets: 3, reps: '10-12', rest: 75, note: 'Hinge, feel the hamstrings. Flat back.' },
-        { name: 'Walking Lunge', sets: 2, reps: '10/leg', rest: 60, note: 'Bodyweight or light DBs. Stability first.' },
-        { name: 'Leg Press', sets: 3, reps: '12-15', rest: 75, note: 'Full ROM, moderate load.' },
-        { name: 'Farmer\'s Carry', sets: 3, reps: '40 yd', rest: 60, note: 'Heavy-ish. Grip and trunk. Walk tall.' },
-        { name: 'Incline Walk Finisher', sets: 1, reps: '5 min', rest: 0, note: 'Treadmill 10-12% incline, brisk. Or 50 jumping jacks.' },
+        { id: 'goblet-squat', name: 'Goblet Squat', sets: 3, reps: '10-12', rest: 75, note: 'Depth over weight. Re-groove the pattern.' },
+        { id: 'db-romanian-deadlift', name: 'DB Romanian Deadlift', sets: 3, reps: '10-12', rest: 75, note: 'Hinge, feel the hamstrings. Flat back.' },
+        { id: 'walking-lunge', name: 'Walking Lunge', sets: 2, reps: '10/leg', rest: 60, note: 'Bodyweight or light DBs. Stability first.' },
+        { id: 'leg-press', name: 'Leg Press', sets: 3, reps: '12-15', rest: 75, note: 'Full ROM, moderate load.' },
+        { id: 'farmer-s-carry', name: 'Farmer\'s Carry', sets: 3, reps: '40 yd', rest: 60, note: 'Heavy-ish. Grip and trunk. Walk tall.' },
+        { id: 'incline-walk-finisher', name: 'Incline Walk Finisher', sets: 1, reps: '5 min', rest: 0, note: 'Treadmill 10-12% incline, brisk. Or 50 jumping jacks.' },
       ]
     },
     strengthB_2: null,
-    cardioA_1: { name: 'Row Intervals', type: 'cardio', mode: 'row', duration: '22 min',
+    cardioA_1: { id: 'row-intervals', name: 'Row Intervals', type: 'cardio', mode: 'row', duration: '22 min',
       rowTarget: '4 min easy warm-up → 6 × (1 min hard / 1.5 min easy) → 3 min cool. Hard = RPE 7, HR ~75-80%.',
       ruckTarget: 'Cool-day alt: 30 min ruck, 6 × (1 min brisk pickup / 2 min steady).', ruckWeight: '20-30 lbs',
       note: 'Hydrow. Indoor beats the Houston heat — big burn, easy on the joints.', exercises: [] },
-    cardioA_2: { name: 'Row Intervals', type: 'cardio', mode: 'row', duration: '24 min',
+    cardioA_2: { id: 'row-intervals', name: 'Row Intervals', type: 'cardio', mode: 'row', duration: '24 min',
       rowTarget: '4 min warm-up → 7 × (1 min hard / 1.5 min easy) → 3 min cool. One more round than last week.',
       ruckTarget: 'Cool-day alt: 32 min ruck with brisk pickups.', ruckWeight: '20-30 lbs',
       note: 'Hold your splits. Same intensity, a touch more volume.', exercises: [] },
-    cardioB_1: { name: 'Steady Burn', type: 'cardio', mode: 'row', duration: '30 min',
+    cardioB_1: { id: 'steady-burn', name: 'Steady Burn', type: 'cardio', mode: 'row', duration: '30 min',
       rowTarget: '30 min steady Zone 2 row. RPE 5-6 — nose-breathing, could hold a conversation.',
       ruckTarget: '30-35 min Zone 2 ruck, flat route. Upright posture, engaged core.', ruckWeight: '30 lbs',
       note: 'Fat-burn pace. Row when it\'s hot, ruck when it\'s cool or you\'re at Boerne.', exercises: [] },
-    cardioB_2: { name: 'Steady Burn', type: 'cardio', mode: 'row', duration: '35 min',
+    cardioB_2: { id: 'steady-burn', name: 'Steady Burn', type: 'cardio', mode: 'row', duration: '35 min',
       rowTarget: '35 min steady Zone 2 row. Lock the pace, add 5 minutes.',
       ruckTarget: '35-40 min Zone 2 ruck, flat.', ruckWeight: '30 lbs',
       note: 'Duration creep. Same easy effort, more time on the engine.', exercises: [] },
 
     // ───────────── PHASE 2 · BURN (Wk 3-5) ─────────────
-    strengthA_3: {
-      name: 'Upper · Push/Pull (Density)',
+    strengthA_3: { id: 'upper-push-pull-density', name: 'Upper · Push/Pull (Density)',
       type: 'strength',
       duration: '45-50 min',
       exercises: [
-        { name: 'DB Bench Press', sets: 4, reps: '8-10', rest: 60, note: 'Shorter rest = more density. Add weight when you hit 10s on all sets.' },
-        { name: 'Chest-Supported Row', sets: 4, reps: '10-12', rest: 60, note: 'Match pulling to pushing.' },
-        { name: 'High-Incline DB Press', sets: 3, reps: '8-10', rest: 60, newSince: '2026-07-01', note: 'Neutral grip, heavier than Reset phase. Stop the set if the right shoulder pinches.' },
-        { name: 'Lat Pulldown', sets: 3, reps: '10-12', rest: 60, note: 'Controlled negatives.' },
-        { name: 'Superset: Lateral Raise + DB Curl', sets: 3, reps: '12-15', rest: 45, note: 'Back-to-back, minimal rest.' },
-        { name: 'Row Sprint Finisher', sets: 5, reps: '30s on / 30s off', rest: 0, note: 'Hydrow. 5 min all-out intervals. Afterburn.' },
+        { id: 'db-bench-press', name: 'DB Bench Press', sets: 4, reps: '8-10', rest: 60, note: 'Shorter rest = more density. Add weight when you hit 10s on all sets.' },
+        { id: 'chest-supported-row', name: 'Chest-Supported Row', sets: 4, reps: '10-12', rest: 60, note: 'Match pulling to pushing.' },
+        { id: 'high-incline-db-press', name: 'High-Incline DB Press', sets: 3, reps: '8-10', rest: 60, newSince: '2026-07-01', note: 'Neutral grip, heavier than Reset phase. Stop the set if the right shoulder pinches.' },
+        { id: 'lat-pulldown', name: 'Lat Pulldown', sets: 3, reps: '10-12', rest: 60, note: 'Controlled negatives.' },
+        { id: 'superset-lateral-raise-db-curl', name: 'Superset: Lateral Raise + DB Curl', sets: 3, reps: '12-15', rest: 45, note: 'Back-to-back, minimal rest.' },
+        { id: 'row-sprint-finisher', name: 'Row Sprint Finisher', sets: 5, reps: '30s on / 30s off', rest: 0, note: 'Hydrow. 5 min all-out intervals. Afterburn.' },
       ]
     },
     strengthA_4: null, strengthA_5: null,
-    strengthB_3: {
-      name: 'Lower · Squat/Hinge (Density)',
+    strengthB_3: { id: 'lower-squat-hinge-density', name: 'Lower · Squat/Hinge (Density)',
       type: 'strength',
       duration: '45-50 min',
       exercises: [
-        { name: 'Goblet or Barbell Squat', sets: 4, reps: '8-10', rest: 75, note: 'Step up the load. Depth honest.' },
-        { name: 'DB or Barbell RDL', sets: 4, reps: '8-10', rest: 75, note: 'Load the hinge progressively.' },
-        { name: 'Bulgarian Split Squat', sets: 3, reps: '8-10/leg', rest: 60, note: 'Humbling. Great for single-leg strength and burn.' },
-        { name: 'Leg Curl', sets: 3, reps: '12', rest: 45, note: 'Slow eccentric.' },
-        { name: 'Farmer\'s Carry', sets: 3, reps: '60 yd', rest: 45, note: 'Heavier and longer than Reset.' },
-        { name: 'Row Sprint Finisher', sets: 5, reps: '30s on / 30s off', rest: 0, note: 'Hydrow. 5 min. Empty the tank.' },
+        { id: 'goblet-or-barbell-squat', name: 'Goblet or Barbell Squat', sets: 4, reps: '8-10', rest: 75, note: 'Step up the load. Depth honest.' },
+        { id: 'db-or-barbell-rdl', name: 'DB or Barbell RDL', sets: 4, reps: '8-10', rest: 75, note: 'Load the hinge progressively.' },
+        { id: 'bulgarian-split-squat', name: 'Bulgarian Split Squat', sets: 3, reps: '8-10/leg', rest: 60, note: 'Humbling. Great for single-leg strength and burn.' },
+        { id: 'leg-curl', name: 'Leg Curl', sets: 3, reps: '12', rest: 45, note: 'Slow eccentric.' },
+        { id: 'farmer-s-carry', name: 'Farmer\'s Carry', sets: 3, reps: '60 yd', rest: 45, note: 'Heavier and longer than Reset.' },
+        { id: 'row-sprint-finisher', name: 'Row Sprint Finisher', sets: 5, reps: '30s on / 30s off', rest: 0, note: 'Hydrow. 5 min. Empty the tank.' },
       ]
     },
     strengthB_4: null, strengthB_5: null,
-    cardioA_3: { name: 'Row Intervals', type: 'cardio', mode: 'row', duration: '26 min',
+    cardioA_3: { id: 'row-intervals', name: 'Row Intervals', type: 'cardio', mode: 'row', duration: '26 min',
       rowTarget: '4 min warm-up → 8 × (1 min hard / 1 min easy) → 4 min cool. Work:rest now 1:1.',
       ruckTarget: 'Cool-day alt: 35 min ruck, 8 × 1 min hill or pace surges.', ruckWeight: '30 lbs',
       note: 'Tighter rest. This is the fat-loss heart of the block.', exercises: [] },
-    cardioA_4: { name: 'Row Intervals', type: 'cardio', mode: 'row', duration: '28 min',
+    cardioA_4: { id: 'row-intervals', name: 'Row Intervals', type: 'cardio', mode: 'row', duration: '28 min',
       rowTarget: '4 min warm-up → 6 × (250m hard / 90s easy) → cool. Pick a split target and defend it.',
       ruckTarget: 'Cool-day alt: 38 min ruck with surges.', ruckWeight: '30 lbs',
       note: 'Distance intervals. Chase a 500m split and hold it.', exercises: [] },
-    cardioA_5: { name: 'Row Intervals (Pyramid)', type: 'cardio', mode: 'row', duration: '30 min',
+    cardioA_5: { id: 'row-intervals-pyramid', name: 'Row Intervals (Pyramid)', type: 'cardio', mode: 'row', duration: '30 min',
       rowTarget: '5 min warm-up → 1-2-3-2-1 min hard (equal easy between) → cool. Peak effort on the 3.',
       ruckTarget: 'Cool-day alt: 40 min ruck, pyramid pace surges.', ruckWeight: '30 lbs',
       note: 'Pyramid keeps it mentally fresh. Push the middle.', exercises: [] },
-    cardioB_3: { name: 'Steady Burn', type: 'cardio', mode: 'row', duration: '40 min',
+    cardioB_3: { id: 'steady-burn', name: 'Steady Burn', type: 'cardio', mode: 'row', duration: '40 min',
       rowTarget: '40 min steady Zone 2 row. RPE 6.',
       ruckTarget: '40-45 min Zone 2 ruck. Add a gradual hill or two.', ruckWeight: '30 lbs',
       note: 'Longer aerobic base = bigger fat-burn engine.', exercises: [] },
-    cardioB_4: { name: 'Steady Burn', type: 'cardio', mode: 'row', duration: '42 min',
+    cardioB_4: { id: 'steady-burn', name: 'Steady Burn', type: 'cardio', mode: 'row', duration: '42 min',
       rowTarget: '42 min steady Zone 2 row, last 5 min a slight push.',
       ruckTarget: '45 min Zone 2 ruck, hills.', ruckWeight: '30 lbs',
       note: 'Hold posture as fatigue sets in.', exercises: [] },
-    cardioB_5: { name: 'Steady Burn', type: 'cardio', mode: 'row', duration: '45 min',
+    cardioB_5: { id: 'steady-burn', name: 'Steady Burn', type: 'cardio', mode: 'row', duration: '45 min',
       rowTarget: '45 min Zone 2 row. Negative split — second half slightly faster.',
       ruckTarget: '45-50 min Zone 2 ruck, rolling route.', ruckWeight: '30 lbs',
       note: 'Peak steady volume for the Burn phase.', exercises: [] },
 
     // ───────────── PHASE 3 · FORGE (Wk 6-8) ─────────────
-    strengthA_6: {
-      name: 'Upper · Push/Pull (Strength)',
+    strengthA_6: { id: 'upper-push-pull-strength', name: 'Upper · Push/Pull (Strength)',
       type: 'strength',
       duration: '45-50 min',
       exercises: [
-        { name: 'Barbell or DB Bench Press', sets: 4, reps: '6-8', rest: 90, note: 'Heavier, lower reps — hold muscle while you cut.' },
-        { name: 'Barbell or Chest-Supported Row', sets: 4, reps: '6-8', rest: 90, note: 'Strong pull. Match the press.' },
-        { name: 'High-Incline DB Press', sets: 3, reps: '8', rest: 75, newSince: '2026-07-01', note: 'Neutral grip, press heavy, brace hard. Pain-free range only.' },
-        { name: 'Weighted Pull-up or Lat Pull', sets: 3, reps: '8', rest: 75, note: 'Add load if you can.' },
-        { name: 'Superset: Lateral Raise + Face Pull', sets: 3, reps: '15', rest: 45, note: 'Shoulder health and caps.' },
-        { name: 'Row Sprint Finisher', sets: 6, reps: '30s on / 30s off', rest: 0, note: 'Hydrow. 6 min. Hardest finisher yet.' },
+        { id: 'barbell-or-db-bench-press', name: 'Barbell or DB Bench Press', sets: 4, reps: '6-8', rest: 90, note: 'Heavier, lower reps — hold muscle while you cut.' },
+        { id: 'barbell-or-chest-supported-row', name: 'Barbell or Chest-Supported Row', sets: 4, reps: '6-8', rest: 90, note: 'Strong pull. Match the press.' },
+        { id: 'high-incline-db-press', name: 'High-Incline DB Press', sets: 3, reps: '8', rest: 75, newSince: '2026-07-01', note: 'Neutral grip, press heavy, brace hard. Pain-free range only.' },
+        { id: 'weighted-pull-up-or-lat-pull', name: 'Weighted Pull-up or Lat Pull', sets: 3, reps: '8', rest: 75, note: 'Add load if you can.' },
+        { id: 'superset-lateral-raise-face-pull', name: 'Superset: Lateral Raise + Face Pull', sets: 3, reps: '15', rest: 45, note: 'Shoulder health and caps.' },
+        { id: 'row-sprint-finisher', name: 'Row Sprint Finisher', sets: 6, reps: '30s on / 30s off', rest: 0, note: 'Hydrow. 6 min. Hardest finisher yet.' },
       ]
     },
     strengthA_7: null,
-    strengthA_8: {
-      name: 'Upper · Consolidate',
+    strengthA_8: { id: 'upper-consolidate', name: 'Upper · Consolidate',
       type: 'strength',
       duration: '35-40 min',
       exercises: [
-        { name: 'DB Bench Press', sets: 3, reps: '8', rest: 75, note: 'Final week — solid, not max. Groove it.' },
-        { name: 'Cable Row', sets: 3, reps: '10', rest: 60, note: 'Quality reps.' },
-        { name: 'High-Incline DB Press', sets: 2, reps: '10', rest: 60, newSince: '2026-07-01', note: 'Neutral grip, moderate.' },
-        { name: 'Lat Pulldown', sets: 2, reps: '12', rest: 60, note: 'Pump.' },
-        { name: 'Push-ups (AMRAP)', sets: 2, reps: 'AMRAP', rest: 45, note: 'Compare to Week 1. Proof you\'re back.' },
+        { id: 'db-bench-press', name: 'DB Bench Press', sets: 3, reps: '8', rest: 75, note: 'Final week — solid, not max. Groove it.' },
+        { id: 'cable-row', name: 'Cable Row', sets: 3, reps: '10', rest: 60, note: 'Quality reps.' },
+        { id: 'high-incline-db-press', name: 'High-Incline DB Press', sets: 2, reps: '10', rest: 60, newSince: '2026-07-01', note: 'Neutral grip, moderate.' },
+        { id: 'lat-pulldown', name: 'Lat Pulldown', sets: 2, reps: '12', rest: 60, note: 'Pump.' },
+        { id: 'push-ups-amrap', name: 'Push-ups (AMRAP)', sets: 2, reps: 'AMRAP', rest: 45, note: 'Compare to Week 1. Proof you\'re back.' },
       ]
     },
-    strengthB_6: {
-      name: 'Lower · Squat/Hinge (Strength)',
+    strengthB_6: { id: 'lower-squat-hinge-strength', name: 'Lower · Squat/Hinge (Strength)',
       type: 'strength',
       duration: '45-50 min',
       exercises: [
-        { name: 'Barbell Back Squat', sets: 4, reps: '6-8', rest: 90, note: 'Heaviest of the block. Depth and control.' },
-        { name: 'Barbell or Trap-Bar Deadlift', sets: 4, reps: '6-8', rest: 90, note: 'Hinge strength. Brace, don\'t round.' },
-        { name: 'Walking Lunge (loaded)', sets: 3, reps: '10/leg', rest: 75, note: 'Heavier DBs.' },
-        { name: 'Leg Curl', sets: 3, reps: '10-12', rest: 45, note: 'Hamstrings honest.' },
-        { name: 'Farmer\'s Carry', sets: 3, reps: '80 yd', rest: 45, note: 'Heaviest carry. Trunk and grip.' },
-        { name: 'Row Sprint Finisher', sets: 6, reps: '30s on / 30s off', rest: 0, note: 'Hydrow. 6 min.' },
+        { id: 'barbell-back-squat', name: 'Barbell Back Squat', sets: 4, reps: '6-8', rest: 90, note: 'Heaviest of the block. Depth and control.' },
+        { id: 'barbell-or-trap-bar-deadlift', name: 'Barbell or Trap-Bar Deadlift', sets: 4, reps: '6-8', rest: 90, note: 'Hinge strength. Brace, don\'t round.' },
+        { id: 'walking-lunge-loaded', name: 'Walking Lunge (loaded)', sets: 3, reps: '10/leg', rest: 75, note: 'Heavier DBs.' },
+        { id: 'leg-curl', name: 'Leg Curl', sets: 3, reps: '10-12', rest: 45, note: 'Hamstrings honest.' },
+        { id: 'farmer-s-carry', name: 'Farmer\'s Carry', sets: 3, reps: '80 yd', rest: 45, note: 'Heaviest carry. Trunk and grip.' },
+        { id: 'row-sprint-finisher', name: 'Row Sprint Finisher', sets: 6, reps: '30s on / 30s off', rest: 0, note: 'Hydrow. 6 min.' },
       ]
     },
     strengthB_7: null,
-    strengthB_8: {
-      name: 'Lower · Consolidate',
+    strengthB_8: { id: 'lower-consolidate', name: 'Lower · Consolidate',
       type: 'strength',
       duration: '35-40 min',
       exercises: [
-        { name: 'Goblet or Back Squat', sets: 3, reps: '8', rest: 75, note: 'Final week — clean reps, moderate load.' },
-        { name: 'DB RDL', sets: 3, reps: '10', rest: 60, note: 'Feel it, don\'t grind it.' },
-        { name: 'Walking Lunge', sets: 2, reps: '10/leg', rest: 60, note: 'Bodyweight.' },
-        { name: 'Farmer\'s Carry', sets: 2, reps: '60 yd', rest: 45, note: 'Strong finish.' },
-        { name: 'Plank', sets: 2, reps: '60s', rest: 30, note: 'Done. You showed up for 8 weeks.' },
+        { id: 'goblet-or-back-squat', name: 'Goblet or Back Squat', sets: 3, reps: '8', rest: 75, note: 'Final week — clean reps, moderate load.' },
+        { id: 'db-rdl', name: 'DB RDL', sets: 3, reps: '10', rest: 60, note: 'Feel it, don\'t grind it.' },
+        { id: 'walking-lunge', name: 'Walking Lunge', sets: 2, reps: '10/leg', rest: 60, note: 'Bodyweight.' },
+        { id: 'farmer-s-carry', name: 'Farmer\'s Carry', sets: 2, reps: '60 yd', rest: 45, note: 'Strong finish.' },
+        { id: 'plank', name: 'Plank', sets: 2, reps: '60s', rest: 30, note: 'Done. You showed up for 8 weeks.' },
       ]
     },
-    cardioA_6: { name: 'Row Intervals', type: 'cardio', mode: 'row', duration: '30 min',
+    cardioA_6: { id: 'row-intervals', name: 'Row Intervals', type: 'cardio', mode: 'row', duration: '30 min',
       rowTarget: '5 min warm-up → 8 × (1 min hard / 45s easy) → cool. Rest shrinks again.',
       ruckTarget: 'Cool-day alt: 40 min ruck, 8 × 1 min hard surges.', ruckWeight: '30-35 lbs',
       note: 'Forge intensity. Splits should beat Week 3.', exercises: [] },
-    cardioA_7: { name: 'Row Intervals (4×4)', type: 'cardio', mode: 'row', duration: '32 min',
+    cardioA_7: { id: 'row-intervals-4-4', name: 'Row Intervals (4×4)', type: 'cardio', mode: 'row', duration: '32 min',
       rowTarget: '5 min warm-up → 4 × (4 min hard / 2 min easy) → cool. Classic engine builder.',
       ruckTarget: 'Cool-day alt: 45 min ruck, 4 × 4 min hard climbs.', ruckWeight: '30-35 lbs',
       note: 'Longer hard blocks. Pace so all four match.', exercises: [] },
-    cardioA_8: { name: '2K Row Test', type: 'cardio', mode: 'row', duration: '~12 min', benchmark: '2K Row / 2-mi Ruck Test',
+    cardioA_8: { id: '2k-row-test', name: '2K Row Test', type: 'cardio', mode: 'row', duration: '~12 min', benchmark: '2K Row / 2-mi Ruck Test',
       rowTarget: 'BENCHMARK: 2000m for time. Warm up well, then full effort. Record time + avg split.',
       ruckTarget: 'Ruck-alt benchmark: 2-mile ruck for time at 30 lbs. Record it.', ruckWeight: '30 lbs',
       note: 'Your Week-8 proof. Beat this when the next block ends.', exercises: [] },
-    cardioB_6: { name: 'Steady Burn', type: 'cardio', mode: 'row', duration: '48 min',
+    cardioB_6: { id: 'steady-burn', name: 'Steady Burn', type: 'cardio', mode: 'row', duration: '48 min',
       rowTarget: '48 min Zone 2 row. Smooth, strong, controlled.',
       ruckTarget: '50 min Zone 2 ruck, rolling hills.', ruckWeight: '30-35 lbs',
       note: 'Longest steady effort yet.', exercises: [] },
-    cardioB_7: { name: 'Steady Burn', type: 'cardio', mode: 'row', duration: '50 min',
+    cardioB_7: { id: 'steady-burn', name: 'Steady Burn', type: 'cardio', mode: 'row', duration: '50 min',
       rowTarget: '50 min Zone 2 row. Peak aerobic volume.',
       ruckTarget: '55-60 min Zone 2 ruck — make it the weekend Boerne long one if you can.', ruckWeight: '30-35 lbs',
       note: 'If the weather breaks, take this one outside.', exercises: [] },
-    cardioB_8: { name: 'Steady + Flush', type: 'cardio', mode: 'row', duration: '40 min',
+    cardioB_8: { id: 'steady-flush', name: 'Steady + Flush', type: 'cardio', mode: 'row', duration: '40 min',
       rowTarget: '40 min easy-moderate row. Final week — flush, don\'t crush.',
       ruckTarget: '40-45 min easy ruck. Enjoy it. You earned the restart.', ruckWeight: '30 lbs',
       note: 'Bring it home. Then plan the next 8 weeks heavier.', exercises: [] },
@@ -1199,6 +1194,162 @@ function dateStr(d) {
   return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
 }
 
+
+// ─── HTML escape (user notes / free text must never hit innerHTML raw) ───
+function escHtml(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&')
+    .replace(/</g, '<')
+    .replace(/>/g, '>')
+    .replace(/"/g, '"')
+    .replace(/'/g, '&#39;');
+}
+
+// Stable exercise key: prefer explicit id, else slug of name.
+function exerciseKey(ex) {
+  if (!ex) return '';
+  if (ex.id) return ex.id;
+  return String(ex.name || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '');
+}
+
+function isPerHandExercise(name) {
+  return /\bDB\b|Dumbbell|Farmer/i.test(name || '') && !/Goblet/i.test(name || '');
+}
+
+// Look up previous exercise log by stable key, then name, then legacy index.
+function findPrevExerciseLog(prevLog, ex, exIndex) {
+  if (!prevLog || !prevLog.exercises) return null;
+  const by = prevLog.exercises;
+  const key = exerciseKey(ex);
+  if (key && by[key] && by[key].sets) return by[key];
+  // name-keyed
+  if (ex && ex.name && by[ex.name] && by[ex.name].sets) return by[ex.name];
+  // legacy numeric index
+  if (by[exIndex] && by[exIndex].sets) return by[exIndex];
+  if (by[String(exIndex)] && by[String(exIndex)].sets) return by[String(exIndex)];
+  // scan by stored name field
+  for (const k of Object.keys(by)) {
+    const entry = by[k];
+    if (entry && entry.name && ex && entry.name === ex.name && entry.sets) return entry;
+    if (entry && entry.id && key && entry.id === key && entry.sets) return entry;
+  }
+  return null;
+}
+
+// In-place strength checkmark update (avoids full re-render / focus steal).
+function updateExerciseChecks(info, log) {
+  if (!info || !info.exercises) return;
+  info.exercises.forEach((ex, i) => {
+    const key = exerciseKey(ex);
+    const exLog = (log.exercises || {})[key]
+      || (log.exercises || {})[i]
+      || (log.exercises || {})[String(i)]
+      || {};
+    const setsLogged = Object.keys(exLog.sets || {}).length;
+    const allDone = setsLogged >= ex.sets;
+    const partial = setsLogged > 0 && !allDone;
+    const check = document.querySelector(`.exercise[data-ex="${i}"] .ex-check`);
+    if (!check) return;
+    check.classList.remove('done', 'partial');
+    if (allDone) check.classList.add('done');
+    else if (partial) check.classList.add('partial');
+  });
+  renderHeader();
+}
+
+// Merge two log objects for the same date — keep the "richer" one, or union fields.
+function mergeDayLogs(cloudLog, localLog) {
+  if (!cloudLog) return localLog;
+  if (!localLog) return cloudLog;
+  const cScore = logRichness(cloudLog);
+  const lScore = logRichness(localLog);
+  if (lScore > cScore) {
+    // Prefer local structure but fill missing fields from cloud
+    return deepFill(localLog, cloudLog);
+  }
+  if (cScore > lScore) return deepFill(cloudLog, localLog);
+  // Equal richness: prefer newer ts if present, else local (device is source of truth for active edits)
+  const cTs = cloudLog.ts || 0;
+  const lTs = localLog.ts || 0;
+  if (cTs > lTs) return deepFill(cloudLog, localLog);
+  return deepFill(localLog, cloudLog);
+}
+
+function logRichness(log) {
+  if (!log) return 0;
+  let n = 0;
+  if (log.type === 'strength') {
+    const ex = log.exercises || {};
+    for (const k of Object.keys(ex)) {
+      const sets = (ex[k] && ex[k].sets) || {};
+      for (const s of Object.keys(sets)) {
+        const set = sets[s] || {};
+        if (set.weight || set.reps || set.rpe) n += 1;
+      }
+    }
+  } else {
+    if (log.duration) n += 2;
+    if (log.distance) n += 2;
+    if (log.watts || log.weight) n += 1;
+    if (log.hr) n += 1;
+    if (log.rpe) n += 1;
+  }
+  if (log.notes) n += 1;
+  return n;
+}
+
+function deepFill(primary, secondary) {
+  const out = JSON.parse(JSON.stringify(primary));
+  if (!secondary) return out;
+  for (const k of Object.keys(secondary)) {
+    if (out[k] == null || out[k] === '') out[k] = secondary[k];
+    else if (k === 'exercises' && typeof secondary[k] === 'object') {
+      out.exercises = out.exercises || {};
+      for (const ek of Object.keys(secondary.exercises || {})) {
+        if (!out.exercises[ek]) out.exercises[ek] = secondary.exercises[ek];
+        else {
+          out.exercises[ek].sets = out.exercises[ek].sets || {};
+          const sSets = (secondary.exercises[ek] && secondary.exercises[ek].sets) || {};
+          for (const sk of Object.keys(sSets)) {
+            if (!out.exercises[ek].sets[sk]) out.exercises[ek].sets[sk] = sSets[sk];
+            else {
+              for (const f of ['weight', 'reps', 'rpe']) {
+                if (out.exercises[ek].sets[sk][f] == null || out.exercises[ek].sets[sk][f] === '') {
+                  out.exercises[ek].sets[sk][f] = sSets[sk][f];
+                }
+              }
+            }
+          }
+          if (!out.exercises[ek].name && secondary.exercises[ek].name) {
+            out.exercises[ek].name = secondary.exercises[ek].name;
+          }
+          if (!out.exercises[ek].id && secondary.exercises[ek].id) {
+            out.exercises[ek].id = secondary.exercises[ek].id;
+          }
+        }
+      }
+    }
+  }
+  return out;
+}
+
+function mergeLogMaps(cloudLogs, localLogs) {
+  const keys = new Set([...Object.keys(cloudLogs || {}), ...Object.keys(localLogs || {})]);
+  const out = {};
+  for (const ds of keys) {
+    out[ds] = mergeDayLogs((cloudLogs || {})[ds], (localLogs || {})[ds]);
+  }
+  return out;
+}
+
+function mergeMapsPreferUnion(cloudMap, localMap) {
+  return { ...(cloudMap || {}), ...(localMap || {}) };
+}
+
+
 // ═══════════════════════════════════════════
 // WEIGHT PROGRESSION SUGGESTIONS
 // ═══════════════════════════════════════════
@@ -1224,13 +1375,11 @@ function parseRepRange(repStr) {
   return { min: n, max: n };
 }
 
-function getWeightIncrement(exerciseName) {
-  const name = exerciseName.toLowerCase();
-  // Dumbbell movements: smaller increments
-  if (name.includes('dumbbell') || name.includes('db ') || name.includes('overhead press (db)') || name.includes('curl')) {
-    return 2.5;
-  }
-  // Cable/machine movements: larger increments
+function getWeightIncrement(exerciseName, unit) {
+  // Per-hand DB loads step smaller; totals / machines step 5.
+  if (unit === 'each' || isPerHandExercise(exerciseName)) return 2.5;
+  const name = (exerciseName || '').toLowerCase();
+  if (name.includes('dumbbell') || name.includes('db ') || name.includes('curl')) return 2.5;
   return 5;
 }
 
@@ -1240,11 +1389,11 @@ function getSuggestion(exerciseDef, exIndex, lastLog, lastLogDate) {
   if (exerciseDef.newSince && (!lastLogDate || lastLogDate < exerciseDef.newSince)) {
     return { type: 'first', weight: null, detail: 'New movement — start light, find your working weight' };
   }
-  if (!lastLog || !lastLog.exercises || !lastLog.exercises[exIndex]) {
+  const prevEx = findPrevExerciseLog(lastLog, exerciseDef, exIndex);
+  if (!prevEx) {
     return { type: 'first', weight: null, detail: 'First session — start moderate, find your working weight' };
   }
 
-  const prevEx = lastLog.exercises[exIndex];
   const sets = prevEx.sets || {};
   const setKeys = Object.keys(sets);
 
@@ -1253,7 +1402,8 @@ function getSuggestion(exerciseDef, exIndex, lastLog, lastLogDate) {
   }
 
   const range = parseRepRange(exerciseDef.reps);
-  const increment = getWeightIncrement(exerciseDef.name);
+  const unit = prevEx.unit || (isPerHandExercise(exerciseDef.name) ? 'each' : 'total');
+  const increment = getWeightIncrement(exerciseDef.name, unit);
 
   // Gather previous performance
   let weights = [];
@@ -1289,20 +1439,20 @@ function getSuggestion(exerciseDef, exIndex, lastLog, lastLogDate) {
     return {
       type: 'progress',
       weight: newWeight,
-      detail: `Hit ${range.max} reps × all sets at ${prevWeight} → go up to ${newWeight}`
+      detail: `Hit ${range.max} reps × all sets at ${prevWeight}${unit==='each'?' each':''} → go up to ${newWeight}${unit==='each'?' each':''}`
     };
   } else if (minReps < range.min) {
     // Didn't even hit minimum — might need to drop
     return {
       type: 'hold',
       weight: prevWeight,
-      detail: `${minReps} reps last time (min: ${range.min}) — hold at ${prevWeight}, focus on form`
+      detail: `${minReps} reps last time (min: ${range.min}) — hold at ${prevWeight}${unit==='each'?' each':''}, focus on form`
     };
   } else {
     return {
       type: 'hold',
       weight: prevWeight,
-      detail: `Avg ${avgReps} reps (target: ${range.max}) — hold at ${prevWeight}, build reps`
+      detail: `Avg ${avgReps} reps (target: ${range.max}) — hold at ${prevWeight}${unit==='each'?' each':''}, build reps`
     };
   }
 }
@@ -1704,7 +1854,7 @@ function renderCardioView(info, log, ds) {
       </div>
       <div style="margin-top:12px;">
         <label style="font-size:0.7rem;font-weight:600;color:var(--dim);text-transform:uppercase;display:block;margin-bottom:4px;">Notes</label>
-        <textarea class="notes-input ruck-notes" placeholder="How'd it feel?">${log.notes||''}</textarea>
+        <textarea class="notes-input ruck-notes" placeholder="How'd it feel?">${escHtml(log.notes||'')}</textarea>
       </div>
     </div>`;
 }
@@ -1752,7 +1902,7 @@ function appendCoreCard(ds, date) {
     </div>
     <div style="margin-top:12px;">
       <label style="font-size:0.7rem;font-weight:600;color:var(--dim);text-transform:uppercase;display:block;margin-bottom:4px;">Core Notes</label>
-      <textarea class="notes-input core-notes" placeholder="How'd it feel? Mods, skips, anything to remember.">${note}</textarea>
+      <textarea class="notes-input core-notes" placeholder="How'd it feel? Mods, skips, anything to remember.">${escHtml(note)}</textarea>
     </div>`;
   container.appendChild(card);
   card.querySelectorAll('.core-round-btn').forEach(btn => {
@@ -1794,7 +1944,11 @@ function renderStrengthView(info, log, ds) {
   }
 
   info.exercises.forEach((ex, i) => {
-    const exLog = (log.exercises || {})[i] || {};
+    const key = exerciseKey(ex);
+    const exLog = (log.exercises || {})[key]
+      || (log.exercises || {})[i]
+      || (log.exercises || {})[String(i)]
+      || {};
     const setsLogged = Object.keys(exLog.sets || {}).length;
     const allDone = setsLogged >= ex.sets;
     const partial = setsLogged > 0 && !allDone;
@@ -1803,26 +1957,27 @@ function renderStrengthView(info, log, ds) {
 
     // Get weight suggestion
     const suggestion = getSuggestion(ex, i, prevLog, prev ? prev.date : null);
-    const sugBadge = `<div class="ex-suggestion ${suggestion.type}">${getSuggestionIcon(suggestion.type)} ${suggestion.weight ? `<strong>${suggestion.weight} lbs</strong> · ` : ''}${suggestion.detail}</div>`;
+    const sugBadge = `<div class="ex-suggestion ${suggestion.type}">${getSuggestionIcon(suggestion.type)} ${suggestion.weight ? `<strong>${suggestion.weight} lbs</strong> · ` : ''}${escHtml(suggestion.detail)}</div>`;
     const weightPlaceholder = suggestion.weight ? suggestion.weight : 'lbs';
 
     // Per-hand logging convention hint for paired-implement moves —
     // prevents the "logged each DB, total is x2" ambiguity (Jay, 6/27).
-    const perHand = /\bDB\b|Dumbbell|Farmer/i.test(ex.name) && !/Goblet/i.test(ex.name);
+    const perHand = isPerHandExercise(ex.name);
+    const unit = perHand ? 'each' : 'total';
     html += `
-    <div class="exercise" data-ex="${i}">
+    <div class="exercise" data-ex="${i}" data-ex-key="${escHtml(key)}" data-unit="${unit}">
       <div class="exercise-header" onclick="toggleExercise(${i})">
-        <span class="ex-name">${ex.name} <a class="form-link" href="${grokFormUrl(ex.name)}" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="Form check on Grok">🎥</a></span>
-        <span class="ex-prescription">${ex.sets} × ${ex.reps}${perHand ? ' · <span style="color:var(--dim)">per-hand</span>' : ''}</span>
+        <span class="ex-name">${escHtml(ex.name)} <a class="form-link" href="${grokFormUrl(ex.name)}" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="Form check on Grok">🎥</a></span>
+        <span class="ex-prescription">${ex.sets} × ${escHtml(ex.reps)}${perHand ? ' · <span style="color:var(--dim)">per-hand</span>' : ''}</span>
         <div class="ex-check ${checkClass}"></div>
       </div>
       <div class="exercise-detail ${isOpen ? 'open' : ''}" id="exDetail${i}">
         ${sugBadge}
-        ${ex.note ? `<div class="ex-note">${ex.note}</div>` : ''}
+        ${ex.note ? `<div class="ex-note">${escHtml(ex.note)}</div>` : ''}
         ${ex.rest ? `<div class="ex-rest">Rest: ${ex.rest}s between sets <button style="background:var(--accent);color:white;border:none;padding:3px 10px;border-radius:6px;font-size:0.75rem;font-weight:600;margin-left:6px;cursor:pointer;" onclick="startTimer(${ex.rest})">Start Timer</button></div>` : ''}
         <div class="set-header">
           <span>Set</span>
-          <span>Weight</span>
+          <span>Weight${perHand ? ' (each)' : ''}</span>
           <span>Reps</span>
           <span>RPE</span>
         </div>
@@ -1831,9 +1986,9 @@ function renderStrengthView(info, log, ds) {
           return `
           <div class="set-row">
             <div class="set-label">${s+1}</div>
-            <input class="set-input set-log" data-ex="${i}" data-set="${s}" data-field="weight" type="number" inputmode="decimal" placeholder="${weightPlaceholder}" value="${setLog.weight||''}" ${!setLog.weight && suggestion.weight ? `data-suggested="${suggestion.weight}"` : ''}>
-            <input class="set-input set-log" data-ex="${i}" data-set="${s}" data-field="reps" type="number" inputmode="numeric" placeholder="${ex.reps}" value="${setLog.reps||''}">
-            <input class="set-input set-log" data-ex="${i}" data-set="${s}" data-field="rpe" type="number" inputmode="numeric" placeholder="RPE" min="1" max="10" value="${setLog.rpe||''}">
+            <input class="set-input set-log" data-ex="${i}" data-ex-key="${escHtml(key)}" data-set="${s}" data-field="weight" type="number" inputmode="decimal" placeholder="${weightPlaceholder}" value="${setLog.weight||''}" ${!setLog.weight && suggestion.weight ? `data-suggested="${suggestion.weight}"` : ''}>
+            <input class="set-input set-log" data-ex="${i}" data-ex-key="${escHtml(key)}" data-set="${s}" data-field="reps" type="number" inputmode="numeric" placeholder="${escHtml(ex.reps)}" value="${setLog.reps||''}">
+            <input class="set-input set-log" data-ex="${i}" data-ex-key="${escHtml(key)}" data-set="${s}" data-field="rpe" type="number" inputmode="numeric" placeholder="RPE" min="1" max="10" value="${setLog.rpe||''}">
           </div>`;
         }).join('')}
       </div>
@@ -1843,7 +1998,7 @@ function renderStrengthView(info, log, ds) {
   return `<div style="margin-top:12px;">${html}</div>
     <div style="margin-top:12px;">
       <label style="font-size:0.7rem;font-weight:600;color:var(--dim);text-transform:uppercase;display:block;margin-bottom:4px;">Session Notes</label>
-      <textarea class="notes-input session-notes" placeholder="How'd it feel? Anything to remember?">${log.notes||''}</textarea>
+      <textarea class="notes-input session-notes" placeholder="How'd it feel? Anything to remember?">${escHtml(log.notes||'')}</textarea>
     </div>`;
 }
 
@@ -1876,7 +2031,7 @@ function maybeRecordBenchmark(ds, info, log) {
 
 function ensureLog(ds, info) {
   let log = getLog(ds);
-  if (!log) log = { type: info.type, workout: info.name };
+  if (!log) log = { type: info.type, workout: info.name, ts: Date.now() };
   if (info.slotType && !log.slot) log.slot = info.slotType;
   if (info.week && !log.week) log.week = info.week;
   if (!log.workout) log.workout = info.name;
@@ -1885,37 +2040,51 @@ function ensureLog(ds, info) {
 }
 
 function attachEventListeners(ds, info) {
+  function touchExerciseBucket(log, input) {
+    if (!log.exercises) log.exercises = {};
+    const exIdx = input.dataset.ex;
+    const key = input.dataset.exKey || exerciseKey((info.exercises || [])[exIdx]) || String(exIdx);
+    const exDef = (info.exercises || [])[exIdx] || {};
+    if (!log.exercises[key]) {
+      // Migrate legacy numeric bucket if present
+      const legacy = log.exercises[exIdx] || log.exercises[String(exIdx)];
+      log.exercises[key] = legacy ? JSON.parse(JSON.stringify(legacy)) : { sets: {} };
+    }
+    if (!log.exercises[key].sets) log.exercises[key].sets = {};
+    log.exercises[key].name = exDef.name || log.exercises[key].name || '';
+    log.exercises[key].id = key;
+    log.exercises[key].unit = isPerHandExercise(exDef.name) ? 'each' : 'total';
+    return { key, setIdx: input.dataset.set };
+  }
+
   // Auto-fill suggested weight on focus
   document.querySelectorAll('.set-log[data-suggested]').forEach(input => {
     input.addEventListener('focus', function() {
       if (!this.value && this.dataset.suggested) {
         this.value = this.dataset.suggested;
         const log = ensureLog(ds, info);
-        if (!log.exercises) log.exercises = {};
-        const exIdx = this.dataset.ex;
-        const setIdx = this.dataset.set;
-        if (!log.exercises[exIdx]) log.exercises[exIdx] = { sets: {} };
-        if (!log.exercises[exIdx].sets[setIdx]) log.exercises[exIdx].sets[setIdx] = {};
-        log.exercises[exIdx].sets[setIdx].weight = this.value;
+        const { key, setIdx } = touchExerciseBucket(log, this);
+        if (!log.exercises[key].sets[setIdx]) log.exercises[key].sets[setIdx] = {};
+        log.exercises[key].sets[setIdx].weight = this.value;
+        log.ts = Date.now();
         saveLog(ds, log);
         delete this.dataset.suggested;
+        updateExerciseChecks(info, log);
       }
     }, { once: true });
   });
 
-  // Strength set logging
+  // Strength set logging — update in place (no full re-render; keeps keyboard focus)
   document.querySelectorAll('.set-log').forEach(input => {
     input.addEventListener('change', () => {
       const log = ensureLog(ds, info);
-      if (!log.exercises) log.exercises = {};
-      const exIdx = input.dataset.ex;
-      const setIdx = input.dataset.set;
+      const { key, setIdx } = touchExerciseBucket(log, input);
       const field = input.dataset.field;
-      if (!log.exercises[exIdx]) log.exercises[exIdx] = { sets: {} };
-      if (!log.exercises[exIdx].sets[setIdx]) log.exercises[exIdx].sets[setIdx] = {};
-      log.exercises[exIdx].sets[setIdx][field] = input.value;
+      if (!log.exercises[key].sets[setIdx]) log.exercises[key].sets[setIdx] = {};
+      log.exercises[key].sets[setIdx][field] = input.value;
+      log.ts = Date.now();
       saveLog(ds, log);
-      renderToday();
+      updateExerciseChecks(info, log);
     });
   });
 
@@ -1924,6 +2093,7 @@ function attachEventListeners(ds, info) {
     input.addEventListener('change', () => {
       const log = ensureLog(ds, info);
       log[input.dataset.field] = input.value;
+      log.ts = Date.now();
       saveLog(ds, log);
       maybeRecordBenchmark(ds, info, log);
       renderHeader();
@@ -1933,6 +2103,7 @@ function attachEventListeners(ds, info) {
     btn.addEventListener('click', () => {
       const log = ensureLog(ds, info);
       log.rpe = btn.dataset.rpe;
+      log.ts = Date.now();
       saveLog(ds, log);
       document.querySelectorAll('.ruck-rpe').forEach(b => b.classList.remove('selected'));
       btn.classList.add('selected');
@@ -1944,6 +2115,7 @@ function attachEventListeners(ds, info) {
     notesEl.addEventListener('change', () => {
       const log = ensureLog(ds, info);
       log.notes = notesEl.value;
+      log.ts = Date.now();
       saveLog(ds, log);
     });
   }
@@ -2080,11 +2252,12 @@ function renderHistory() {
     const cc = core[ds];
     const coreTag = coreDidDay(cc) ? (cc.rounds != null ? ' · core ' + cc.rounds + '/3' : ' · core ✓') : '';
     histHtml += `
-    <div class="history-entry">
+    <div class="history-entry" onclick="navigateToDay('${ds}')" title="Open this day">
       <div class="he-date">${dateLabel}${coreTag}</div>
-      <div class="he-title">${log.workout || log.type}</div>
-      <div class="he-stats">${stats}</div>
-      ${log.notes ? `<div style="font-size:0.8rem;color:var(--muted);font-style:italic;margin-top:4px;">"${log.notes}"</div>` : ''}
+      <div class="he-title">${escHtml(log.workout || log.type)}</div>
+      <div class="he-stats">${escHtml(stats)}</div>
+      ${log.notes ? `<div style="font-size:0.8rem;color:var(--muted);font-style:italic;margin-top:4px;">"${escHtml(log.notes)}"</div>` : ''}
+      <div class="he-hint">Tap to open / edit →</div>
     </div>`;
   });
   document.getElementById('historyContent').innerHTML = histHtml;
@@ -2287,22 +2460,41 @@ async function restoreFromCloud() {
   try {
     const data = await fetchRepoJson(SYNC_FILE);
 
-    // Merge: cloud data fills in anything missing locally
+    // Smart merge: per-date log richness (not blind local-wins).
+    // Prevents a thin local day from wiping a fuller cloud session.
     const local = getState();
     const merged = { ...data };
-    if (local.logs) {
-      merged.logs = { ...data.logs, ...local.logs };
-    }
+    merged.logs = mergeLogMaps(data.logs || {}, local.logs || {});
     if (local.startDate && !merged.startDate) {
       merged.startDate = local.startDate;
     }
-    if (local.core) merged.core = { ...(data.core || {}), ...local.core };
-    if (local.swaps) merged.swaps = { ...(data.swaps || {}), ...local.swaps };
-    if (local.benchmarks) merged.benchmarks = { ...(data.benchmarks || {}), ...local.benchmarks };
+    // Core / swaps / benchmarks: union by date; local fills holes but does not clobber richer cloud
+    merged.core = {};
+    const coreKeys = new Set([...Object.keys(data.core || {}), ...Object.keys(local.core || {})]);
+    for (const k of coreKeys) {
+      const c = (data.core || {})[k];
+      const l = (local.core || {})[k];
+      if (!c) merged.core[k] = l;
+      else if (!l) merged.core[k] = c;
+      else {
+        const cR = (c.rounds != null ? c.rounds : (c.done ? 3 : 0));
+        const lR = (l.rounds != null ? l.rounds : (l.done ? 3 : 0));
+        merged.core[k] = (lR > cR || (l.ts || 0) >= (c.ts || 0)) ? { ...c, ...l } : { ...l, ...c };
+        if (!merged.core[k].note && (c.note || l.note)) merged.core[k].note = l.note || c.note;
+      }
+    }
+    merged.swaps = { ...(data.swaps || {}), ...(local.swaps || {}) };
+    merged.benchmarks = { ...(data.benchmarks || {}), ...(local.benchmarks || {}) };
+
+    // Conflict report when both sides had same-date strength logs
+    let conflicts = 0;
+    for (const ds of Object.keys(data.logs || {})) {
+      if ((local.logs || {})[ds] && logRichness(data.logs[ds]) !== logRichness(local.logs[ds])) conflicts++;
+    }
 
     saveState(merged);
     const logCount = Object.keys(merged.logs || {}).length;
-    status.textContent = `✅ Restored ${logCount} workout(s) — ${new Date().toLocaleTimeString()}`;
+    status.textContent = `✅ Restored ${logCount} workout(s)${conflicts ? ` · merged ${conflicts} overlapping day(s)` : ''} — ${new Date().toLocaleTimeString()}`;
     status.style.color = 'var(--green)';
 
     // Refresh views
