@@ -7,6 +7,9 @@ Personal PWA for the **FORGE** 8-week strength + row/ruck + daily core block.
 
 ## Features
 
+- **Progress charts** — best-set weight trends + cardio distance (SVG, no deps)
+- **Block archive** — FORGE 1 → FORGE 2 keeps history; progression scoped to current block
+
 - Flexible 4-session weeks (strength A/B, cardio A/B — any days)
 - Set logging with progressive load suggestions (per-hand aware)
 - Rest timer (iOS audio unlock + vibrate + flash)
@@ -47,3 +50,14 @@ All program data lives in the `PROGRAM` object in `index.html` (phases, workouts
 ## Privacy note
 
 Workout logs sync only to the **private** `workout-data` repo. This app repo is public shell + program only — do not commit personal logs or PATs here.
+
+## Blocks (FORGE N)
+
+When an 8-week block ends (or you want a fresh program), use **Settings → Start New 8-Week Block** (or the completion CTA on Today).
+
+- Archives the current block with a date range
+- Keeps all logs forever
+- Progress tab can filter **Current / All / FORGE N**
+- Weight suggestions only look at the **current** block (so program rewrites don't inherit wrong history)
+
+Legacy data without `blockId` is migrated into **FORGE 1** on first load after v2.6.

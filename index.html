@@ -558,6 +558,81 @@ body {
   cursor: pointer;
 }
 
+
+/* ── Charts + Blocks (v2.6) ── */
+.chart-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px;
+  margin-bottom: 10px;
+}
+.chart-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--heading);
+  margin-bottom: 2px;
+}
+.chart-sub {
+  font-size: 0.7rem;
+  color: var(--dim);
+  margin-bottom: 10px;
+}
+.chart-svg { width: 100%; height: 140px; display: block; }
+.chart-empty {
+  font-size: 0.8rem;
+  color: var(--muted);
+  padding: 20px 0;
+  text-align: center;
+}
+.chart-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+.chart-pill {
+  font-size: 0.65rem;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 8px;
+  background: var(--card2);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  cursor: pointer;
+}
+.chart-pill.active {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: rgba(74,158,255,0.12);
+}
+.block-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+.block-chip {
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 6px 12px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: var(--card2);
+  color: var(--muted);
+  cursor: pointer;
+}
+.block-chip.active {
+  border-color: var(--accent);
+  background: rgba(74,158,255,0.15);
+  color: var(--accent);
+}
+.block-chip.archived {
+  opacity: 0.85;
+}
+.delta-up { color: var(--green); }
+.delta-down { color: var(--red); }
+.delta-flat { color: var(--dim); }
 /* ── Form-check links (Grok) ── */
 .form-link { text-decoration: none; font-size: 0.8rem; padding: 2px 6px; opacity: 0.7; }
 .form-link:active { opacity: 1; }
@@ -717,6 +792,10 @@ if (sessionStorage.getItem('ri_auth')==='1') {
 <div class="page" id="pageHistory">
   <div class="section-title">Progress</div>
   <div id="statsContent"></div>
+  <div class="section-title">Strength Trends</div>
+  <div id="chartsContent"></div>
+  <div class="section-title">Blocks</div>
+  <div id="blockFilter"></div>
   <div class="section-title">Workout History</div>
   <div id="historyContent"></div>
 </div>
@@ -725,6 +804,10 @@ if (sessionStorage.getItem('ri_auth')==='1') {
 <div class="page" id="pageSettings">
   <div class="section-title">Program</div>
   <div class="card">
+    <div class="setting-row">
+      <span class="setting-label">Current Block</span>
+      <span class="setting-value" id="currentBlockDisplay">—</span>
+    </div>
     <div class="setting-row">
       <span class="setting-label">Start Date</span>
       <input type="date" class="date-input" id="startDateInput" style="width:auto;">
@@ -738,6 +821,8 @@ if (sessionStorage.getItem('ri_auth')==='1') {
       <span class="setting-value" id="currentPhaseDisplay">—</span>
     </div>
   </div>
+  <button class="btn btn-secondary" onclick="confirmStartNewBlock()" style="margin-bottom:8px;">Start New 8-Week Block</button>
+  <div style="font-size:0.75rem;color:var(--dim);margin:-4px 0 16px;">Archives the current block for history/charts, then starts fresh. Logs stay — progression restarts for the new block.</div>
   <div class="section-title">Cloud Sync</div>
   <div class="card">
     <div style="font-size:0.85rem;color:var(--muted);margin-bottom:10px;">Sync workout data so Knox can include lift details in your weekly wellness digest. Data syncs to <code>data/ruck-iron-data.json</code> in the <b>private</b> workout-data repo (PAT required).</div>
@@ -766,7 +851,7 @@ if (sessionStorage.getItem('ri_auth')==='1') {
   <button class="btn btn-secondary" onclick="exportData()">Export All Data (JSON)</button>
   <button class="btn btn-danger" onclick="confirmClear()">Clear All Data</button>
   <div style="text-align:center;margin-top:24px;">
-    <p style="font-size:0.75rem;color:var(--dim);">Ruck + Iron v2.5.0 · 2026-08-08</p>
+    <p style="font-size:0.75rem;color:var(--dim);">Ruck + Iron v2.6.0 · 2026-08-08</p>
     <p style="font-size:0.75rem;color:var(--dim);">Built by Knox for Jay Furman</p>
   </div>
 </div>
@@ -1018,12 +1103,135 @@ function resolveWorkout(type, week) {
 // STATE
 // ═══════════════════════════════════════════
 
+
+// ═══════════════════════════════════════════
+// BLOCK ARCHIVE (FORGE 1 → FORGE 2 …)
+// ═══════════════════════════════════════════
+// Logs keep their dates forever. Blocks group them for history filters,
+// charts, and progression (suggestions only use the *current* block so a
+// program rewrite doesn't inherit old exercise indexes/weights blindly).
+
+let historyBlockFilter = 'current'; // 'current' | 'all' | blockId
+let chartLiftKey = null; // selected exercise key for big chart
+
+function ensureBlocks(s) {
+  if (!s.blocks) s.blocks = [];
+  if (!s.startDate) return s;
+  if (!s.currentBlockId || !s.blocks.length) {
+    const id = 'forge-1';
+    s.blocks = [{
+      id,
+      name: 'FORGE 1',
+      startDate: s.startDate,
+      endDate: null,
+      program: 'FORGE',
+      createdAt: Date.now(),
+    }];
+    s.currentBlockId = id;
+    // Backfill legacy logs/core/benchmarks into forge-1
+    for (const ds of Object.keys(s.logs || {})) {
+      if (!s.logs[ds].blockId) s.logs[ds].blockId = id;
+    }
+    for (const ds of Object.keys(s.core || {})) {
+      if (s.core[ds] && !s.core[ds].blockId) s.core[ds].blockId = id;
+    }
+    for (const ds of Object.keys(s.benchmarks || {})) {
+      if (s.benchmarks[ds] && !s.benchmarks[ds].blockId) s.benchmarks[ds].blockId = id;
+    }
+  }
+  return s;
+}
+
 function getState() {
   try {
-    return JSON.parse(localStorage.getItem('ruckIronState') || '{}');
-  } catch { return {}; }
+    const s = JSON.parse(localStorage.getItem('ruckIronState') || '{}');
+    return ensureBlocks(s);
+  } catch { return ensureBlocks({}); }
 }
-function saveState(s) { localStorage.setItem('ruckIronState', JSON.stringify(s)); }
+
+function getCurrentBlockId() {
+  const s = getState();
+  return s.currentBlockId || (s.blocks && s.blocks[0] && s.blocks[0].id) || null;
+}
+
+function getCurrentBlock() {
+  const s = getState();
+  const id = getCurrentBlockId();
+  return (s.blocks || []).find(b => b.id === id) || null;
+}
+
+function getBlockById(id) {
+  return (getState().blocks || []).find(b => b.id === id) || null;
+}
+
+function isDateInBlock(ds, blockId) {
+  const b = getBlockById(blockId);
+  if (!b) return true;
+  if (ds < b.startDate) return false;
+  if (b.endDate && ds > b.endDate) return false;
+  return true;
+}
+
+function logBelongsToBlock(ds, log, blockId) {
+  if (!blockId) return true;
+  if (log && log.blockId) return log.blockId === blockId;
+  return isDateInBlock(ds, blockId);
+}
+
+function nextForgeName(blocks) {
+  let max = 0;
+  for (const b of blocks || []) {
+    const m = String(b.name || '').match(/FORGE\s*(\d+)/i);
+    if (m) max = Math.max(max, parseInt(m[1], 10));
+  }
+  return 'FORGE ' + (max + 1);
+}
+
+function confirmStartNewBlock() {
+  const cur = getCurrentBlock();
+  const label = cur ? cur.name : 'current block';
+  if (!confirm('Archive ' + label + ' and start a new 8-week block today?\\n\\n• All logs stay in history\\n• Charts can filter by block\\n• Weight suggestions reset to the new block')) return;
+  startNewBlock();
+}
+
+function startNewBlock() {
+  const s = getState();
+  ensureBlocks(s);
+  const today = dateStr(new Date());
+  const cur = (s.blocks || []).find(b => b.id === s.currentBlockId);
+  if (cur && !cur.endDate) {
+    // End yesterday if starting mid-stream so ranges don't overlap
+    const y = new Date(today + 'T12:00:00');
+    y.setDate(y.getDate() - 1);
+    cur.endDate = dateStr(y);
+    if (cur.endDate < cur.startDate) cur.endDate = today;
+  }
+  const name = nextForgeName(s.blocks);
+  const id = name.toLowerCase().replace(/\s+/g, '-') + '-' + Date.now().toString(36);
+  s.blocks.push({
+    id,
+    name,
+    startDate: today,
+    endDate: null,
+    program: 'FORGE',
+    createdAt: Date.now(),
+  });
+  s.currentBlockId = id;
+  s.startDate = today;
+  saveState(s);
+  historyBlockFilter = 'current';
+  viewDate = new Date();
+  renderToday();
+  renderHeader();
+  if (document.getElementById('pageSettings')?.classList.contains('active')) renderSettings();
+  if (document.getElementById('pageHistory')?.classList.contains('active')) renderHistory();
+}
+
+
+function saveState(s) {
+  ensureBlocks(s);
+  localStorage.setItem('ruckIronState', JSON.stringify(s));
+}
 
 function getStartDate() {
   const s = getState();
@@ -1032,8 +1240,17 @@ function getStartDate() {
 function setStartDate(d) {
   const s = getState();
   s.startDate = d;
+  // If no block yet, ensureBlocks will create forge-1 on next getState/save
+  if (!s.currentBlockId || !(s.blocks || []).length) {
+    ensureBlocks(s);
+    if (s.blocks && s.blocks[0]) s.blocks[0].startDate = d;
+  } else {
+    const cur = (s.blocks || []).find(b => b.id === s.currentBlockId);
+    if (cur && !cur.endDate) cur.startDate = d;
+  }
   saveState(s);
 }
+
 
 function getWeekNumber(date) {
   // Parse as local noon — bare 'YYYY-MM-DD' parses as UTC midnight and
@@ -1114,19 +1331,18 @@ function weekProgress(week) {
   const bonus = Math.max(0, sessions - done.size);
   return { done: done.size, total: PROGRAM.weekOrder.length, slots: done, bonus };
 }
-function startNewBlock() {
-  setStartDate(dateStr(new Date()));
-  viewDate = new Date();
-  renderToday();
-  renderHeader();
-}
+// startNewBlock / confirmStartNewBlock defined with block archive helpers above
 
 // ─── Daily core helpers ───
 function getCoreLog(ds) { return (getState().core || {})[ds] || null; }
 function saveCoreLog(ds, data) {
   const s = getState();
   if (!s.core) s.core = {};
-  if (data === null) { delete s.core[ds]; } else { s.core[ds] = data; }
+  if (data === null) { delete s.core[ds]; }
+  else {
+    if (!data.blockId) data.blockId = getCurrentBlockId();
+    s.core[ds] = data;
+  }
   saveState(s);
   debouncedSync();
 }
@@ -1358,8 +1574,12 @@ function getLastLogForWorkout(workoutName) {
   const state = getState();
   const logs = state.logs || {};
   const today = dateStr(new Date());
+  const bid = getCurrentBlockId();
   const entries = Object.entries(logs)
-    .filter(([ds, log]) => log.workout === workoutName && ds !== today && log.type === 'strength')
+    .filter(([ds, log]) => {
+      if (log.workout !== workoutName || ds === today || log.type !== 'strength') return false;
+      return logBelongsToBlock(ds, log, bid);
+    })
     .sort((a, b) => b[0].localeCompare(a[0]));
   return entries.length > 0 ? { date: entries[0][0], log: entries[0][1] } : null;
 }
@@ -1667,7 +1887,9 @@ function renderHeader() {
   const prog = weekProgress(week);
   const bonusStr = prog.bonus ? ` · +${prog.bonus} bonus` : '';
   const staleStr = syncIsStale() ? ' · ⚠️ sync stale' : '';
-  document.getElementById('headerSub').textContent = `Week ${week} of ${TW} · ${prog.done}/${prog.total} slots${bonusStr}${staleStr}`;
+  const block = getCurrentBlock();
+  const blockStr = block ? `${block.name} · ` : '';
+  document.getElementById('headerSub').textContent = `${blockStr}Week ${week} of ${TW} · ${prog.done}/${prog.total} slots${bonusStr}${staleStr}`;
   document.getElementById('headerBadge').innerHTML = `<span class="week-phase" style="background:${phase.color}22;color:${phase.color}">${phase.name}</span>`;
 }
 
@@ -2024,7 +2246,8 @@ function maybeRecordBenchmark(ds, info, log) {
     name: info.benchmark, mode: log.mode || 'row',
     duration: log.duration || '', distance: log.distance || '',
     watts: log.watts || '', weight: log.weight || '',
-    hr: log.hr || '', rpe: log.rpe || '', week: info.week || null
+    hr: log.hr || '', rpe: log.rpe || '', week: info.week || null,
+    blockId: log.blockId || getCurrentBlockId()
   };
   saveState(s);
 }
@@ -2036,6 +2259,8 @@ function ensureLog(ds, info) {
   if (info.week && !log.week) log.week = info.week;
   if (!log.workout) log.workout = info.name;
   if (!log.type) log.type = info.type;
+  const bid = getCurrentBlockId();
+  if (bid && !log.blockId) log.blockId = bid;
   return log;
 }
 
@@ -2182,12 +2407,184 @@ function navigateToDay(ds) {
   showPage('Today');
 }
 
+function resolveHistoryBlockId() {
+  if (historyBlockFilter === 'all') return null;
+  if (historyBlockFilter === 'current') return getCurrentBlockId();
+  return historyBlockFilter;
+}
+
+function filterLogsByBlock(logs, blockId) {
+  return Object.entries(logs || {})
+    .filter(([ds, log]) => logBelongsToBlock(ds, log, blockId))
+    .sort((a, b) => b[0].localeCompare(a[0]));
+}
+
+// Best (heaviest) set weight that still has reps for an exercise entry.
+function bestSetWeight(exEntry) {
+  if (!exEntry || !exEntry.sets) return null;
+  let best = null;
+  for (const s of Object.values(exEntry.sets)) {
+    if (!s || s.weight === '' || s.weight == null) continue;
+    const w = parseFloat(s.weight);
+    if (isNaN(w)) continue;
+    // Skip pure AMRAP bodyweight zeros unless they are the only data
+    if (best === null || w > best) best = w;
+  }
+  return best;
+}
+
+function exerciseSeries(exerciseKey, blockId) {
+  const logs = getState().logs || {};
+  const points = [];
+  for (const [ds, log] of Object.entries(logs)) {
+    if (!log || log.type !== 'strength' || !log.exercises) continue;
+    if (!logBelongsToBlock(ds, log, blockId)) continue;
+    // Match by id/key/name slug
+    let hit = log.exercises[exerciseKey];
+    if (!hit) {
+      for (const [k, ex] of Object.entries(log.exercises)) {
+        const id = ex.id || k;
+        const slug = exerciseKeyFromName(ex.name || k);
+        if (id === exerciseKey || slug === exerciseKey || k === exerciseKey) {
+          hit = ex;
+          break;
+        }
+      }
+    }
+    if (!hit) continue;
+    const w = bestSetWeight(hit);
+    if (w == null) continue;
+    points.push({ date: ds, weight: w, unit: hit.unit || (isPerHandExercise(hit.name) ? 'each' : 'total') });
+  }
+  points.sort((a, b) => a.date.localeCompare(b.date));
+  return points;
+}
+
+function exerciseKeyFromName(name) {
+  return String(name || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '');
+}
+
+// Rank lifts by how often they appear with logged weight in the filter scope.
+function topLiftKeys(blockId, limit) {
+  const counts = {};
+  const labels = {};
+  const logs = getState().logs || {};
+  for (const [ds, log] of Object.entries(logs)) {
+    if (!log || log.type !== 'strength' || !log.exercises) continue;
+    if (!logBelongsToBlock(ds, log, blockId)) continue;
+    for (const [k, ex] of Object.entries(log.exercises)) {
+      if (bestSetWeight(ex) == null) continue;
+      const key = ex.id || exerciseKeyFromName(ex.name) || k;
+      counts[key] = (counts[key] || 0) + 1;
+      labels[key] = ex.name || key;
+    }
+  }
+  return Object.keys(counts)
+    .sort((a, b) => counts[b] - counts[a])
+    .slice(0, limit || 6)
+    .map(k => ({ key: k, label: labels[k], count: counts[k] }));
+}
+
+function cardioSeries(blockId) {
+  const logs = getState().logs || {};
+  const points = [];
+  for (const [ds, log] of Object.entries(logs)) {
+    if (!log || log.type === 'strength') continue;
+    if (!logBelongsToBlock(ds, log, blockId)) continue;
+    const mode = log.mode || (log.type === 'ruck' ? 'ruck' : 'row');
+    const dist = parseFloat(log.distance);
+    if (isNaN(dist) || dist <= 0) continue;
+    // Normalize to miles for chart compare: row meters → miles
+    const miles = mode === 'ruck' ? dist : dist / 1609.34;
+    points.push({ date: ds, miles, mode, raw: dist });
+  }
+  points.sort((a, b) => a.date.localeCompare(b.date));
+  return points;
+}
+
+function renderLineChartSvg(points, opts) {
+  opts = opts || {};
+  const w = 320, h = 140;
+  const padL = 36, padR = 10, padT = 12, padB = 24;
+  if (!points.length) {
+    return `<div class="chart-empty">${escHtml(opts.empty || 'Not enough data yet')}</div>`;
+  }
+  const vals = points.map(p => p.value);
+  let minV = Math.min(...vals);
+  let maxV = Math.max(...vals);
+  if (minV === maxV) { minV = minV * 0.9; maxV = maxV * 1.1 || 1; }
+  const span = maxV - minV || 1;
+  const innerW = w - padL - padR;
+  const innerH = h - padT - padB;
+  const coords = points.map((p, i) => {
+    const x = padL + (points.length === 1 ? innerW / 2 : (i / (points.length - 1)) * innerW);
+    const y = padT + innerH - ((p.value - minV) / span) * innerH;
+    return { x, y, ...p };
+  });
+  const poly = coords.map(c => `${c.x.toFixed(1)},${c.y.toFixed(1)}`).join(' ');
+  const area = `${padL},${padT + innerH} ${poly} ${padL + innerW},${padT + innerH}`;
+  const color = opts.color || '#4a9eff';
+  const first = coords[0], last = coords[coords.length - 1];
+  const delta = last.value - first.value;
+  const deltaCls = delta > 0.01 ? 'delta-up' : delta < -0.01 ? 'delta-down' : 'delta-flat';
+  const deltaStr = (delta > 0 ? '+' : '') + (Number.isInteger(delta) ? delta : delta.toFixed(1));
+  const yTicks = [minV, (minV + maxV) / 2, maxV];
+  let ticks = '';
+  for (const t of yTicks) {
+    const y = padT + innerH - ((t - minV) / span) * innerH;
+    ticks += `<text x="${padL - 4}" y="${y + 3}" text-anchor="end" fill="#64748b" font-size="9">${opts.format ? opts.format(t) : Math.round(t)}</text>`;
+    ticks += `<line x1="${padL}" y1="${y}" x2="${w - padR}" y2="${y}" stroke="#2a2d3a" stroke-width="1"/>`;
+  }
+  const dots = coords.map(c =>
+    `<circle cx="${c.x.toFixed(1)}" cy="${c.y.toFixed(1)}" r="3.5" fill="${color}"><title>${escHtml(c.date)}: ${escHtml(String(c.value))}${opts.unit ? ' ' + opts.unit : ''}</title></circle>`
+  ).join('');
+  const xLabels = [];
+  if (coords.length) {
+    xLabels.push(`<text x="${first.x}" y="${h - 6}" text-anchor="start" fill="#64748b" font-size="9">${escHtml(shortDate(first.date))}</text>`);
+    if (coords.length > 1) {
+      xLabels.push(`<text x="${last.x}" y="${h - 6}" text-anchor="end" fill="#64748b" font-size="9">${escHtml(shortDate(last.date))}</text>`);
+    }
+  }
+  return `
+    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px;">
+      <div class="chart-title">${escHtml(opts.title || '')}</div>
+      <div style="font-size:0.75rem;font-weight:700;" class="${deltaCls}">${escHtml(String(last.value))}${opts.unit ? ' ' + opts.unit : ''} <span style="font-weight:600;opacity:0.85;">(${deltaStr})</span></div>
+    </div>
+    <div class="chart-sub">${escHtml(opts.sub || (points.length + ' sessions'))}</div>
+    <svg class="chart-svg" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">
+      ${ticks}
+      <polygon points="${area}" fill="${color}" opacity="0.12"/>
+      <polyline points="${poly}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+      ${dots}
+      ${xLabels.join('')}
+    </svg>`;
+}
+
+function shortDate(ds) {
+  const d = new Date(ds + 'T12:00:00');
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+function setHistoryBlockFilter(val) {
+  historyBlockFilter = val;
+  renderHistory();
+}
+
+function setChartLift(key) {
+  chartLiftKey = key;
+  renderHistory();
+}
+
 function renderHistory() {
   renderHeader();
   const state = getState();
-  const logs = state.logs || {};
+  ensureBlocks(state);
+  const blockId = resolveHistoryBlockId();
   const core = state.core || {};
-  const entries = Object.entries(logs).sort((a,b) => b[0].localeCompare(a[0]));
+  const entries = filterLogsByBlock(state.logs || {}, blockId);
 
   let totalCardio = 0, totalStrength = 0;
   entries.forEach(([ds, log]) => {
@@ -2195,19 +2592,82 @@ function renderHistory() {
     else totalCardio++;
   });
 
+  const block = blockId ? getBlockById(blockId) : null;
+  const scopeLabel = historyBlockFilter === 'all' ? 'All blocks' : (block ? block.name : 'Current block');
+
   const statsHtml = `
     <div class="stats-grid">
       <div class="stat-box"><div class="stat-num">${entries.length}</div><div class="stat-label">Sessions</div></div>
       <div class="stat-box"><div class="stat-num">${totalStrength}</div><div class="stat-label">Strength</div></div>
       <div class="stat-box"><div class="stat-num">${totalCardio}</div><div class="stat-label">Cardio</div></div>
       <div class="stat-box"><div class="stat-num">${coreStreak()} 🔥</div><div class="stat-label">Core Streak</div></div>
-    </div>`;
+    </div>
+    <div style="font-size:0.7rem;color:var(--dim);margin:-6px 0 12px;text-align:center;">Showing: ${escHtml(scopeLabel)}</div>`;
   document.getElementById('statsContent').innerHTML = statsHtml;
 
-  // Benchmarks section — block-over-block comparison lives here.
-  const benchmarks = Object.entries(state.benchmarks || {}).sort((a,b) => b[0].localeCompare(a[0]));
+  // Block filter chips
+  const blocks = (state.blocks || []).slice().sort((a, b) => (a.startDate || '').localeCompare(b.startDate || ''));
+  let chips = `<div class="block-chips">
+    <button class="block-chip ${historyBlockFilter === 'current' ? 'active' : ''}" onclick="setHistoryBlockFilter('current')">Current</button>
+    <button class="block-chip ${historyBlockFilter === 'all' ? 'active' : ''}" onclick="setHistoryBlockFilter('all')">All</button>`;
+  for (const b of blocks) {
+    const active = historyBlockFilter === b.id ? 'active' : '';
+    const archived = b.endDate ? 'archived' : '';
+    chips += `<button class="block-chip ${active} ${archived}" onclick="setHistoryBlockFilter('${b.id}')">${escHtml(b.name)}</button>`;
+  }
+  chips += `</div>`;
+  if (blocks.length) {
+    chips += `<div style="font-size:0.7rem;color:var(--dim);margin:-4px 0 12px;">`;
+    chips += blocks.map(b => {
+      const end = b.endDate || 'now';
+      return `${escHtml(b.name)}: ${escHtml(b.startDate)} → ${escHtml(end)}`;
+    }).join(' · ');
+    chips += `</div>`;
+  }
+  document.getElementById('blockFilter').innerHTML = chips;
+
+  // Charts
+  const lifts = topLiftKeys(blockId, 8);
+  if (!chartLiftKey && lifts.length) chartLiftKey = lifts[0].key;
+  if (chartLiftKey && lifts.length && !lifts.find(l => l.key === chartLiftKey)) {
+    chartLiftKey = lifts[0].key;
+  }
+
+  let chartsHtml = '';
+  if (lifts.length) {
+    const lift = lifts.find(l => l.key === chartLiftKey) || lifts[0];
+    const series = exerciseSeries(lift.key, blockId).map(p => ({ date: p.date, value: p.weight, unit: p.unit }));
+    const unit = series[0] && series[0].unit === 'each' ? 'lb ea' : 'lb';
+    chartsHtml += `<div class="chart-card">${renderLineChartSvg(series, {
+      title: lift.label,
+      sub: 'Best set weight · ' + scopeLabel,
+      color: '#4a9eff',
+      unit,
+      empty: 'Log a few sets to see the trend',
+    })}
+    <div class="chart-legend">
+      ${lifts.map(l => `<button class="chart-pill ${l.key === lift.key ? 'active' : ''}" onclick="setChartLift('${l.key}')">${escHtml(l.label)}</button>`).join('')}
+    </div></div>`;
+  } else {
+    chartsHtml += `<div class="chart-card"><div class="chart-empty">Strength charts appear after a few logged sets.</div></div>`;
+  }
+
+  const cardio = cardioSeries(blockId).map(p => ({ date: p.date, value: Math.round(p.miles * 100) / 100, mode: p.mode }));
+  chartsHtml += `<div class="chart-card">${renderLineChartSvg(cardio, {
+    title: 'Cardio distance',
+    sub: 'Row m→mi · Ruck mi · ' + scopeLabel,
+    color: '#34d399',
+    unit: 'mi',
+    empty: 'Log row/ruck distance to chart it',
+    format: (v) => (Math.round(v * 10) / 10),
+  })}</div>`;
+
+  // Benchmarks (filtered)
+  const benchmarks = Object.entries(state.benchmarks || {})
+    .filter(([ds, b]) => logBelongsToBlock(ds, b, blockId))
+    .sort((a, b) => b[0].localeCompare(a[0]));
   if (benchmarks.length) {
-    let bHtml = '<div class="section-title">Benchmarks</div>';
+    chartsHtml += '<div class="section-title" style="margin-top:8px;">Benchmarks</div>';
     benchmarks.forEach(([ds, b]) => {
       const d = new Date(ds + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
       const parts = [];
@@ -2216,17 +2676,18 @@ function renderHistory() {
       if (b.distance) parts.push(`${b.distance}${b.mode === 'ruck' ? ' mi' : ' m'}`);
       if (b.watts) parts.push(`${b.watts} W`);
       if (b.rpe) parts.push(`RPE ${b.rpe}`);
-      bHtml += `<div class="history-entry" style="border-color:rgba(245,158,11,0.4);">
+      chartsHtml += `<div class="history-entry" style="border-color:rgba(245,158,11,0.4);" onclick="navigateToDay('${ds}')">
         <div class="he-date">${d}</div>
-        <div class="he-title">🏁 ${b.name}</div>
-        <div class="he-stats">${parts.join(' • ')}</div>
+        <div class="he-title">🏁 ${escHtml(b.name)}</div>
+        <div class="he-stats">${escHtml(parts.join(' • '))}</div>
       </div>`;
     });
-    document.getElementById('statsContent').innerHTML = statsHtml + bHtml;
   }
 
+  document.getElementById('chartsContent').innerHTML = chartsHtml;
+
   if (entries.length === 0) {
-    document.getElementById('historyContent').innerHTML = '<div class="empty-state"><p>No workouts logged yet. Day 1 starts now.</p></div>';
+    document.getElementById('historyContent').innerHTML = '<div class="empty-state"><p>No workouts in this block yet.</p></div>';
     return;
   }
 
@@ -2251,9 +2712,12 @@ function renderHistory() {
     }
     const cc = core[ds];
     const coreTag = coreDidDay(cc) ? (cc.rounds != null ? ' · core ' + cc.rounds + '/3' : ' · core ✓') : '';
+    const btag = log.blockId && historyBlockFilter === 'all'
+      ? ` · ${escHtml((getBlockById(log.blockId) || {}).name || log.blockId)}`
+      : '';
     histHtml += `
     <div class="history-entry" onclick="navigateToDay('${ds}')" title="Open this day">
-      <div class="he-date">${dateLabel}${coreTag}</div>
+      <div class="he-date">${dateLabel}${coreTag}${btag}</div>
       <div class="he-title">${escHtml(log.workout || log.type)}</div>
       <div class="he-stats">${escHtml(stats)}</div>
       ${log.notes ? `<div style="font-size:0.8rem;color:var(--muted);font-style:italic;margin-top:4px;">"${escHtml(log.notes)}"</div>` : ''}
@@ -2295,6 +2759,11 @@ function renderSettings() {
   document.getElementById('currentWeekDisplay').textContent = week > 0 && week <= TW ? `Week ${week} of ${TW}` : week > TW ? 'Complete' : '—';
   const phase = week > 0 && week <= TW ? getPhase(week) : null;
   document.getElementById('currentPhaseDisplay').textContent = phase ? phase.name : '—';
+  const bd = document.getElementById('currentBlockDisplay');
+  if (bd) {
+    const b = getCurrentBlock();
+    bd.textContent = b ? b.name : '—';
+  }
 }
 
 
@@ -2485,6 +2954,16 @@ async function restoreFromCloud() {
     }
     merged.swaps = { ...(data.swaps || {}), ...(local.swaps || {}) };
     merged.benchmarks = { ...(data.benchmarks || {}), ...(local.benchmarks || {}) };
+
+    // Blocks: union by id; prefer local currentBlockId if present
+    const byId = {};
+    for (const b of (data.blocks || [])) byId[b.id] = { ...b };
+    for (const b of (local.blocks || [])) {
+      byId[b.id] = byId[b.id] ? { ...byId[b.id], ...b } : { ...b };
+    }
+    merged.blocks = Object.values(byId).sort((a, b) => (a.startDate || '').localeCompare(b.startDate || ''));
+    merged.currentBlockId = local.currentBlockId || data.currentBlockId || (merged.blocks[0] && merged.blocks[0].id) || null;
+    ensureBlocks(merged);
 
     // Conflict report when both sides had same-date strength logs
     let conflicts = 0;
