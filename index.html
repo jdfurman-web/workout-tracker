@@ -358,9 +358,33 @@ body {
 .timer-time { font-size: 1.6rem; font-weight: 700; color: var(--heading); font-variant-numeric: tabular-nums; }
 .timer-label { font-size: 0.75rem; color: var(--muted); }
 .timer-bar.flash { animation: timerFlash 0.6s ease-in-out 4; }
+.timer-bar.flash-strong {
+  animation: timerFlashStrong 0.4s ease-in-out 8;
+  border-bottom-color: var(--green);
+}
 @keyframes timerFlash {
   0%, 100% { background: rgba(26,29,40,0.97); }
   50% { background: rgba(74,158,255,0.5); }
+}
+@keyframes timerFlashStrong {
+  0%, 100% { background: rgba(26,29,40,0.97); color: var(--heading); }
+  50% { background: rgba(52,211,153,0.9); }
+}
+.timer-bar.flash-strong .timer-time { color: #04140c; }
+.timer-bar.flash-strong .timer-label { color: #0b2418; font-weight: 700; }
+/* Full-viewport pulse when audio cannot play over Spotify/Audible */
+body.timer-done-pulse::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 250;
+  pointer-events: none;
+  background: rgba(52,211,153,0.42);
+  animation: screenPulse 0.45s ease-in-out 6;
+}
+@keyframes screenPulse {
+  0%, 100% { opacity: 0; }
+  50% { opacity: 1; }
 }
 .timer-dismiss {
   padding: 6px 16px;
@@ -851,7 +875,7 @@ if (sessionStorage.getItem('ri_auth')==='1') {
   <button class="btn btn-secondary" onclick="exportData()">Export All Data (JSON)</button>
   <button class="btn btn-danger" onclick="confirmClear()">Clear All Data</button>
   <div style="text-align:center;margin-top:24px;">
-    <p style="font-size:0.75rem;color:var(--dim);">Ruck + Iron v2.6.0 · 2026-08-08</p>
+    <p style="font-size:0.75rem;color:var(--dim);">Ruck + Iron v2.6.1 · 2026-08-12</p>
     <p style="font-size:0.75rem;color:var(--dim);">Built by Knox for Jay Furman</p>
   </div>
 </div>
@@ -1686,58 +1710,241 @@ function getSuggestionIcon(type) {
 // ═══════════════════════════════════════════
 // TIMER + AUDIO CHIME
 // ═══════════════════════════════════════════
+// iOS + Spotify/Audible: Web AudioContext is often interrupted/suspended by
+// the media app's audio session. resume() from a setInterval callback is not
+// a user gesture, so oscillators go silent after the first rest or two.
+// Fix: prime a short HTMLAudio chime on every Rest tap (and set-log gestures),
+// declare navigator.audioSession.type = 'transient' when available (ducks
+// other audio), fall back to Web Audio, and escalate the visual cue if play()
+// fails. Silent-buffer unlock still helps screen-lock cases.
 let timerInterval = null;
 let timerEnd = 0;
 let audioCtx = null;
 let timerChimed = false;
+let chimeUrl = null;
+let chimeAudio = null;
+let timerWakeLock = null;
+let timerPulseTimer = null;
 
-function playChime() {
-  // iOS suspends the AudioContext on screen-lock/background — starting
-  // oscillators on a suspended context is silent (Jay bug 2026-07-18).
-  // Resume first when needed; vibration + visual flash are the fallback cues.
-  try {
-    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    if (audioCtx.state === 'suspended') {
-      audioCtx.resume().catch(() => {}).finally(playChimeTones);
-      return;
+function buildChimeWavBuffer() {
+  // ~0.65s ascending C5–E5–G5 sine ping — small enough to keep in memory.
+  const sampleRate = 22050;
+  const notes = [
+    { f: 523.25, t0: 0.00, dur: 0.22 },
+    { f: 659.25, t0: 0.16, dur: 0.22 },
+    { f: 783.99, t0: 0.32, dur: 0.30 },
+  ];
+  const totalSec = 0.68;
+  const n = Math.floor(sampleRate * totalSec);
+  const pcm = new Int16Array(n);
+  for (let i = 0; i < n; i++) {
+    const t = i / sampleRate;
+    let sample = 0;
+    for (let ni = 0; ni < notes.length; ni++) {
+      const note = notes[ni];
+      const local = t - note.t0;
+      if (local < 0 || local > note.dur) continue;
+      const attack = 0.008;
+      const gain = local < attack
+        ? (local / attack)
+        : Math.pow(Math.max(0, 1 - (local - attack) / (note.dur - attack)), 1.6);
+      sample += Math.sin(2 * Math.PI * note.f * local) * gain * 0.38;
     }
-    playChimeTones();
-  } catch(e) {}
+    pcm[i] = Math.max(-32767, Math.min(32767, (sample * 32767) | 0));
+  }
+  const dataSize = n * 2;
+  const buffer = new ArrayBuffer(44 + dataSize);
+  const view = new DataView(buffer);
+  const writeStr = (o, s) => { for (let i = 0; i < s.length; i++) view.setUint8(o + i, s.charCodeAt(i)); };
+  writeStr(0, 'RIFF');
+  view.setUint32(4, 36 + dataSize, true);
+  writeStr(8, 'WAVE');
+  writeStr(12, 'fmt ');
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true);
+  view.setUint16(22, 1, true);
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, sampleRate * 2, true);
+  view.setUint16(32, 2, true);
+  view.setUint16(34, 16, true);
+  writeStr(36, 'data');
+  view.setUint32(40, dataSize, true);
+  for (let i = 0; i < n; i++) view.setInt16(44 + i * 2, pcm[i], true);
+  return buffer;
+}
+function getChimeUrl() {
+  if (chimeUrl) return chimeUrl;
+  chimeUrl = URL.createObjectURL(new Blob([buildChimeWavBuffer()], { type: 'audio/wav' }));
+  return chimeUrl;
+}
+function ensureChimeAudio() {
+  if (chimeAudio) return chimeAudio;
+  const a = new Audio(getChimeUrl());
+  a.preload = 'auto';
+  a.setAttribute('playsinline', '');
+  a.setAttribute('webkit-playsinline', '');
+  a.volume = 1;
+  chimeAudio = a;
+  return a;
+}
+function configureAudioSession() {
+  // Safari/iOS Audio Session API: "transient" = short notification that may
+  // duck Spotify/Audible instead of losing the hardware entirely.
+  try {
+    if (navigator.audioSession && navigator.audioSession.type !== 'transient') {
+      navigator.audioSession.type = 'transient';
+    }
+  } catch (e) {}
+}
+function onAudioCtxStateChange() {
+  // Interrupted while Spotify owns the session — don't swallow; next Rest tap
+  // / visibility return / in-timer tap will re-unlock. No auto-resume here:
+  // resume() outside a gesture often never resolves on iOS.
+}
+function ensureAudioCtx() {
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    try { audioCtx.addEventListener('statechange', onAudioCtxStateChange); } catch (e) {}
+  }
+  return audioCtx;
+}
+function unlockAudio() {
+  // Must run inside a user gesture (Rest tap, set field focus/change, etc.).
+  configureAudioSession();
+  try {
+    const ctx = ensureAudioCtx();
+    if (ctx.state === 'suspended' || ctx.state === 'interrupted') {
+      ctx.resume().catch(() => {});
+    }
+    const b = ctx.createBuffer(1, 1, 22050);
+    const s = ctx.createBufferSource();
+    s.buffer = b; s.connect(ctx.destination); s.start(0);
+  } catch (e) {}
+  try {
+    const a = ensureChimeAudio();
+    a.muted = true;
+    a.currentTime = 0;
+    const p = a.play();
+    if (p && typeof p.then === 'function') {
+      p.then(() => {
+        a.pause();
+        a.currentTime = 0;
+        a.muted = false;
+      }).catch(() => { a.muted = false; });
+    } else {
+      a.muted = false;
+    }
+  } catch (e) {}
+}
+function playHtmlChime() {
+  return new Promise((resolve) => {
+    try {
+      configureAudioSession();
+      // Fresh element avoids iOS "used once then silent" quirks after interruption.
+      const a = new Audio(getChimeUrl());
+      a.setAttribute('playsinline', '');
+      a.setAttribute('webkit-playsinline', '');
+      a.volume = 1;
+      chimeAudio = a;
+      const done = (ok) => resolve(!!ok);
+      const p = a.play();
+      if (p && typeof p.then === 'function') {
+        p.then(() => done(true)).catch(() => done(false));
+      } else {
+        done(true);
+      }
+    } catch (e) { resolve(false); }
+  });
 }
 function playChimeTones() {
+  const notes = [523.25, 659.25, 783.99]; // C5, E5, G5
+  notes.forEach((freq, i) => {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'sine';
+    osc.frequency.value = freq;
+    gain.gain.setValueAtTime(0.3, audioCtx.currentTime + i * 0.15);
+    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + i * 0.15 + 0.4);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start(audioCtx.currentTime + i * 0.15);
+    osc.stop(audioCtx.currentTime + i * 0.15 + 0.4);
+  });
+}
+function playWebAudioChime() {
+  return new Promise((resolve) => {
+    try {
+      const ctx = ensureAudioCtx();
+      const go = () => {
+        try {
+          if (ctx.state !== 'running') { resolve(false); return; }
+          playChimeTones();
+          resolve(true);
+        } catch (e) { resolve(false); }
+      };
+      if (ctx.state === 'suspended' || ctx.state === 'interrupted') {
+        // Best-effort: may no-op outside a gesture when Spotify holds the session.
+        const p = ctx.resume();
+        if (p && typeof p.then === 'function') p.then(go).catch(() => resolve(false));
+        else go();
+      } else {
+        go();
+      }
+    } catch (e) { resolve(false); }
+  });
+}
+function playChime() {
+  // Prefer primed HTMLAudio (mixes/ducks better under competing media);
+  // Web Audio oscillators are the secondary path.
+  return playHtmlChime().then((ok) => ok ? true : playWebAudioChime());
+}
+function clearTimerVisual() {
+  const bar = document.getElementById('timerBar');
+  if (bar) bar.classList.remove('flash', 'flash-strong');
+  document.body.classList.remove('timer-done-pulse');
+  if (timerPulseTimer) { clearTimeout(timerPulseTimer); timerPulseTimer = null; }
+}
+function showTimerDoneVisual(strong) {
+  const bar = document.getElementById('timerBar');
+  if (!bar) return;
+  bar.classList.remove('flash', 'flash-strong');
+  void bar.offsetWidth; // restart animation
+  bar.classList.add(strong ? 'flash-strong' : 'flash');
+  document.body.classList.remove('timer-done-pulse');
+  if (strong) {
+    void document.body.offsetWidth;
+    document.body.classList.add('timer-done-pulse');
+  }
+  if (timerPulseTimer) clearTimeout(timerPulseTimer);
+  timerPulseTimer = setTimeout(() => {
+    bar.classList.remove('flash', 'flash-strong');
+    document.body.classList.remove('timer-done-pulse');
+    timerPulseTimer = null;
+  }, strong ? 3200 : 2600);
+}
+async function requestTimerWakeLock() {
   try {
-    // Three-tone ascending chime
-    const notes = [523.25, 659.25, 783.99]; // C5, E5, G5
-    notes.forEach((freq, i) => {
-      const osc = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
-      osc.type = 'sine';
-      osc.frequency.value = freq;
-      gain.gain.setValueAtTime(0.3, audioCtx.currentTime + i * 0.15);
-      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + i * 0.15 + 0.4);
-      osc.connect(gain);
-      gain.connect(audioCtx.destination);
-      osc.start(audioCtx.currentTime + i * 0.15);
-      osc.stop(audioCtx.currentTime + i * 0.15 + 0.4);
-    });
-  } catch(e) {}
+    if (timerWakeLock) { try { await timerWakeLock.release(); } catch (e) {} timerWakeLock = null; }
+    if (navigator.wakeLock && navigator.wakeLock.request) {
+      timerWakeLock = await navigator.wakeLock.request('screen');
+      timerWakeLock.addEventListener('release', () => { timerWakeLock = null; });
+    }
+  } catch (e) { timerWakeLock = null; }
+}
+function releaseTimerWakeLock() {
+  if (!timerWakeLock) return;
+  try { timerWakeLock.release(); } catch (e) {}
+  timerWakeLock = null;
 }
 
 function startTimer(seconds) {
-  // Unlock audio INSIDE the user gesture (iOS): create + resume + play a
-  // 1-sample silent buffer. Without the buffer play, iOS often re-suspends
-  // and the end-of-timer chime never sounds.
-  try {
-    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    if (audioCtx.state === 'suspended') audioCtx.resume();
-    const b = audioCtx.createBuffer(1, 1, 22050);
-    const s = audioCtx.createBufferSource();
-    s.buffer = b; s.connect(audioCtx.destination); s.start(0);
-  } catch(e) {}
+  unlockAudio();
   clearInterval(timerInterval);
+  clearTimerVisual();
   timerChimed = false;
   timerEnd = Date.now() + seconds * 1000;
   document.getElementById('timerBar').classList.add('active');
+  requestTimerWakeLock();
   updateTimer();
   timerInterval = setInterval(updateTimer, 250);
 }
@@ -1748,20 +1955,23 @@ function updateTimer() {
   document.getElementById('timerDisplay').textContent = `${m}:${String(s).padStart(2, '0')}`;
   if (remaining <= 0) {
     clearInterval(timerInterval);
+    releaseTimerWakeLock();
     document.getElementById('timerDisplay').textContent = 'GO!';
     if (!timerChimed) {
       timerChimed = true;
-      playChime();
-      if (navigator.vibrate) navigator.vibrate([200, 100, 200, 100, 200]);
-      // Visual cue for muted-switch / denied-audio cases
-      const bar = document.getElementById('timerBar');
-      bar.classList.add('flash');
-      setTimeout(() => bar.classList.remove('flash'), 2600);
+      // Immediate moderate visual; escalate if both audio paths fail.
+      showTimerDoneVisual(false);
+      try { if (navigator.vibrate) navigator.vibrate([200, 100, 200, 100, 200]); } catch (e) {}
+      playChime().then((ok) => {
+        if (!ok) showTimerDoneVisual(true);
+      });
     }
   }
 }
 function dismissTimer() {
   clearInterval(timerInterval);
+  releaseTimerWakeLock();
+  clearTimerVisual();
   document.getElementById('timerBar').classList.remove('active');
 }
 // iOS throttles/kills intervals in the background. On return, settle the
@@ -1769,10 +1979,20 @@ function dismissTimer() {
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible' &&
       document.getElementById('timerBar').classList.contains('active')) {
-    if (Date.now() < timerEnd) timerInterval = setInterval(updateTimer, 250);
+    if (Date.now() < timerEnd) {
+      clearInterval(timerInterval);
+      timerInterval = setInterval(updateTimer, 250);
+      requestTimerWakeLock();
+    }
     updateTimer();
   }
 });
+// Re-prime while the rest timer is on-screen (tap near end of rest is common).
+// This is often the only gesture available after Spotify interrupts Web Audio.
+document.addEventListener('pointerdown', () => {
+  const bar = document.getElementById('timerBar');
+  if (bar && bar.classList.contains('active') && Date.now() < timerEnd) unlockAudio();
+}, { passive: true });
 
 // ═══════════════════════════════════════════
 // DATE NAVIGATION + WORKOUT SWAP
@@ -2285,6 +2505,7 @@ function attachEventListeners(ds, info) {
   // Auto-fill suggested weight on focus
   document.querySelectorAll('.set-log[data-suggested]').forEach(input => {
     input.addEventListener('focus', function() {
+      unlockAudio(); // keep chime primed between sets (iOS + Spotify)
       if (!this.value && this.dataset.suggested) {
         this.value = this.dataset.suggested;
         const log = ensureLog(ds, info);
@@ -2301,7 +2522,9 @@ function attachEventListeners(ds, info) {
 
   // Strength set logging — update in place (no full re-render; keeps keyboard focus)
   document.querySelectorAll('.set-log').forEach(input => {
+    input.addEventListener('focus', () => { unlockAudio(); });
     input.addEventListener('change', () => {
+      unlockAudio();
       const log = ensureLog(ds, info);
       const { key, setIdx } = touchExerciseBucket(log, input);
       const field = input.dataset.field;
