@@ -1,6 +1,6 @@
-# Ruck + Iron
+# FORGE
 
-Personal PWA for the **FORGE** 8-week strength + row/ruck + core block (4–5 core days per week, not daily). Week windows are **7 days from startDate**.
+Personal PWA for the **FORGE** 8-week strength + row/ruck + core block (4–5 core days per week, not daily). Week windows are **7 days from startDate**. Foundry skin (ember / soot) as of v2.8.0.
 
 **Live:** https://workout.furmans.me  
 **Data (private):** [jdfurman-web/workout-data](https://github.com/jdfurman-web/workout-data)
