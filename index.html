@@ -2111,6 +2111,17 @@ function navToToday() {
   viewDate = new Date();
   renderToday();
 }
+function bindTodayDateNav() {
+  const container = document.getElementById('todayContent');
+  if (!container || container.dataset.dateNavBound) return;
+  container.dataset.dateNavBound = '1';
+  container.addEventListener('click', (e) => {
+    const todayBtn = e.target.closest('[data-nav-today]');
+    const dayBtn = e.target.closest('[data-nav-day]');
+    if (todayBtn) { e.preventDefault(); navToToday(); return; }
+    if (dayBtn) { e.preventDefault(); navDay(parseInt(dayBtn.getAttribute('data-nav-day'), 10)); }
+  });
+}
 
 function openSwap() {
   const ds = dateStr(viewDate);
@@ -2178,7 +2189,7 @@ function renderHeader() {
   const week = getWeekNumber(today);
   const TW = PROGRAM.totalWeeks;
   if (week < 1) {
-    document.getElementById('headerSub').textContent = `Program starts ${new Date(startDate).toLocaleDateString('en-US', {month:'short',day:'numeric'})}`;
+    document.getElementById('headerSub').textContent = `Program starts ${ForgeEngine.prettyDate(startDate)}`;
     document.getElementById('headerBadge').innerHTML = '';
     return;
   }
@@ -2206,7 +2217,7 @@ function forge2OfferHtml() {
   return `<div class="card" style="margin-top:8px;border-color:rgba(74,158,255,0.35);">
     <div class="day-type" style="color:var(--accent);">${copy.title}</div>
     <div class="day-desc">${copy.sub}</div>
-    <button class="btn btn-primary" style="margin-top:12px;" onclick="startNewBlock('${startOn}')">${copy.button}</button>
+    <button class="btn btn-primary" style="margin-top:12px;" onclick="confirmStartNewBlock()">${copy.button}</button>
   </div>`;
 }
 
@@ -2234,12 +2245,12 @@ function renderToday() {
   const dayLabel = isToday ? 'Today' : d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
   let dateNavHtml = `
     <div class="date-nav">
-      <button class="date-nav-btn" onclick="navDay(-1)">‹</button>
+      <button type="button" class="date-nav-btn" data-nav-day="-1">‹</button>
       <div>
         <div class="date-nav-label">${dayLabel}</div>
-        ${!isToday ? `<div style="text-align:center;margin-top:4px;"><span class="date-nav-today" onclick="navToToday()">Back to Today</span></div>` : ''}
+        ${!isToday ? `<div style="text-align:center;margin-top:4px;"><span class="date-nav-today" data-nav-today>Back to Today</span></div>` : ''}
       </div>
-      <button class="date-nav-btn" onclick="navDay(1)">›</button>
+      <button type="button" class="date-nav-btn" data-nav-day="1">›</button>
     </div>`;
   const offerHtml = (isToday && shouldOfferForge2Start()) ? forge2OfferHtml() : '';
 
@@ -2257,10 +2268,10 @@ function renderToday() {
           <div class="day-type" style="color:var(--green);">${copy.title}</div>
           <div class="day-name">8 weeks, done.</div>
           <div class="day-desc">${copy.sub}</div>
-          <button class="btn btn-primary" style="margin-top:14px;" onclick="startNewBlock('${startOn}')">${copy.button}</button>
+          <button class="btn btn-primary" style="margin-top:14px;" onclick="confirmStartNewBlock()">${copy.button}</button>
         </div>`;
     } else {
-      container.innerHTML = dateNavHtml + offerHtml + `<div class="empty-state"><p>${getStartDate() ? 'FORGE 2 starts ' + ForgeEngine.prettyDate(getStartDate()) + '. Swipe forward to preview week 1.' : 'Block hasn\'t started yet.'}</p></div>`;
+      container.innerHTML = dateNavHtml + offerHtml + `<div class="empty-state"><p>${getStartDate() ? 'FORGE 2 starts ' + ForgeEngine.prettyDate(getStartDate()) + '. Use the arrows to preview week 1.' : 'Block hasn\'t started yet.'}</p></div>`;
     }
     appendCoreCard(ds, d, { hasSession: false });
     return;
@@ -2327,13 +2338,20 @@ function renderToday() {
   if (info.swapped) {
     swapNote = `<div style="font-size:0.75rem;color:var(--yellow);margin-top:4px;">🔄 Swapped <button style="background:none;border:none;color:var(--dim);font-size:0.7rem;text-decoration:underline;cursor:pointer;" onclick="clearSwapOverride('${ds}');renderToday();">Reset</button></div>`;
   }
+  const loggedHere = !!(info.logged || logHasData(log));
+  const previewNote = (!isToday && !loggedHere)
+    ? `<div style="font-size:0.75rem;color:var(--yellow);margin-top:4px;">Next up · not logged yet — same pool slot, not a second session</div>`
+    : '';
+  const typeLine = (!isToday && !loggedHere)
+    ? `${isCardio ? 'Cardio' : 'Strength'} · Next up`
+    : `${isCardio ? 'Cardio' : 'Strength'} · ${prog.done}/${prog.total} this week`;
 
   let html = dateNavHtml + offerHtml + `
     <div style="margin-top:8px;">
-      <div class="day-type ${typeClass}">${isCardio ? 'Cardio' : 'Strength'} · ${prog.done}/${prog.total} this week</div>
+      <div class="day-type ${typeClass}">${typeLine}</div>
       <div class="day-name">${info.name}</div>
       <div class="day-desc">${info.duration} • Week ${info.week || week} • ${getPhase(week).name}</div>
-      ${swapNote}
+      ${swapNote}${previewNote}
     </div>
     <div class="swap-bar">
       <button class="swap-btn" onclick="setCoreOnly('${ds}')">🧘 Core-Only Day</button>
@@ -3117,9 +3135,10 @@ function renderSettings() {
   document.getElementById('startDateInput').value = startDate || '';
   const TW = PROGRAM.totalWeeks;
   const week = startDate ? getWeekNumber(new Date()) : 0;
-  document.getElementById('currentWeekDisplay').textContent = week > 0 && week <= TW ? `Week ${week} of ${TW}` : week > TW ? 'Complete' : '—';
+  const startsLabel = startDate ? ('Starts ' + ForgeEngine.prettyDate(startDate)) : '—';
+  document.getElementById('currentWeekDisplay').textContent = week > 0 && week <= TW ? `Week ${week} of ${TW}` : week > TW ? 'Complete' : startsLabel;
   const phase = week > 0 && week <= TW ? getPhase(week) : null;
-  document.getElementById('currentPhaseDisplay').textContent = phase ? phase.name : '—';
+  document.getElementById('currentPhaseDisplay').textContent = phase ? phase.name : (week < 1 && startDate ? startsLabel : '—');
   const bd = document.getElementById('currentBlockDisplay');
   if (bd) {
     const b = getCurrentBlock();
@@ -3421,6 +3440,7 @@ function renderReadinessCard() {
 // ═══════════════════════════════════════════
 renderToday();
 renderHeader();
+bindTodayDateNav();
 fetchOuraReadiness();
 
 // Offline support — cache-first app shell via service worker.

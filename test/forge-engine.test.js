@@ -158,6 +158,12 @@ test('bonus fifth is not asked: 4/4 → weekdone (picker returns null)', () => {
   assert.strictEqual(r.remaining.length, 0);
 });
 
+test('prettyDate uses local noon so 2026-08-15 is the 15th, not the 14th', () => {
+  const p = E.prettyDate('2026-08-15');
+  assert.match(p, /15/);
+  assert.doesNotMatch(p, /14/);
+});
+
 test('offer copy: Friday vs Saturday', () => {
   const fri = E.forge2OfferCopy('2026-08-14', '2026-08-15');
   assert.match(fri.button, /Saturday/i);
