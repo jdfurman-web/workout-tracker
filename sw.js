@@ -1,9 +1,9 @@
-// Ruck + Iron — offline app shell (v2.6.1, 2026-08-12)
+// Ruck + Iron — offline app shell (v2.7.0, 2026-08-13)
 // Strategy: network-first for the shell (so deploys land immediately),
 // cache fallback when offline (Boerne / gym dead zones). Data lives in
 // localStorage; cross-origin GitHub API/raw fetches are never cached.
-const CACHE = 'ri-shell-v2.6.1';
-const SHELL = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png', './apple-touch-icon.png'];
+const CACHE = 'ri-shell-v2.7.0';
+const SHELL = ['./', './index.html', './forge-engine.js', './manifest.json', './icon-192.png', './icon-512.png', './apple-touch-icon.png'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));

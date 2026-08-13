@@ -681,6 +681,12 @@ body.timer-done-pulse::after {
 .core-status { flex-shrink:0; font-size:0.85rem; font-weight:700; color:var(--dim); padding:7px 12px; border:1px solid var(--border); border-radius:10px; min-width:48px; text-align:center; }
 .core-status.done { color:var(--green); border-color:var(--green); background:rgba(52,211,153,0.12); }
 .core-round-btn { max-width:none; }
+.core-log-btn {
+  display:block; width:100%; margin-top:14px; padding:12px 14px;
+  border:1px dashed var(--border); border-radius:var(--radius);
+  background:transparent; color:var(--muted); font-size:0.85rem; font-weight:700; cursor:pointer;
+}
+.core-log-btn:active { border-color:var(--accent); color:var(--accent); }
 </style>
 </head>
 <body>
@@ -846,7 +852,7 @@ if (sessionStorage.getItem('ri_auth')==='1') {
     </div>
   </div>
   <button class="btn btn-secondary" onclick="confirmStartNewBlock()" style="margin-bottom:8px;">Start New 8-Week Block</button>
-  <div style="font-size:0.75rem;color:var(--dim);margin:-4px 0 16px;">Archives the current block for history/charts, then starts fresh. Logs stay — progression restarts for the new block.</div>
+  <div style="font-size:0.75rem;color:var(--dim);margin:-4px 0 16px;">Archives the current block. Logs stay. Last weights carry forward. FORGE 2 will not start before Saturday 8/15.</div>
   <div class="section-title">Cloud Sync</div>
   <div class="card">
     <div style="font-size:0.85rem;color:var(--muted);margin-bottom:10px;">Sync workout data so Knox can include lift details in your weekly wellness digest. Data syncs to <code>data/ruck-iron-data.json</code> in the <b>private</b> workout-data repo (PAT required).</div>
@@ -875,7 +881,7 @@ if (sessionStorage.getItem('ri_auth')==='1') {
   <button class="btn btn-secondary" onclick="exportData()">Export All Data (JSON)</button>
   <button class="btn btn-danger" onclick="confirmClear()">Clear All Data</button>
   <div style="text-align:center;margin-top:24px;">
-    <p style="font-size:0.75rem;color:var(--dim);">Ruck + Iron v2.6.1 · 2026-08-12</p>
+    <p style="font-size:0.75rem;color:var(--dim);">Ruck + Iron v2.7.0 · 2026-08-13</p>
     <p style="font-size:0.75rem;color:var(--dim);">Built by Knox for Jay Furman</p>
   </div>
 </div>
@@ -909,6 +915,7 @@ if (sessionStorage.getItem('ri_auth')==='1') {
   </button>
 </nav>
 
+<script src="./forge-engine.js"></script>
 <script>
 // ═══════════════════════════════════════════
 // PROGRAM DATA — FORGE · 8-Week Fat-Loss Block
@@ -926,7 +933,7 @@ const PROGRAM = {
     { id: 'forge', name: 'Forge', weeks: [6,7,8], color: '#ef4444' },
   ],
 
-  // 4 bodyweight core circuits — no equipment, do anywhere. Rotate daily.
+  // 4 bodyweight core circuits. Week target: 4 days floor / 5 stretch, not 7/7.
   core: [
     { id: 'core-a-anti-extension', name: 'Core A · Anti-Extension', duration: '10-12 min', note: 'Brace like someone\'s about to poke your gut. Quality over speed.',
       moves: ['Forearm Plank — 45s', 'Dead Bug — 10/side', 'Hollow Hold — 30s', 'Side Plank — 30s/side', 'Glute Bridge — 20 reps', '↻ 3 rounds · ~30s rest'] },
@@ -1211,37 +1218,46 @@ function nextForgeName(blocks) {
   return 'FORGE ' + (max + 1);
 }
 
+function proposedNextBlockStartDate() {
+  return ForgeEngine.proposedBlockStart(dateStr(new Date()), nextForgeName(getState().blocks));
+}
+
+function shouldOfferForge2Start() {
+  return nextForgeName(getState().blocks || []) === 'FORGE 2';
+}
+
 function confirmStartNewBlock() {
   const cur = getCurrentBlock();
   const label = cur ? cur.name : 'current block';
-  if (!confirm('Archive ' + label + ' and start a new 8-week block today?\\n\\n• All logs stay in history\\n• Charts can filter by block\\n• Weight suggestions reset to the new block')) return;
-  startNewBlock();
+  const today = dateStr(new Date());
+  const startOn = proposedNextBlockStartDate();
+  const nextName = nextForgeName(getState().blocks);
+  const when = startOn > today ? ('on ' + ForgeEngine.prettyDate(startOn)) : 'today';
+  if (!confirm('Archive ' + label + ' and start ' + nextName + ' ' + when + '?\\n\\n• All logs stay in history\\n• Charts can filter by block\\n• Last weights carry into the new block')) return;
+  startNewBlock(startOn);
 }
 
-function startNewBlock() {
+function startNewBlock(chosenStart) {
   const s = getState();
   ensureBlocks(s);
-  const today = dateStr(new Date());
+  const start = chosenStart || proposedNextBlockStartDate();
   const cur = (s.blocks || []).find(b => b.id === s.currentBlockId);
   if (cur && !cur.endDate) {
-    // End yesterday if starting mid-stream so ranges don't overlap
-    const y = new Date(today + 'T12:00:00');
-    y.setDate(y.getDate() - 1);
-    cur.endDate = dateStr(y);
-    if (cur.endDate < cur.startDate) cur.endDate = today;
+    cur.endDate = ForgeEngine.addDays(start, -1);
+    if (cur.endDate < cur.startDate) cur.endDate = start;
   }
   const name = nextForgeName(s.blocks);
   const id = name.toLowerCase().replace(/\s+/g, '-') + '-' + Date.now().toString(36);
   s.blocks.push({
     id,
     name,
-    startDate: today,
+    startDate: start,
     endDate: null,
     program: 'FORGE',
     createdAt: Date.now(),
   });
   s.currentBlockId = id;
-  s.startDate = today;
+  s.startDate = start;
   saveState(s);
   historyBlockFilter = 'current';
   viewDate = new Date();
@@ -1296,22 +1312,38 @@ function getPhase(week) {
 }
 
 
+function pickSlotForDate(date) {
+  const week = getWeekNumber(date);
+  if (week < 1) return { slot: null, reason: 'not-started', remaining: PROGRAM.weekOrder.slice(), trainableLeft: 0 };
+  const bounds = ForgeEngine.weekBounds(getStartDate(), week);
+  return ForgeEngine.pickNextSlot({
+    weekOrder: PROGRAM.weekOrder,
+    doneSlots: loggedSlotsForWeek(week),
+    fromDs: dateStr(date),
+    weekEndDs: bounds.end,
+    lastDates: ForgeEngine.lastSlotDates(getState().logs || {}, logHasData),
+  });
+}
+
 function getDayWorkout(date) {
   const week = getWeekNumber(date);
   if (week < 1 || week > PROGRAM.totalWeeks) return null;
   const ds = dateStr(date);
-  // If this date already has a logged/started session, show that slot.
   const log = getLog(ds);
   if (log && log.slot) {
     const w = resolveWorkout(log.slot, week);
     if (w) return { ...w, week, slotType: log.slot, logged: true };
   }
-  // Flexible cadence: show the next undone session for the week.
-  const slot = nextSlotForWeek(week);
-  if (!slot) return { type: 'weekdone', week, message: 'All 4 sessions done this week. Take a bonus row/ruck or rest — daily core still counts.' };
-  const workout = resolveWorkout(slot, week);
-  if (!workout) return { type: 'rest', message: 'Rest day', week };
-  return { ...workout, week, slotType: slot };
+  const picked = pickSlotForDate(date);
+  if (picked.reason === 'weekdone') {
+    return { type: 'weekdone', week, message: 'All 4 sessions done this week. Bonus row/ruck if you want — the plan will not ask for a fifth.' };
+  }
+  if (!picked.slot) {
+    return { type: 'rest', week, reason: picked.reason, message: picked.reason === 'monday' ? 'Monday — no lifting' : 'Rest day' };
+  }
+  const workout = resolveWorkout(picked.slot, week);
+  if (!workout) return { type: 'rest', message: 'Rest day', week, reason: picked.reason };
+  return { ...workout, week, slotType: picked.slot, pickReason: picked.reason };
 }
 
 // ─── Flexible-cadence helpers ───
@@ -1337,9 +1369,16 @@ function loggedSlotsForWeek(week) {
   return done;
 }
 function nextSlotForWeek(week) {
-  const done = loggedSlotsForWeek(week);
-  for (const slot of PROGRAM.weekOrder) { if (!done.has(slot)) return slot; }
-  return null;
+  const remaining = ForgeEngine.sortSlotsByStaleness(
+    ForgeEngine.remainingSlots(PROGRAM.weekOrder, loggedSlotsForWeek(week)),
+    ForgeEngine.lastSlotDates(getState().logs || {}, logHasData),
+    PROGRAM.weekOrder
+  );
+  return remaining[0] || null;
+}
+function coreDaysForWeek(week) {
+  const b = ForgeEngine.weekBounds(getStartDate(), week);
+  return ForgeEngine.countCoreDays(getState().core || {}, b.start, b.end, coreDidDay);
 }
 function weekProgress(week) {
   const done = loggedSlotsForWeek(week);
@@ -1357,7 +1396,8 @@ function weekProgress(week) {
 }
 // startNewBlock / confirmStartNewBlock defined with block archive helpers above
 
-// ─── Daily core helpers ───
+// ─── Core helpers (4 floor / 5 stretch per week, not daily) ───
+let coreExpanded = {};
 function getCoreLog(ds) { return (getState().core || {})[ds] || null; }
 function saveCoreLog(ds, data) {
   const s = getState();
@@ -1594,6 +1634,45 @@ function mergeMapsPreferUnion(cloudMap, localMap) {
 // WEIGHT PROGRESSION SUGGESTIONS
 // ═══════════════════════════════════════════
 
+const EXERCISE_FAMILIES = [
+  ['db-bench-press', 'barbell-or-db-bench-press'],
+  ['seated-cable-row', 'chest-supported-row', 'barbell-or-chest-supported-row', 'cable-row'],
+  ['goblet-squat', 'goblet-or-barbell-squat', 'barbell-back-squat', 'goblet-or-back-squat'],
+  ['db-romanian-deadlift', 'db-or-barbell-rdl', 'barbell-or-trap-bar-deadlift', 'db-rdl'],
+  ['walking-lunge', 'walking-lunge-loaded'],
+  ['lat-pulldown', 'weighted-pull-up-or-lat-pull'],
+];
+function exerciseFamilyKeys(key) {
+  const keys = new Set([key]);
+  for (const g of EXERCISE_FAMILIES) { if (g.includes(key)) g.forEach(k => keys.add(k)); }
+  return keys;
+}
+function findExerciseEntryInLog(log, ex) {
+  if (!log || !log.exercises) return null;
+  const by = log.exercises;
+  const aliases = exerciseFamilyKeys(exerciseKey(ex));
+  if (ex && ex.name) aliases.add(ex.name);
+  for (const k of aliases) {
+    if (by[k] && by[k].sets && Object.keys(by[k].sets).length) return by[k];
+  }
+  return findPrevExerciseLog(log, ex, 0);
+}
+function getLastExerciseLog(ex, skipDs) {
+  const logs = getState().logs || {};
+  const bid = getCurrentBlockId();
+  const hits = [];
+  for (const ds of Object.keys(logs)) {
+    if (ds === skipDs) continue;
+    const log = logs[ds];
+    if (!log || log.type !== 'strength') continue;
+    const entry = findExerciseEntryInLog(log, ex);
+    if (!entry) continue;
+    hits.push({ ds, log, entry, current: logBelongsToBlock(ds, log, bid) });
+  }
+  hits.sort((a, b) => b.ds.localeCompare(a.ds));
+  const currentHits = hits.filter(h => h.current);
+  return currentHits[0] || hits[0] || null;
+}
 function getLastLogForWorkout(workoutName) {
   const state = getState();
   const logs = state.logs || {};
@@ -1602,9 +1681,14 @@ function getLastLogForWorkout(workoutName) {
   const entries = Object.entries(logs)
     .filter(([ds, log]) => {
       if (log.workout !== workoutName || ds === today || log.type !== 'strength') return false;
-      return logBelongsToBlock(ds, log, bid);
+      return true;
     })
-    .sort((a, b) => b[0].localeCompare(a[0]));
+    .sort((a, b) => {
+      const ac = logBelongsToBlock(a[0], a[1], bid) ? 1 : 0;
+      const bc = logBelongsToBlock(b[0], b[1], bid) ? 1 : 0;
+      if (ac !== bc) return bc - ac;
+      return b[0].localeCompare(a[0]);
+    });
   return entries.length > 0 ? { date: entries[0][0], log: entries[0][1] } : null;
 }
 
@@ -2027,6 +2111,17 @@ function navToToday() {
   viewDate = new Date();
   renderToday();
 }
+function bindTodayDateNav() {
+  const container = document.getElementById('todayContent');
+  if (!container || container.dataset.dateNavBound) return;
+  container.dataset.dateNavBound = '1';
+  container.addEventListener('click', (e) => {
+    const todayBtn = e.target.closest('[data-nav-today]');
+    const dayBtn = e.target.closest('[data-nav-day]');
+    if (todayBtn) { e.preventDefault(); navToToday(); return; }
+    if (dayBtn) { e.preventDefault(); navDay(parseInt(dayBtn.getAttribute('data-nav-day'), 10)); }
+  });
+}
 
 function openSwap() {
   const ds = dateStr(viewDate);
@@ -2094,7 +2189,7 @@ function renderHeader() {
   const week = getWeekNumber(today);
   const TW = PROGRAM.totalWeeks;
   if (week < 1) {
-    document.getElementById('headerSub').textContent = `Program starts ${new Date(startDate).toLocaleDateString('en-US', {month:'short',day:'numeric'})}`;
+    document.getElementById('headerSub').textContent = `Program starts ${ForgeEngine.prettyDate(startDate)}`;
     document.getElementById('headerBadge').innerHTML = '';
     return;
   }
@@ -2106,13 +2201,25 @@ function renderHeader() {
   const phase = getPhase(week);
   const prog = weekProgress(week);
   const bonusStr = prog.bonus ? ` · +${prog.bonus} bonus` : '';
+  const coreStr = ' · ' + ForgeEngine.coreWeekLabel(coreDaysForWeek(week));
   const staleStr = syncIsStale() ? ' · ⚠️ sync stale' : '';
   const block = getCurrentBlock();
   const blockStr = block ? `${block.name} · ` : '';
-  document.getElementById('headerSub').textContent = `${blockStr}Week ${week} of ${TW} · ${prog.done}/${prog.total} slots${bonusStr}${staleStr}`;
+  document.getElementById('headerSub').textContent = `${blockStr}Week ${week} of ${TW} · ${prog.done}/${prog.total} slots${bonusStr}${coreStr}${staleStr}`;
   document.getElementById('headerBadge').innerHTML = `<span class="week-phase" style="background:${phase.color}22;color:${phase.color}">${phase.name}</span>`;
 }
 
+
+function forge2OfferHtml() {
+  const today = dateStr(new Date());
+  const startOn = proposedNextBlockStartDate();
+  const copy = ForgeEngine.forge2OfferCopy(today, startOn);
+  return `<div class="card" style="margin-top:8px;border-color:rgba(74,158,255,0.35);">
+    <div class="day-type" style="color:var(--accent);">${copy.title}</div>
+    <div class="day-desc">${copy.sub}</div>
+    <button class="btn btn-primary" style="margin-top:12px;" onclick="confirmStartNewBlock()">${copy.button}</button>
+  </div>`;
+}
 
 function renderToday() {
   renderHeader();
@@ -2138,28 +2245,35 @@ function renderToday() {
   const dayLabel = isToday ? 'Today' : d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
   let dateNavHtml = `
     <div class="date-nav">
-      <button class="date-nav-btn" onclick="navDay(-1)">‹</button>
+      <button type="button" class="date-nav-btn" data-nav-day="-1">‹</button>
       <div>
         <div class="date-nav-label">${dayLabel}</div>
-        ${!isToday ? `<div style="text-align:center;margin-top:4px;"><span class="date-nav-today" onclick="navToToday()">Back to Today</span></div>` : ''}
+        ${!isToday ? `<div style="text-align:center;margin-top:4px;"><span class="date-nav-today" data-nav-today>Back to Today</span></div>` : ''}
       </div>
-      <button class="date-nav-btn" onclick="navDay(1)">›</button>
+      <button type="button" class="date-nav-btn" data-nav-day="1">›</button>
     </div>`;
+  const offerHtml = (isToday && shouldOfferForge2Start()) ? forge2OfferHtml() : '';
 
   // Out of program range
   if (week < 1 || week > PROGRAM.totalWeeks) {
     if (week > PROGRAM.totalWeeks) {
+      const startOn = proposedNextBlockStartDate();
+      const todayS = dateStr(new Date());
+      const nextName = nextForgeName(getState().blocks);
+      const copy = nextName === 'FORGE 2'
+        ? ForgeEngine.forge2OfferCopy(todayS, startOn)
+        : { title: 'Block Complete', button: startOn > todayS ? 'Start next block on ' + ForgeEngine.prettyDate(startOn) : 'Start New 8-Week Block — Today', sub: '8 weeks, done. Bank a benchmark, then forge the next block — heavier.' };
       container.innerHTML = dateNavHtml + `
         <div class="card" style="margin-top:8px;text-align:center;">
-          <div class="day-type" style="color:var(--green);">Block Complete</div>
+          <div class="day-type" style="color:var(--green);">${copy.title}</div>
           <div class="day-name">8 weeks, done.</div>
-          <div class="day-desc">Bank a benchmark, then forge the next block — heavier.</div>
-          <button class="btn btn-primary" style="margin-top:14px;" onclick="startNewBlock()">Start New 8-Week Block — Today</button>
+          <div class="day-desc">${copy.sub}</div>
+          <button class="btn btn-primary" style="margin-top:14px;" onclick="confirmStartNewBlock()">${copy.button}</button>
         </div>`;
     } else {
-      container.innerHTML = dateNavHtml + `<div class="empty-state"><p>Block hasn't started yet.</p></div>`;
+      container.innerHTML = dateNavHtml + offerHtml + `<div class="empty-state"><p>${getStartDate() ? 'FORGE 2 starts ' + ForgeEngine.prettyDate(getStartDate()) + '. Use the arrows to preview week 1.' : 'Block hasn\'t started yet.'}</p></div>`;
     }
-    appendCoreCard(ds, d);
+    appendCoreCard(ds, d, { hasSession: false });
     return;
   }
 
@@ -2168,14 +2282,14 @@ function renderToday() {
 
   // Core-only day: rest from lifting/cardio, just the core work
   if (swap && swap.slotType === 'coreonly') {
-    container.innerHTML = dateNavHtml + `
+    container.innerHTML = dateNavHtml + offerHtml + `
       <div class="card" style="margin-top:8px;text-align:center;">
         <div class="day-type" style="color:var(--yellow);">Core-Only Day</div>
         <div class="day-name">Rest from lifting & cardio</div>
-        <div class="day-desc">No full session today — just the core work below. Recovery is part of the plan.</div>
+        <div class="day-desc">No training slot today — core still counts toward 4/week. Recovery is part of the plan.</div>
         <button class="swap-btn" style="margin-top:8px;" onclick="clearSwapOverride('${ds}');renderToday();">Undo — show my workout</button>
       </div>`;
-    appendCoreCard(ds, d);
+    appendCoreCard(ds, d, { coreOnly: true });
     if (ouraData) renderReadinessCard();
     return;
   }
@@ -2189,21 +2303,28 @@ function renderToday() {
   }
 
   if (info && info.type === 'weekdone') {
-    container.innerHTML = dateNavHtml + `
+    container.innerHTML = dateNavHtml + offerHtml + `
       <div class="card" style="margin-top:8px;text-align:center;">
         <div class="day-type cardio">Week ${info.week} Complete</div>
         <div class="day-name">All 4 sessions done 💪</div>
         <div class="day-desc">${info.message}</div>
       </div>
       <div class="swap-bar"><span></span><button class="swap-btn" onclick="openSwap()">＋ Bonus Session</button></div>`;
-    appendCoreCard(ds, d);
+    appendCoreCard(ds, d, { hasSession: false });
     if (ouraData) renderReadinessCard();
     return;
   }
 
-  if (!info) {
-    container.innerHTML = dateNavHtml + `<div class="empty-state"><p>Rest day — daily core still counts.</p></div>`;
-    appendCoreCard(ds, d);
+  if (!info || info.type === 'rest') {
+    const monday = info && info.reason === 'monday';
+    container.innerHTML = dateNavHtml + offerHtml + `
+      <div class="card" style="margin-top:8px;text-align:center;">
+        <div class="day-type" style="color:var(--yellow);">${monday ? 'Monday' : 'Rest'}</div>
+        <div class="day-name">${monday ? 'No lifting today' : 'Rest day'}</div>
+        <div class="day-desc">${monday ? 'Slots stay in the week pool. Core is optional.' : 'One session a day — nothing stacked. Core is optional.'}</div>
+      </div>`;
+    appendCoreCard(ds, d, { hasSession: false });
+    if (ouraData) renderReadinessCard();
     return;
   }
 
@@ -2217,13 +2338,20 @@ function renderToday() {
   if (info.swapped) {
     swapNote = `<div style="font-size:0.75rem;color:var(--yellow);margin-top:4px;">🔄 Swapped <button style="background:none;border:none;color:var(--dim);font-size:0.7rem;text-decoration:underline;cursor:pointer;" onclick="clearSwapOverride('${ds}');renderToday();">Reset</button></div>`;
   }
+  const loggedHere = !!(info.logged || logHasData(log));
+  const previewNote = (!isToday && !loggedHere)
+    ? `<div style="font-size:0.75rem;color:var(--yellow);margin-top:4px;">Next up · not logged yet — same pool slot, not a second session</div>`
+    : '';
+  const typeLine = (!isToday && !loggedHere)
+    ? `${isCardio ? 'Cardio' : 'Strength'} · Next up`
+    : `${isCardio ? 'Cardio' : 'Strength'} · ${prog.done}/${prog.total} this week`;
 
-  let html = dateNavHtml + `
+  let html = dateNavHtml + offerHtml + `
     <div style="margin-top:8px;">
-      <div class="day-type ${typeClass}">${isCardio ? 'Cardio' : 'Strength'} · ${prog.done}/${prog.total} this week</div>
+      <div class="day-type ${typeClass}">${typeLine}</div>
       <div class="day-name">${info.name}</div>
       <div class="day-desc">${info.duration} • Week ${info.week || week} • ${getPhase(week).name}</div>
-      ${swapNote}
+      ${swapNote}${previewNote}
     </div>
     <div class="swap-bar">
       <button class="swap-btn" onclick="setCoreOnly('${ds}')">🧘 Core-Only Day</button>
@@ -2238,7 +2366,7 @@ function renderToday() {
 
   container.innerHTML = html;
   attachEventListeners(ds, info);
-  appendCoreCard(ds, d);
+  appendCoreCard(ds, d, { hasSession: true });
   if (ouraData) renderReadinessCard();
 }
 
@@ -2310,17 +2438,35 @@ function setCardioMode(ds, mode) {
   renderToday();
 }
 
-function appendCoreCard(ds, date) {
+function appendCoreCard(ds, date, opts) {
+  opts = opts || {};
   const container = document.getElementById('todayContent');
   if (!container) return;
   const existing = document.getElementById('coreCard');
   if (existing) existing.remove();
+  const existingBtn = document.getElementById('coreLogBtn');
+  if (existingBtn) existingBtn.remove();
   const routine = coreRoutineForDate(date);
   if (!routine) return;
   const log = getCoreLog(ds) || {};
   const rounds = log.rounds != null ? log.rounds : (log.done ? 3 : 0);
   const note = log.note || '';
   const done = rounds > 0;
+  const week = getWeekNumber(date);
+  const coreLabel = week >= 1 && week <= PROGRAM.totalWeeks ? ForgeEngine.coreWeekLabel(coreDaysForWeek(week)) : '';
+  const showFull = !!(opts.hasSession || opts.coreOnly || opts.force || done || coreExpanded[ds]);
+  if (!showFull) {
+    const btn = document.createElement('button');
+    btn.id = 'coreLogBtn';
+    btn.className = 'core-log-btn';
+    btn.textContent = '＋ Log core';
+    btn.addEventListener('click', () => {
+      coreExpanded[ds] = true;
+      appendCoreCard(ds, date, Object.assign({}, opts, { force: true }));
+    });
+    container.appendChild(btn);
+    return;
+  }
   const statusLabel = done ? (rounds >= 3 ? '✓ ' + rounds + '/3' : rounds + '/3') : '—';
   const card = document.createElement('div');
   card.id = 'coreCard';
@@ -2329,7 +2475,7 @@ function appendCoreCard(ds, date) {
   card.innerHTML = `
     <div class="core-head">
       <div>
-        <div class="core-eyebrow">Daily Core · ${routine.duration} · anywhere</div>
+        <div class="core-eyebrow">Core · ${routine.duration} · ${coreLabel || 'anywhere'}</div>
         <div class="core-name">${routine.name}</div>
       </div>
       <div class="core-status ${done ? 'done' : ''}">${statusLabel}</div>
@@ -2352,14 +2498,14 @@ function appendCoreCard(ds, date) {
       const cur = getCoreLog(ds) || {};
       const curRounds = cur.rounds != null ? cur.rounds : (cur.done ? 3 : 0);
       const n = parseInt(btn.dataset.rounds);
-      const newRounds = (curRounds === n) ? n - 1 : n; // tap the active count again to step down/clear
+      const newRounds = (curRounds === n) ? n - 1 : n;
       if (newRounds <= 0) {
         if (cur.note) { saveCoreLog(ds, { rounds: 0, done: false, routine: routine.name, note: cur.note, ts: Date.now() }); }
         else { saveCoreLog(ds, null); }
       } else {
         saveCoreLog(ds, { rounds: newRounds, done: true, routine: routine.name, note: cur.note || '', ts: Date.now() });
       }
-      appendCoreCard(ds, date);
+      appendCoreCard(ds, date, opts);
       renderHeader();
     });
   });
@@ -2375,13 +2521,15 @@ function appendCoreCard(ds, date) {
 
 
 function renderStrengthView(info, log, ds) {
-  // Get previous workout data for suggestions
-  const prev = getLastLogForWorkout(info.name);
-  const prevLog = prev ? prev.log : null;
-  const prevDate = prev ? new Date(prev.date + 'T12:00:00').toLocaleDateString('en-US', {month:'short', day:'numeric'}) : null;
+  let latestPrevDate = null;
+  info.exercises.forEach((ex) => {
+    const prevEx = getLastExerciseLog(ex, ds);
+    if (prevEx && (!latestPrevDate || prevEx.ds > latestPrevDate)) latestPrevDate = prevEx.ds;
+  });
+  const prevDate = latestPrevDate ? new Date(latestPrevDate + 'T12:00:00').toLocaleDateString('en-US', {month:'short', day:'numeric'}) : null;
 
   let html = '';
-  if (prev) {
+  if (prevDate) {
     html += `<div style="font-size:0.7rem;color:var(--dim);margin:12px 0 4px;text-align:center;">Suggestions based on ${prevDate} session</div>`;
   }
 
@@ -2398,7 +2546,9 @@ function renderStrengthView(info, log, ds) {
     const isOpen = !allDone;
 
     // Get weight suggestion
-    const suggestion = getSuggestion(ex, i, prevLog, prev ? prev.date : null);
+    const prevEx = getLastExerciseLog(ex, ds);
+    const wrap = prevEx ? { exercises: { [exerciseKey(ex)]: prevEx.entry } } : null;
+    const suggestion = getSuggestion(ex, i, wrap, prevEx ? prevEx.ds : null);
     const sugBadge = `<div class="ex-suggestion ${suggestion.type}">${getSuggestionIcon(suggestion.type)} ${suggestion.weight ? `<strong>${suggestion.weight} lbs</strong> · ` : ''}${escHtml(suggestion.detail)}</div>`;
     const weightPlaceholder = suggestion.weight ? suggestion.weight : 'lbs';
 
@@ -2585,6 +2735,12 @@ function renderWeek() {
 
   const done = loggedSlotsForWeek(week);
   const phase = getPhase(week);
+  const coreN = coreDaysForWeek(week);
+  const pick = pickSlotForDate(new Date());
+  let cadenceNote = 'One session a day. Monday is off from lifting. Short weeks can close under 4.';
+  if (pick.reason === 'drop-extras') cadenceNote = pick.remaining.length + ' left, ' + pick.trainableLeft + ' day' + (pick.trainableLeft === 1 ? '' : 's') + ' — one session today.';
+  else if (pick.reason === 'weekdone') cadenceNote = '4/4 done. Bonus is optional — the picker will not ask for a fifth.';
+  else if (pick.reason === 'monday') cadenceNote = 'Monday off from lifting. Remaining slots stay in the pool.';
   let html = `<div class="card" style="margin-bottom:14px;">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;">
       <div>
@@ -2592,12 +2748,12 @@ function renderWeek() {
         <div style="font-size:1.4rem;font-weight:700;color:var(--heading);margin-top:2px;">${done.size}/${PROGRAM.weekOrder.length} sessions</div>
       </div>
       <div style="text-align:right;">
-        <div class="core-eyebrow">Core streak</div>
-        <div style="font-size:1.4rem;font-weight:700;color:var(--green);margin-top:2px;">${coreStreak()} 🔥</div>
+        <div class="core-eyebrow">Core this week</div>
+        <div style="font-size:1.4rem;font-weight:700;color:var(--green);margin-top:2px;">${ForgeEngine.coreWeekLabel(coreN)}</div>
       </div>
     </div>
     <div class="week-progress">${PROGRAM.weekOrder.map(s => `<div class="wp-dot ${done.has(s) ? 'done' : ''}"></div>`).join('')}</div>
-    <div style="font-size:0.75rem;color:var(--dim);">Do these 4 any days this week. Tap one to start it today.</div>
+    <div style="font-size:0.75rem;color:var(--dim);">${cadenceNote}</div>
   </div>`;
 
   PROGRAM.weekOrder.forEach(slot => {
@@ -2823,7 +2979,7 @@ function renderHistory() {
       <div class="stat-box"><div class="stat-num">${entries.length}</div><div class="stat-label">Sessions</div></div>
       <div class="stat-box"><div class="stat-num">${totalStrength}</div><div class="stat-label">Strength</div></div>
       <div class="stat-box"><div class="stat-num">${totalCardio}</div><div class="stat-label">Cardio</div></div>
-      <div class="stat-box"><div class="stat-num">${coreStreak()} 🔥</div><div class="stat-label">Core Streak</div></div>
+      <div class="stat-box"><div class="stat-num">${ForgeEngine.coreWeekLabel(coreDaysForWeek(getWeekNumber(new Date())))}</div><div class="stat-label">Core This Week</div></div>
     </div>
     <div style="font-size:0.7rem;color:var(--dim);margin:-6px 0 12px;text-align:center;">Showing: ${escHtml(scopeLabel)}</div>`;
   document.getElementById('statsContent').innerHTML = statsHtml;
@@ -2979,9 +3135,10 @@ function renderSettings() {
   document.getElementById('startDateInput').value = startDate || '';
   const TW = PROGRAM.totalWeeks;
   const week = startDate ? getWeekNumber(new Date()) : 0;
-  document.getElementById('currentWeekDisplay').textContent = week > 0 && week <= TW ? `Week ${week} of ${TW}` : week > TW ? 'Complete' : '—';
+  const startsLabel = startDate ? ('Starts ' + ForgeEngine.prettyDate(startDate)) : '—';
+  document.getElementById('currentWeekDisplay').textContent = week > 0 && week <= TW ? `Week ${week} of ${TW}` : week > TW ? 'Complete' : startsLabel;
   const phase = week > 0 && week <= TW ? getPhase(week) : null;
-  document.getElementById('currentPhaseDisplay').textContent = phase ? phase.name : '—';
+  document.getElementById('currentPhaseDisplay').textContent = phase ? phase.name : (week < 1 && startDate ? startsLabel : '—');
   const bd = document.getElementById('currentBlockDisplay');
   if (bd) {
     const b = getCurrentBlock();
@@ -3283,6 +3440,7 @@ function renderReadinessCard() {
 // ═══════════════════════════════════════════
 renderToday();
 renderHeader();
+bindTodayDateNav();
 fetchOuraReadiness();
 
 // Offline support — cache-first app shell via service worker.
