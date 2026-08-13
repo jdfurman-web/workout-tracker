@@ -1,11 +1,11 @@
 {
-  "name": "Ruck + Iron",
-  "short_name": "Ruck+Iron",
-  "description": "Ruck + Iron — strength, rowing \u0026 ruck tracker",
+  "name": "FORGE",
+  "short_name": "FORGE",
+  "description": "FORGE — strength, rowing & ruck tracker",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0f1117",
-  "theme_color": "#0f1117",
+  "background_color": "#0b0a09",
+  "theme_color": "#0b0a09",
   "orientation": "portrait",
   "icons": [
     {
