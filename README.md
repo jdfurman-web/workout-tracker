@@ -1,6 +1,6 @@
 # Ruck + Iron
 
-Personal PWA for the **FORGE** 8-week strength + row/ruck + daily core block.
+Personal PWA for the **FORGE** 8-week strength + row/ruck + core block (4–5 core days per week, not daily). Week windows are **7 days from startDate**.
 
 **Live:** https://workout.furmans.me  
 **Data (private):** [jdfurman-web/workout-data](https://github.com/jdfurman-web/workout-data)
@@ -10,10 +10,10 @@ Personal PWA for the **FORGE** 8-week strength + row/ruck + daily core block.
 - **Progress charts** — best-set weight trends + cardio distance (SVG, no deps)
 - **Block archive** — FORGE 1 → FORGE 2 keeps history; progression scoped to current block
 
-- Flexible 4-session weeks (strength A/B, cardio A/B — any days)
-- Set logging with progressive load suggestions (per-hand aware)
+- Flexible 4-session weeks (strength A/B, cardio A/B — any days; miss slips, no stacking)
+- Set logging with progressive load suggestions (per-hand aware; last weights carry into a new block)
 - Rest timer (iOS audio unlock + vibrate + flash)
-- Daily rotating core + streak
+- Core 4–5 days/week (workout-day default, standalone allowed)
 - Oura readiness card (from private data repo)
 - Cloud sync to private GitHub repo (fine-grained PAT)
 - Face ID / passcode lock (device convenience only — not multi-user auth)
@@ -58,6 +58,6 @@ When an 8-week block ends (or you want a fresh program), use **Settings → Star
 - Archives the current block with a date range
 - Keeps all logs forever
 - Progress tab can filter **Current / All / FORGE N**
-- Weight suggestions only look at the **current** block (so program rewrites don't inherit wrong history)
+- Last weights carry into the new block (no invented numbers)
 
 Legacy data without `blockId` is migrated into **FORGE 1** on first load after v2.6.
