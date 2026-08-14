@@ -1,8 +1,8 @@
-// FORGE — offline app shell (v2.8.0, 2026-08-13)
+// FORGE — offline app shell (v2.8.1, 2026-08-14)
 // Strategy: network-first for the shell (so deploys land immediately),
 // cache fallback when offline (Boerne / gym dead zones). Data lives in
 // localStorage; cross-origin GitHub API/raw fetches are never cached.
-const CACHE = 'forge-shell-v2.8.0';
+const CACHE = 'forge-shell-v2.8.1';
 const SHELL = ['./', './index.html', './forge-engine.js', './manifest.json', './icon-192.png', './icon-512.png', './apple-touch-icon.png'];
 
 self.addEventListener('install', (e) => {
