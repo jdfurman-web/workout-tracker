@@ -41,17 +41,19 @@ function isTargetTreadmill(log) {
     && sameNum(log.rpe, 7);
 }
 
-function convertEntry(log) {
+function convertEntry(log, now) {
   const next = Object.assign({}, log);
   next.mode = 'treadmill';
   if (next.type === 'ruck' || next.type == null || next.type === '') next.type = 'cardio';
   delete next.weight;
+  if (next.updatedAt == null || next.updatedAt === '') next.updatedAt = now || Date.now();
   return next;
 }
 
 // Returns { changed, before, after, doc } or { error }.
 // `doc` is a deep copy with only logs[TARGET_DAY] replaced.
-function migrateDoc(doc) {
+function migrateDoc(doc, now) {
+  const stamp = now || Date.now();
   if (!doc || typeof doc !== 'object' || Array.isArray(doc)) {
     return { error: 'root JSON is not an object' };
   }
@@ -60,6 +62,12 @@ function migrateDoc(doc) {
   }
   const before = doc.logs[TARGET_DAY];
   if (isTargetTreadmill(before)) {
+    if (before.updatedAt == null || before.updatedAt === '') {
+      const after = Object.assign({}, before, { updatedAt: stamp });
+      const next = JSON.parse(JSON.stringify(doc));
+      next.logs[TARGET_DAY] = after;
+      return { changed: true, before: before, after: after, doc: next };
+    }
     return { changed: false, before: before, after: before, doc: doc };
   }
   const treadmillWithPack = before.mode === 'treadmill'
@@ -69,7 +77,7 @@ function migrateDoc(doc) {
     && sameNum(before.rpe, 7)
     && sameNum(before.weight, 0);
   if (treadmillWithPack) {
-    const after = convertEntry(before);
+    const after = convertEntry(before, stamp);
     const next = JSON.parse(JSON.stringify(doc));
     next.logs[TARGET_DAY] = after;
     return { changed: true, before: before, after: after, doc: next };
@@ -79,7 +87,7 @@ function migrateDoc(doc) {
       error: TARGET_DAY + ' is not the 0 lb ruck (30 min, 1.77 mi, HR 130, RPE 7) and is not already the treadmill conversion. Nothing was written.',
     };
   }
-  const after = convertEntry(before);
+  const after = convertEntry(before, stamp);
   const next = JSON.parse(JSON.stringify(doc));
   next.logs[TARGET_DAY] = after;
   return { changed: true, before: before, after: after, doc: next };

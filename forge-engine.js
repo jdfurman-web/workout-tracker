@@ -304,6 +304,234 @@
     };
   }
 
+  function entryUpdatedAt(entry) {
+    if (!entry || entry.updatedAt == null || entry.updatedAt === '') return null;
+    const n = Number(entry.updatedAt);
+    return Number.isFinite(n) ? n : null;
+  }
+
+  function logRichness(log) {
+    if (!log) return 0;
+    let n = 0;
+    if (log.type === 'strength') {
+      const ex = log.exercises || {};
+      for (const k of Object.keys(ex)) {
+        const sets = (ex[k] && ex[k].sets) || {};
+        for (const s of Object.keys(sets)) {
+          const set = sets[s] || {};
+          if (set.weight || set.reps || set.rpe) n += 1;
+        }
+      }
+    } else {
+      if (log.duration) n += 2;
+      if (log.distance) n += 2;
+      if (log.watts || log.weight) n += 1;
+      if (log.hr) n += 1;
+      if (log.rpe) n += 1;
+      if (log.calories) n += 1;
+      if (log.incline || log.speed || log.maxSpeed) n += 1;
+      if (log.className) n += 2;
+      if (log.covers) n += 1;
+      if (log.intensity) n += 1;
+    }
+    if (log.notes) n += 1;
+    return n;
+  }
+
+  function deepFill(primary, secondary) {
+    const out = JSON.parse(JSON.stringify(primary));
+    if (!secondary) return out;
+    for (const k of Object.keys(secondary)) {
+      if (out[k] == null || out[k] === '') out[k] = secondary[k];
+      else if (k === 'exercises' && typeof secondary[k] === 'object') {
+        out.exercises = out.exercises || {};
+        for (const ek of Object.keys(secondary.exercises || {})) {
+          if (!out.exercises[ek]) out.exercises[ek] = secondary.exercises[ek];
+          else {
+            out.exercises[ek].sets = out.exercises[ek].sets || {};
+            const sSets = (secondary.exercises[ek] && secondary.exercises[ek].sets) || {};
+            for (const sk of Object.keys(sSets)) {
+              if (!out.exercises[ek].sets[sk]) out.exercises[ek].sets[sk] = sSets[sk];
+              else {
+                for (const f of ['weight', 'reps', 'rpe']) {
+                  if (out.exercises[ek].sets[sk][f] == null || out.exercises[ek].sets[sk][f] === '') {
+                    out.exercises[ek].sets[sk][f] = sSets[sk][f];
+                  }
+                }
+              }
+            }
+            if (!out.exercises[ek].name && secondary.exercises[ek].name) out.exercises[ek].name = secondary.exercises[ek].name;
+            if (!out.exercises[ek].id && secondary.exercises[ek].id) out.exercises[ek].id = secondary.exercises[ek].id;
+          }
+        }
+      }
+    }
+    return out;
+  }
+
+  // Newer updatedAt wins the whole entry. A stamp on only one side wins.
+  // Neither side stamped: richness, then ts, then deepFill — the old path.
+  function mergeDayLogs(cloudLog, localLog) {
+    if (!cloudLog) return localLog;
+    if (!localLog) return cloudLog;
+    const cU = entryUpdatedAt(cloudLog);
+    const lU = entryUpdatedAt(localLog);
+    if (cU != null && lU != null) return cU >= lU ? cloudLog : localLog;
+    if (cU != null) return cloudLog;
+    if (lU != null) return localLog;
+    const cScore = logRichness(cloudLog);
+    const lScore = logRichness(localLog);
+    if (lScore > cScore) return deepFill(localLog, cloudLog);
+    if (cScore > lScore) return deepFill(cloudLog, localLog);
+    const cTs = cloudLog.ts || 0;
+    const lTs = localLog.ts || 0;
+    if (cTs > lTs) return deepFill(cloudLog, localLog);
+    return deepFill(localLog, cloudLog);
+  }
+
+  function mergeLogMaps(cloudLogs, localLogs) {
+    const keys = new Set([...Object.keys(cloudLogs || {}), ...Object.keys(localLogs || {})]);
+    const out = {};
+    keys.forEach((ds) => {
+      out[ds] = mergeDayLogs((cloudLogs || {})[ds], (localLogs || {})[ds]);
+    });
+    return out;
+  }
+
+  function extraKey(entry) {
+    if (!entry || typeof entry !== 'object') return '';
+    if (entry.id) return String(entry.id);
+    if (entry.ouraId) return String(entry.ouraId);
+    return '';
+  }
+
+  function mergeExtraLists(cloudList, localList) {
+    const order = [];
+    const map = {};
+    function take(entry) {
+      if (!entry || typeof entry !== 'object') return;
+      const id = extraKey(entry);
+      if (!id) return;
+      const withId = Object.assign({}, entry, { id: id, extra: true, covers: '' });
+      delete withId.slot;
+      delete withId.slots;
+      if (!map[id]) order.push(id);
+      map[id] = map[id] ? mergeDayLogs(map[id], withId) : withId;
+      map[id].extra = true;
+      map[id].covers = '';
+      delete map[id].slot;
+      delete map[id].slots;
+    }
+    (Array.isArray(cloudList) ? cloudList : []).forEach(take);
+    (Array.isArray(localList) ? localList : []).forEach(take);
+    return order.map((id) => map[id]);
+  }
+
+  function mergeExtrasMaps(cloudExtras, localExtras) {
+    const keys = new Set([...Object.keys(cloudExtras || {}), ...Object.keys(localExtras || {})]);
+    const out = {};
+    keys.forEach((ds) => {
+      const list = mergeExtraLists((cloudExtras || {})[ds], (localExtras || {})[ds]);
+      if (list.length) out[ds] = list;
+    });
+    return out;
+  }
+
+  // Move logs[date] with extra:true into extras[date]. Safe to repeat.
+  function migrateLegacyExtras(doc) {
+    if (!doc || typeof doc !== 'object') return { changed: false };
+    if (!doc.logs) doc.logs = {};
+    if (!doc.extras) doc.extras = {};
+    let changed = false;
+    Object.keys(doc.logs).forEach((ds) => {
+      const log = doc.logs[ds];
+      if (!log || log.extra !== true) return;
+      const id = extraKey(log) || ('legacy-' + ds);
+      const entry = Object.assign({}, log, { id: id, extra: true, covers: '' });
+      delete entry.slot;
+      delete entry.slots;
+      if (entry.updatedAt == null || entry.updatedAt === '') entry.updatedAt = entry.ts || 0;
+      const list = Array.isArray(doc.extras[ds]) ? doc.extras[ds].slice() : [];
+      const idx = list.findIndex((e) => extraKey(e) === id);
+      if (idx === -1) list.push(entry);
+      else list[idx] = mergeDayLogs(list[idx], entry);
+      doc.extras[ds] = list;
+      delete doc.logs[ds];
+      changed = true;
+    });
+    return { changed: changed };
+  }
+
+  function mergeCoreMaps(cloudCore, localCore) {
+    const out = {};
+    const keys = new Set([...Object.keys(cloudCore || {}), ...Object.keys(localCore || {})]);
+    keys.forEach((k) => {
+      const c = (cloudCore || {})[k];
+      const l = (localCore || {})[k];
+      if (!c) out[k] = l;
+      else if (!l) out[k] = c;
+      else {
+        const cU = entryUpdatedAt(c);
+        const lU = entryUpdatedAt(l);
+        if (cU != null || lU != null) {
+          if (cU != null && lU != null) out[k] = cU >= lU ? c : l;
+          else out[k] = cU != null ? c : l;
+        } else {
+          const cR = (c.rounds != null ? c.rounds : (c.done ? 3 : 0));
+          const lR = (l.rounds != null ? l.rounds : (l.done ? 3 : 0));
+          out[k] = (lR > cR || (l.ts || 0) >= (c.ts || 0)) ? Object.assign({}, c, l) : Object.assign({}, l, c);
+          if (!out[k].note && (c.note || l.note)) out[k].note = l.note || c.note;
+        }
+      }
+    });
+    return out;
+  }
+
+  function mergeSyncState(cloud, local) {
+    const c = JSON.parse(JSON.stringify(cloud || {}));
+    const l = JSON.parse(JSON.stringify(local || {}));
+    migrateLegacyExtras(c);
+    migrateLegacyExtras(l);
+    const merged = Object.assign({}, c);
+    merged.logs = mergeLogMaps(c.logs || {}, l.logs || {});
+    merged.extras = mergeExtrasMaps(c.extras || {}, l.extras || {});
+    merged.core = mergeCoreMaps(c.core || {}, l.core || {});
+    merged.swaps = Object.assign({}, c.swaps || {}, l.swaps || {});
+    merged.benchmarks = Object.assign({}, c.benchmarks || {}, l.benchmarks || {});
+    if (l.startDate && !merged.startDate) merged.startDate = l.startDate;
+    const byId = {};
+    (c.blocks || []).forEach((b) => { if (b && b.id) byId[b.id] = Object.assign({}, b); });
+    (l.blocks || []).forEach((b) => {
+      if (!b || !b.id) return;
+      byId[b.id] = byId[b.id] ? Object.assign({}, byId[b.id], b) : Object.assign({}, b);
+    });
+    merged.blocks = Object.values(byId).sort((a, b) => (a.startDate || '').localeCompare(b.startDate || ''));
+    merged.currentBlockId = l.currentBlockId || c.currentBlockId || (merged.blocks[0] && merged.blocks[0].id) || null;
+    return merged;
+  }
+
+  // Next undone cardio slot for a date. Extras and that date's own log do not count.
+  function cardioSlotDue(doc, day, weekOrder) {
+    const order = weekOrder || ['strengthA', 'cardioA', 'strengthB', 'cardioB'];
+    const block = (doc.blocks || []).find((b) => b && b.id === (doc.currentBlockId || 'forge-4-mwijdguv'))
+      || (doc.blocks || []).find((b) => b && b.startDate);
+    const start = (block && block.startDate) || doc.startDate;
+    if (!start) return '';
+    const week = weekNumber(start, day);
+    if (week < 1) return '';
+    const bounds = weekBounds(start, week);
+    const done = new Set();
+    const logs = doc.logs || {};
+    Object.keys(logs).forEach((ds) => {
+      if (ds === day || ds < bounds.start || ds > bounds.end) return;
+      const log = logs[ds];
+      if (!log || log.extra) return;
+      slotsOnLog(log).forEach((slot) => done.add(slot));
+    });
+    const assigned = assignClassSlots({ weekOrder: order, doneSlots: done, covers: 'cardio' });
+    return assigned[0] || '';
+  }
+
   const api = {
     FORGE2_START,
     CORE_FLOOR,
@@ -335,6 +563,16 @@
     proposedBlockStart,
     prettyDate,
     forge2OfferCopy,
+    entryUpdatedAt,
+    logRichness,
+    mergeDayLogs,
+    mergeLogMaps,
+    extraKey,
+    mergeExtraLists,
+    mergeExtrasMaps,
+    migrateLegacyExtras,
+    mergeSyncState,
+    cardioSlotDue,
   };
 
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
