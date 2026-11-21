@@ -188,4 +188,110 @@ test('fake last prescriptions are not invented — only read from logs', () => {
   assert.strictEqual(bench.reps, '8');
 });
 
+test('a strength class fills the next strength slot; the next day slips to cardio', () => {
+  const filled = E.assignClassSlots({ weekOrder: WEEK_ORDER, doneSlots: new Set(), covers: 'strength' });
+  assert.deepStrictEqual(filled, ['strengthA']);
+  const sun = pick('2026-08-16', filled);
+  assert.strictEqual(sun.slot, 'cardioA');
+  assert.strictEqual(sun.remaining.length, 3);
+});
+
+test('a class that covers both fills one strength slot and one cardio slot', () => {
+  const filled = E.assignClassSlots({ weekOrder: WEEK_ORDER, doneSlots: new Set(), covers: 'both' });
+  assert.deepStrictEqual(filled, ['strengthA', 'cardioA']);
+  const sun = pick('2026-08-16', filled);
+  assert.strictEqual(sun.slot, 'strengthB');
+  assert.ok(!sun.remaining.includes('strengthA'));
+  assert.ok(!sun.remaining.includes('cardioA'));
+});
+
+test('class cardio skips a strength slot that is still open', () => {
+  const filled = E.assignClassSlots({
+    weekOrder: WEEK_ORDER,
+    doneSlots: new Set(),
+    covers: 'cardio',
+  });
+  assert.deepStrictEqual(filled, ['cardioA']);
+  const sun = pick('2026-08-16', filled);
+  assert.strictEqual(sun.slot, 'strengthA');
+});
+
+test('second strength class takes strengthB, then that kind is only a bonus repeat', () => {
+  const second = E.assignClassSlots({
+    weekOrder: WEEK_ORDER,
+    doneSlots: new Set(['strengthA']),
+    covers: 'strength',
+  });
+  assert.deepStrictEqual(second, ['strengthB']);
+  const bonus = E.assignClassSlots({
+    weekOrder: WEEK_ORDER,
+    doneSlots: new Set(['strengthA', 'strengthB']),
+    covers: 'strength',
+  });
+  assert.deepStrictEqual(bonus, ['strengthB']);
+});
+
+test('Monday stays non-trainable after a class filled Saturday', () => {
+  const mon = pick('2026-08-17', ['strengthA']);
+  assert.strictEqual(mon.slot, null);
+  assert.strictEqual(mon.reason, 'monday');
+});
+
+test('lastSlotDates records every slot one class filled', () => {
+  const logs = {
+    '2026-08-15': { type: 'class', className: 'GTX', covers: 'both', slot: 'strengthA', slots: ['strengthA', 'cardioA'], duration: '45' },
+  };
+  const has = (log) => !!(log && (log.className || log.duration));
+  const last = E.lastSlotDates(logs, has);
+  assert.strictEqual(last.strengthA, '2026-08-15');
+  assert.strictEqual(last.cardioA, '2026-08-15');
+  assert.strictEqual(last.strengthB, undefined);
+});
+
+test('GTX and Alpha default to strength; other names do not', () => {
+  assert.strictEqual(E.defaultClassCovers('GTX'), 'strength');
+  assert.strictEqual(E.defaultClassCovers('alpha'), 'strength');
+  assert.strictEqual(E.defaultClassCovers('Spin'), '');
+  assert.strictEqual(E.defaultClassCovers(''), '');
+});
+
+test('oura workouts degrade when missing or for another day', () => {
+  assert.deepStrictEqual(E.ouraWorkoutsForDay(null, '2026-11-21'), []);
+  assert.deepStrictEqual(E.ouraWorkoutsForDay({}, '2026-11-21'), []);
+  assert.deepStrictEqual(E.ouraWorkoutsForDay({ workouts: [] }, '2026-11-21'), []);
+  assert.deepStrictEqual(E.ouraWorkoutsForDay({ workouts: null }, '2026-11-21'), []);
+  const data = { workouts: [{ id: 'a', day: '2026-11-20', activity: 'running' }] };
+  assert.deepStrictEqual(E.ouraWorkoutsForDay(data, '2026-11-21'), []);
+  assert.strictEqual(E.ouraWorkoutsForDay(data, '2026-11-20').length, 1);
+});
+
+test('oura prefill chooses treadmill or class and never names a slot', () => {
+  const run = {
+    id: 'ow1', day: '2026-11-22', activity: 'running', label: null,
+    start: '2026-11-22T14:02:00-06:00', end: '2026-11-22T14:32:00-06:00',
+    calories: 280, intensity: 'moderate', source: 'oura', avg_hr: 128, max_hr: 151,
+  };
+  const pre = E.ouraPrefill(run);
+  assert.strictEqual(pre.kind, 'treadmill');
+  assert.strictEqual(pre.mode, 'treadmill');
+  assert.strictEqual(pre.duration, '30');
+  assert.strictEqual(pre.hr, '128');
+  assert.strictEqual(pre.calories, '280');
+  assert.strictEqual(pre.slot, undefined);
+  assert.strictEqual(pre.slots, undefined);
+  assert.strictEqual(pre.distance, undefined);
+  const gtx = {
+    id: 'ow2', day: '2026-11-22', activity: 'strength_training', label: 'GTX',
+    start: '2026-11-22T18:00:00-06:00', end: '2026-11-22T18:45:00-06:00',
+    calories: 410, intensity: 'hard', source: 'oura', avg_hr: 142, max_hr: 168,
+  };
+  const klass = E.ouraPrefill(gtx);
+  assert.strictEqual(klass.kind, 'class');
+  assert.strictEqual(klass.className, 'GTX');
+  assert.strictEqual(klass.covers, 'strength');
+  assert.strictEqual(klass.duration, '45');
+  assert.strictEqual(klass.intensity, 'hard');
+  assert.strictEqual(klass.slot, undefined);
+});
+
 console.log('\n' + passed + ' tests passed');

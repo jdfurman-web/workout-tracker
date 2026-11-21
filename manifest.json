@@ -1,7 +1,7 @@
 {
   "name": "FORGE",
   "short_name": "FORGE",
-  "description": "FORGE — strength, rowing & ruck tracker",
+  "description": "FORGE — strength, rowing, ruck, and treadmill tracker",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0b0a09",
