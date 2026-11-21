@@ -158,6 +158,8 @@
 
   function blankNum(v) {
     if (v == null || v === '') return '';
+    const n = Number(v);
+    if (Number.isFinite(n)) return String(Math.round(n));
     return String(v);
   }
 

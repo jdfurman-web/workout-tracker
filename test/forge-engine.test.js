@@ -294,4 +294,26 @@ test('oura prefill chooses treadmill or class and never names a slot', () => {
   assert.strictEqual(klass.slot, undefined);
 });
 
+test('oura calories and heart rate round to whole numbers', () => {
+  const pre = E.ouraPrefill({
+    id: 'ow-float', day: '2026-11-22', activity: 'running', label: null,
+    start: '2026-11-22T14:02:00-06:00', end: '2026-11-22T14:32:00-06:00',
+    calories: 119.133056640625, intensity: 'moderate', source: 'oura', avg_hr: 127.4, max_hr: 151.2,
+  });
+  assert.strictEqual(pre.kind, 'treadmill');
+  assert.strictEqual(pre.calories, '119');
+  assert.strictEqual(pre.hr, '127');
+  assert.strictEqual(pre.slot, undefined);
+  assert.strictEqual(pre.ouraDraft, undefined);
+  const klass = E.ouraPrefill({
+    id: 'ow-class-float', day: '2026-11-22', activity: 'strength_training', label: 'GTX',
+    start: '2026-11-22T18:00:00-06:00', end: '2026-11-22T18:45:00-06:00',
+    calories: 410.6, intensity: 'hard', source: 'oura', avg_hr: 141.5,
+  });
+  assert.strictEqual(klass.calories, '411');
+  assert.strictEqual(klass.hr, '142');
+  assert.strictEqual(klass.intensity, 'hard');
+  assert.strictEqual(klass.covers, 'strength');
+});
+
 console.log('\n' + passed + ' tests passed');
