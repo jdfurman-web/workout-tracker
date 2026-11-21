@@ -56,15 +56,158 @@
     return n;
   }
 
+  // A log may name one slot (`slot`) or several (`slots`) when one class
+  // covers both a strength slot and a cardio slot. Same reader either way.
+  function slotsOnLog(log) {
+    if (!log) return [];
+    const many = Array.isArray(log.slots) ? log.slots.filter(Boolean) : [];
+    if (many.length) return many.slice();
+    return log.slot ? [log.slot] : [];
+  }
+
+  function slotKind(slot) {
+    const s = String(slot || '');
+    if (s.indexOf('strength') === 0) return 'strength';
+    if (s.indexOf('cardio') === 0) return 'cardio';
+    return '';
+  }
+
+  // Next open slot of the kind a class counts as. Already-done slots stay
+  // done; this only names which remaining pool entries the class satisfies.
+  // If that kind is already full, the last slot of the kind is repeated
+  // (bonus), which the existing week-done picker already ignores.
+  function assignClassSlots(opts) {
+    const weekOrder = opts.weekOrder || [];
+    const done = opts.doneSlots instanceof Set ? opts.doneSlots : new Set(opts.doneSlots || []);
+    const covers = opts.covers === 'both' ? 'both' : (opts.covers === 'cardio' ? 'cardio' : (opts.covers === 'strength' ? 'strength' : ''));
+    if (!covers) return [];
+    const kinds = covers === 'both' ? ['strength', 'cardio'] : [covers];
+    const out = [];
+    for (let i = 0; i < kinds.length; i++) {
+      const ofKind = weekOrder.filter((s) => slotKind(s) === kinds[i]);
+      if (!ofKind.length) continue;
+      let pick = null;
+      for (let j = 0; j < ofKind.length; j++) {
+        if (!done.has(ofKind[j]) && out.indexOf(ofKind[j]) === -1) { pick = ofKind[j]; break; }
+      }
+      if (!pick) pick = ofKind[ofKind.length - 1];
+      if (out.indexOf(pick) === -1) out.push(pick);
+    }
+    return out;
+  }
+
   function lastSlotDates(logs, hasData) {
     const last = {};
     for (const ds of Object.keys(logs || {})) {
       const log = logs[ds];
-      if (!log || !log.slot) continue;
+      if (!log) continue;
       if (hasData && !hasData(log)) continue;
-      if (!last[log.slot] || ds > last[log.slot]) last[log.slot] = ds;
+      const slots = slotsOnLog(log);
+      for (let i = 0; i < slots.length; i++) {
+        const slot = slots[i];
+        if (!last[slot] || ds > last[slot]) last[slot] = ds;
+      }
     }
     return last;
+  }
+
+  function ouraWorkoutsForDay(data, day) {
+    if (!data || !Array.isArray(data.workouts) || !day) return [];
+    return data.workouts.filter((w) => w && w.day === day);
+  }
+
+  function minutesBetweenIso(start, end) {
+    const a = Date.parse(start || '');
+    const b = Date.parse(end || '');
+    if (!isFinite(a) || !isFinite(b) || b < a) return '';
+    return String(Math.round((b - a) / 60000));
+  }
+
+  function mentionsYoga(item) {
+    const activity = String((item && item.activity) || '').toLowerCase();
+    const label = String((item && item.label) || '').toLowerCase();
+    return activity.indexOf('yoga') !== -1 || label.indexOf('yoga') !== -1;
+  }
+
+  function ouraEntryKind(item) {
+    const label = String((item && item.label) || '').toLowerCase();
+    const activity = String((item && item.activity) || '').toLowerCase();
+    const blob = label + ' ' + activity;
+    // Yoga, including Yin, is an extra. It never fills a plan slot.
+    if (mentionsYoga(item)) return 'extra';
+    if (/\b(gtx|alpha)\b/.test(blob)) return 'class';
+    if (/class|strength|weight|lift|hiit|pilates|crossfit|functional/.test(blob)) return 'class';
+    if (/tread|run|jog|walk|elliptical/.test(blob)) return 'treadmill';
+    return 'class';
+  }
+
+  function ouraOffersSlot(item) {
+    return ouraEntryKind(item) !== 'extra';
+  }
+
+  function defaultClassCovers(name) {
+    const n = String(name || '').trim().toLowerCase();
+    if (n === 'gtx' || n === 'alpha') return 'strength';
+    return '';
+  }
+
+  function inferClassCovers(item) {
+    if (mentionsYoga(item)) return '';
+    const named = defaultClassCovers(item && (item.label || item.className));
+    if (named) return named;
+    const blob = String((item && item.activity) || '').toLowerCase();
+    if (/strength|weight|lift|hiit|functional|crossfit|pilates/.test(blob)) return 'strength';
+    if (/cardio|run|walk|row|cycle|bike|tread|elliptical|jog/.test(blob)) return 'cardio';
+    return '';
+  }
+
+  function ouraClassName(item) {
+    const label = item && item.label != null ? String(item.label).trim() : '';
+    if (label) return label;
+    const act = item && item.activity ? String(item.activity).trim() : '';
+    if (!act) return '';
+    return act.replace(/[_-]+/g, ' ').replace(/\b[a-z]/g, (c) => c.toUpperCase());
+  }
+
+  function blankNum(v) {
+    if (v == null || v === '') return '';
+    const n = Number(v);
+    if (Number.isFinite(n)) return String(Math.round(n));
+    return String(v);
+  }
+
+  // Form values only. No slot — a suggestion must not complete a session.
+  function ouraPrefill(item) {
+    const kind = ouraEntryKind(item || {});
+    const duration = minutesBetweenIso(item && item.start, item && item.end);
+    const base = {
+      kind: kind,
+      duration: duration,
+      calories: blankNum(item && item.calories),
+      hr: blankNum(item && item.avg_hr),
+      ouraId: item && item.id != null ? String(item.id) : '',
+    };
+    if (kind === 'treadmill') {
+      base.type = 'cardio';
+      base.mode = 'treadmill';
+      return base;
+    }
+    if (kind === 'extra') {
+      base.type = 'class';
+      base.mode = 'class';
+      base.className = ouraClassName(item || {}) || 'Yoga';
+      base.covers = '';
+      base.extra = true;
+      base.intensity = blankNum(item && item.intensity);
+      return base;
+    }
+    const className = ouraClassName(item || {});
+    base.type = 'class';
+    base.mode = 'class';
+    base.className = className;
+    base.covers = defaultClassCovers(className) || inferClassCovers(item || {});
+    base.intensity = blankNum(item && item.intensity);
+    return base;
   }
 
   function remainingSlots(weekOrder, doneSlots) {
@@ -172,7 +315,18 @@
     weekNumber,
     weekBounds,
     remainingTrainableDays,
+    slotsOnLog,
+    slotKind,
+    assignClassSlots,
     lastSlotDates,
+    ouraWorkoutsForDay,
+    minutesBetweenIso,
+    ouraEntryKind,
+    ouraOffersSlot,
+    defaultClassCovers,
+    inferClassCovers,
+    ouraClassName,
+    ouraPrefill,
     remainingSlots,
     sortSlotsByStaleness,
     pickNextSlot,

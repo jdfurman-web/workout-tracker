@@ -695,8 +695,17 @@ body.timer-done-pulse::after {
 /* ── FORGE: Cardio + Daily Core ── */
 .day-type.cardio { color: var(--green); }
 .mode-toggle { display:flex; gap:8px; margin-bottom:12px; }
-.mode-btn { flex:1; padding:11px 0; border:1px solid var(--border); border-radius:10px; background:var(--bg); color:var(--muted); font-size:0.9rem; font-weight:700; cursor:pointer; text-align:center; }
+.mode-btn { flex:1; padding:11px 4px; border:1px solid var(--border); border-radius:10px; background:var(--bg); color:var(--muted); font-size:0.8rem; font-weight:700; cursor:pointer; text-align:center; }
 .mode-btn.active { border-color: var(--green); background: rgba(52,211,153,0.15); color: var(--green); }
+.ruck-fields label { display:block; font-size:0.7rem; font-weight:600; color:var(--dim); text-transform:uppercase; margin-bottom:4px; letter-spacing:0.03em; }
+.opt-tag { font-weight:600; letter-spacing:0; text-transform:none; color:var(--dim); }
+.oura-workouts { margin:0 0 12px; }
+.oura-row { display:flex; flex-direction:column; align-items:flex-start; gap:8px; padding:10px 0; border-top:1px solid var(--border); }
+.oura-title { font-size:0.95rem; font-weight:700; color:var(--heading); }
+.oura-meta { font-size:0.78rem; color:var(--muted); line-height:1.35; }
+.oura-add { background:transparent; border:1px solid var(--green); color:var(--green); border-radius:8px; padding:8px 12px; font-weight:700; font-size:0.8rem; cursor:pointer; }
+.oura-note { font-size:0.75rem; color:var(--yellow); margin-top:8px; }
+.class-name { text-align:left; margin-bottom:10px; }
 .core-card.done { border-color: rgba(52,211,153,0.4); }
 .core-head { display:flex; align-items:center; justify-content:space-between; gap:10px; }
 .core-eyebrow { font-size:0.65rem; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; color:var(--dim); }
@@ -996,7 +1005,7 @@ if (sessionStorage.getItem('ri_auth')==='1') {
   <button class="btn btn-secondary" onclick="exportData()">Export All Data (JSON)</button>
   <button class="btn btn-danger" onclick="confirmClear()">Clear All Data</button>
   <div style="text-align:center;margin-top:24px;">
-    <p style="font-size:0.75rem;color:var(--dim);">FORGE v2.8.0 · 2026-08-13</p>
+    <p style="font-size:0.75rem;color:var(--dim);">FORGE v2.9.2 · 2026-11-21</p>
     <p style="font-size:0.65rem;color:var(--dim);letter-spacing:0.04em;">Ruck + Iron · Knox for Jay Furman</p>
   </div>
 </div>
@@ -1463,23 +1472,31 @@ function getDayWorkout(date) {
 
 // ─── Flexible-cadence helpers ───
 let activeInfo = null;
+function classLog(log) {
+  return !!(log && (log.type === 'class' || log.mode === 'class'));
+}
 function logHasData(log) {
-  if (!log) return false;
+  if (!log || log.ouraDraft) return false;
+  if (classLog(log)) {
+    return !!(String(log.className || '').trim() || log.duration || log.calories || log.hr || log.intensity);
+  }
   if (log.type === 'strength') {
     const ex = log.exercises || {};
     for (const k in ex) { if (ex[k].sets && Object.keys(ex[k].sets).length) return true; }
     return false;
   }
-  return !!(log.duration || log.distance || log.watts);
+  return !!(log.duration || log.distance || log.watts || log.calories);
 }
-function loggedSlotsForWeek(week) {
+function loggedSlotsForWeek(week, exceptDs) {
   const logs = (getState().logs) || {};
   const done = new Set();
   for (const ds in logs) {
+    if (exceptDs && ds === exceptDs) continue;
     const log = logs[ds];
-    if (!log || !log.slot) continue;
-    if (!logHasData(log)) continue;
-    if (getWeekNumber(new Date(ds + 'T12:00:00')) === week) done.add(log.slot);
+    if (!log || !logHasData(log)) continue;
+    if (getWeekNumber(new Date(ds + 'T12:00:00')) !== week) continue;
+    const slots = ForgeEngine.slotsOnLog(log);
+    for (let i = 0; i < slots.length; i++) done.add(slots[i]);
   }
   return done;
 }
@@ -1593,10 +1610,10 @@ function dateStr(d) {
 // ─── HTML escape (user notes / free text must never hit innerHTML raw) ───
 function escHtml(s) {
   return String(s == null ? '' : s)
-    .replace(/&/g, '&')
-    .replace(/</g, '<')
-    .replace(/>/g, '>')
-    .replace(/"/g, '"')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
 }
 
@@ -1691,6 +1708,11 @@ function logRichness(log) {
     if (log.watts || log.weight) n += 1;
     if (log.hr) n += 1;
     if (log.rpe) n += 1;
+    if (log.calories) n += 1;
+    if (log.incline || log.speed) n += 1;
+    if (log.className) n += 2;
+    if (log.covers) n += 1;
+    if (log.intensity) n += 1;
   }
   if (log.notes) n += 1;
   return n;
@@ -2253,7 +2275,7 @@ function openSwap() {
   options.forEach(opt => {
     const isCardio = opt.workout.type === 'cardio' || opt.workout.type === 'ruck' || opt.workout.type === 'row';
     const typeLabel = isCardio ? 'cardio' : 'strength';
-    const detail = isCardio ? (opt.workout.duration + ' • row / ruck') : (opt.workout.duration + ' • ' + (opt.workout.exercises ? opt.workout.exercises.length : 0) + ' exercises');
+    const detail = isCardio ? (opt.workout.duration + ' • row / ruck / tread') : (opt.workout.duration + ' • ' + (opt.workout.exercises ? opt.workout.exercises.length : 0) + ' exercises');
     html += `
     <div class="swap-option" onclick="selectSwap('${ds}','${opt.type}',${opt.week})">
       <span class="so-type ${typeLabel}">${typeLabel}</span>
@@ -2415,6 +2437,7 @@ function renderToday() {
     }
     appendCoreCard(ds, d, { hasSession: false });
     appendQuietStats(week);
+    paintDayExtras(ds);
     return;
   }
 
@@ -2431,7 +2454,7 @@ function renderToday() {
     });
     appendCoreCard(ds, d, { coreOnly: true });
     appendQuietStats(week);
-    if (ouraData) renderReadinessCard();
+    paintDayExtras(ds);
     return;
   }
 
@@ -2451,7 +2474,7 @@ function renderToday() {
     }) + `<div class="swap-bar"><span></span><button class="swap-btn" onclick="openSwap()">＋ Bonus session</button></div>`;
     appendCoreCard(ds, d, { hasSession: false });
     appendQuietStats(week);
-    if (ouraData) renderReadinessCard();
+    paintDayExtras(ds);
     return;
   }
 
@@ -2464,14 +2487,19 @@ function renderToday() {
     });
     appendCoreCard(ds, d, { hasSession: false });
     appendQuietStats(week);
-    if (ouraData) renderReadinessCard();
+    paintDayExtras(ds);
     return;
   }
 
   activeInfo = info;
-  const isCardio = info.type === 'cardio' || info.type === 'ruck' || info.type === 'row';
   const log = getLog(ds) || {};
-  const parts = splitWorkoutName(info.name);
+  const isClass = classLog(log);
+  const isCardio = !isClass && (info.type === 'cardio' || info.type === 'ruck' || info.type === 'row' || log.mode === 'treadmill');
+  const parts = isClass
+    ? { title: (String(log.className || '').trim() || (log.extra ? 'Yoga' : 'Class')), sub: log.extra ? 'Extra · does not fill a plan slot' : coversPhrase(log.covers) }
+    : (log.mode === 'treadmill'
+      ? { title: 'Treadmill', sub: 'Cardio' }
+      : splitWorkoutName(info.name));
 
   let swapNote = '';
   if (info.swapped) {
@@ -2481,14 +2509,16 @@ function renderToday() {
   const previewNote = (!isToday && !loggedHere)
     ? `<div style="font-size:0.75rem;color:var(--yellow);margin-top:10px;">Next up · not logged yet — same pool slot, not a second session</div>`
     : '';
-  const eyebrow = (!isToday && !loggedHere)
-    ? `${isCardio ? 'Cardio' : 'Strength'} · Next up`
-    : `Today's session`;
+  const eyebrow = isClass
+    ? (log.extra ? 'Extra' : 'Class')
+    : ((!isToday && !loggedHere)
+      ? `${isCardio ? 'Cardio' : 'Strength'} · Next up`
+      : `Today's session`);
 
   let html = dateNavHtml + offerHtml + sessionCardHtml({
     eyebrow,
-    name: parts.title,
-    sub: parts.sub,
+    name: escHtml(parts.title),
+    sub: escHtml(parts.sub),
     metaLeft: (info.duration || '').toUpperCase(),
     metaRight: 'Week ' + (info.week || week),
     extra: swapNote + previewNote,
@@ -2497,71 +2527,85 @@ function renderToday() {
       <button class="swap-btn" onclick="openSwap()">Swap workout</button>
     </div>`;
 
-  if (isCardio) {
-    html += renderCardioView(info, log, ds);
-  } else {
-    html += renderStrengthView(info, log, ds);
-  }
+  html += sessionKindToggle(ds, isClass);
+  if (isClass) html += renderClassView(info, log, ds);
+  else if (isCardio) html += renderCardioView(info, log, ds);
+  else html += renderStrengthView(info, log, ds);
 
   container.innerHTML = html;
   attachEventListeners(ds, info);
   appendCoreCard(ds, d, { hasSession: true });
   appendQuietStats(week);
-  if (ouraData) renderReadinessCard();
+  paintDayExtras(ds);
 }
 
 
 function renderCardioView(info, log, ds) {
-  const mode = (log && log.mode) ? log.mode : (info.mode || 'row');
+  const mode = (log && log.mode && log.mode !== 'class') ? log.mode : (info.mode || 'row');
   const isRuck = mode === 'ruck';
-  const allowRow = !!info.rowTarget;
-  const allowRuck = !!info.ruckTarget;
-  const target = isRuck ? (info.ruckTarget || info.rowTarget) : (info.rowTarget || info.ruckTarget);
-
-  let toggle = '';
-  if (allowRow && allowRuck) {
-    toggle = `
-      <div class="mode-toggle">
-        <button class="mode-btn ${!isRuck ? 'active' : ''}" onclick="setCardioMode('${ds}','row')">🚣 Row</button>
-        <button class="mode-btn ${isRuck ? 'active' : ''}" onclick="setCardioMode('${ds}','ruck')">🎒 Ruck</button>
-      </div>`;
-  }
+  const isTread = mode === 'treadmill';
+  const target = isTread
+    ? 'Treadmill. Type time and miles from the machine. Incline, speed, and calories are optional.'
+    : (isRuck ? (info.ruckTarget || info.rowTarget) : (info.rowTarget || info.ruckTarget));
+  const distLabel = (isRuck || isTread) ? (isTread ? 'Miles' : 'Distance (mi)') : 'Distance (m)';
+  const timeLabel = isTread ? 'Time (min)' : 'Duration (min)';
+  const third = isTread
+    ? `<div>
+          <label>Incline % <span class="opt-tag">optional</span></label>
+          <input class="set-input ruck-log" data-field="incline" type="number" inputmode="decimal" step="0.5" placeholder="—" value="${escHtml(log.incline||'')}">
+        </div>
+        <div>
+          <label>Avg speed (mph) <span class="opt-tag">optional</span></label>
+          <input class="set-input ruck-log" data-field="speed" type="number" inputmode="decimal" step="0.1" placeholder="—" value="${escHtml(log.speed||'')}">
+        </div>
+        <div>
+          <label>Calories <span class="opt-tag">optional</span></label>
+          <input class="set-input ruck-log" data-field="calories" type="number" inputmode="numeric" placeholder="—" value="${escHtml(log.calories||'')}">
+        </div>`
+    : (isRuck
+      ? `<div>
+          <label>Pack Weight (lbs)</label>
+          <input class="set-input ruck-log" data-field="weight" type="number" inputmode="numeric" placeholder="—" value="${escHtml(log.weight||'')}">
+        </div>`
+      : `<div>
+          <label>Avg Watts</label>
+          <input class="set-input ruck-log" data-field="watts" type="number" inputmode="numeric" placeholder="—" value="${escHtml(log.watts||'')}">
+        </div>`);
 
   return `
     <div class="card" style="margin-top:12px;">
-      ${toggle}
-      <div style="padding:14px;background:var(--bg);border-radius:10px;margin-bottom:12px;">
-        <div style="font-size:1.02rem;color:var(--green);font-weight:600;line-height:1.45;">${target}</div>
-        ${isRuck && info.ruckWeight ? `<div style="font-size:0.85rem;color:var(--muted);margin-top:6px;">Pack: ${info.ruckWeight}</div>` : ''}
+      <div class="mode-toggle">
+        <button type="button" class="mode-btn ${mode==='row'?'active':''}" onclick="setCardioMode('${ds}','row')">Row</button>
+        <button type="button" class="mode-btn ${isRuck?'active':''}" onclick="setCardioMode('${ds}','ruck')">Ruck</button>
+        <button type="button" class="mode-btn ${isTread?'active':''}" onclick="setCardioMode('${ds}','treadmill')">Treadmill</button>
       </div>
-      ${info.note ? `<div class="ex-note">${info.note}</div>` : ''}
+      <div style="padding:14px;background:var(--bg);border-radius:10px;margin-bottom:12px;">
+        <div style="font-size:1.02rem;color:var(--green);font-weight:600;line-height:1.45;">${escHtml(target || '')}</div>
+        ${isRuck && info.ruckWeight ? `<div style="font-size:0.85rem;color:var(--muted);margin-top:6px;">Pack: ${escHtml(info.ruckWeight)}</div>` : ''}
+      </div>
+      ${info.note && !isTread ? `<div class="ex-note">${escHtml(info.note)}</div>` : ''}
 
       <div class="section-title" style="margin-top:16px;">Log It</div>
       <div class="ruck-fields">
         <div>
-          <label>Duration (min)</label>
-          <input class="set-input ruck-log" data-field="duration" type="number" inputmode="numeric" placeholder="—" value="${log.duration||''}">
+          <label>${timeLabel}</label>
+          <input class="set-input ruck-log" data-field="duration" type="number" inputmode="numeric" placeholder="—" value="${escHtml(log.duration||'')}">
         </div>
         <div>
-          <label>${isRuck ? 'Distance (mi)' : 'Distance (m)'}</label>
-          <input class="set-input ruck-log" data-field="distance" type="number" inputmode="decimal" step="${isRuck ? '0.1' : '50'}" placeholder="—" value="${log.distance||''}">
+          <label>${distLabel}</label>
+          <input class="set-input ruck-log" data-field="distance" type="number" inputmode="decimal" step="${isRuck || isTread ? '0.01' : '50'}" placeholder="—" value="${escHtml(log.distance||'')}">
         </div>
-        ${isRuck ? `<div>
-          <label>Pack Weight (lbs)</label>
-          <input class="set-input ruck-log" data-field="weight" type="number" inputmode="numeric" placeholder="—" value="${log.weight||''}">
-        </div>` : `<div>
-          <label>Avg Watts</label>
-          <input class="set-input ruck-log" data-field="watts" type="number" inputmode="numeric" placeholder="—" value="${log.watts||''}">
-        </div>`}
+        ${third}
         <div>
           <label>Avg HR (bpm)</label>
-          <input class="set-input ruck-log" data-field="hr" type="number" inputmode="numeric" placeholder="—" value="${log.hr||''}">
+          <input class="set-input ruck-log" data-field="hr" type="number" inputmode="numeric" placeholder="—" value="${escHtml(log.hr||'')}">
         </div>
       </div>
       <div class="rpe-label">Effort (RPE)</div>
       <div class="rpe-row">
-        ${[4,5,6,7,8,9,10].map(n => `<button class="rpe-btn ruck-rpe ${log.rpe==n?'selected':''}" data-rpe="${n}">${n}</button>`).join('')}
+        ${[4,5,6,7,8,9,10].map(n => `<button type="button" class="rpe-btn ruck-rpe ${log.rpe==n?'selected':''}" data-rpe="${n}">${n}</button>`).join('')}
       </div>
+      ${ouraDraftBar(ds, log)}
       <div style="margin-top:12px;">
         <label style="font-size:0.7rem;font-weight:600;color:var(--dim);text-transform:uppercase;display:block;margin-bottom:4px;">Notes</label>
         <textarea class="notes-input ruck-notes" placeholder="How'd it feel?">${escHtml(log.notes||'')}</textarea>
@@ -2571,11 +2615,221 @@ function renderCardioView(info, log, ds) {
 
 function setCardioMode(ds, mode) {
   const info = activeInfo || {};
-  const log = getLog(ds) || { type: info.type || 'cardio', workout: info.name, slot: info.slotType, week: info.week };
+  const log = getLog(ds) || { type: 'cardio', workout: info.name, week: info.week };
   log.mode = mode;
-  if (!log.slot && info.slotType) { log.slot = info.slotType; log.week = info.week; log.type = info.type; log.workout = info.name; }
+  log.type = 'cardio';
+  if (mode === 'treadmill') log.workout = 'Treadmill';
+  else if (!log.workout || log.workout === 'Treadmill' || log.workout === 'Class') log.workout = info.name || 'Cardio';
+  if (info.week) log.week = info.week;
+  const bid = getCurrentBlockId();
+  if (bid && !log.blockId) log.blockId = bid;
+  if (log.ouraDraft) {
+    delete log.slot;
+    delete log.slots;
+  } else if (logHasData(log) || mode !== 'treadmill') assignCardioSlot(ds, log, info);
+  else { delete log.slot; delete log.slots; }
   saveLog(ds, log);
   renderToday();
+}
+
+function sessionKindToggle(ds, isClass) {
+  return `<div class="mode-toggle" style="margin-top:12px;">
+    <button type="button" class="mode-btn ${isClass ? '' : 'active'}" onclick="setSessionKind('${ds}','planned')">Planned</button>
+    <button type="button" class="mode-btn ${isClass ? 'active' : ''}" onclick="setSessionKind('${ds}','class')">Class</button>
+  </div>`;
+}
+
+function coversPhrase(covers) {
+  if (covers === 'strength') return 'Counts as strength';
+  if (covers === 'cardio') return 'Counts as cardio';
+  if (covers === 'both') return 'Counts as strength and cardio';
+  return 'Choose what this class fills';
+}
+
+function slotFriendly(slot) {
+  if (slot === 'strengthA') return 'Strength A';
+  if (slot === 'strengthB') return 'Strength B';
+  if (slot === 'cardioA') return 'Cardio A';
+  if (slot === 'cardioB') return 'Cardio B';
+  return slot || '';
+}
+
+function assignCardioSlot(ds, log, info) {
+  const week = getWeekNumber(new Date(ds + 'T12:00:00'));
+  const done = loggedSlotsForWeek(week, ds);
+  let slot = log.slot && ForgeEngine.slotKind(log.slot) === 'cardio' ? log.slot : '';
+  const current = info && info.slotType;
+  if (!slot && current && ForgeEngine.slotKind(current) === 'cardio' && !done.has(current)) slot = current;
+  if (!slot) {
+    const assigned = ForgeEngine.assignClassSlots({ weekOrder: PROGRAM.weekOrder, doneSlots: done, covers: 'cardio' });
+    slot = assigned[0] || '';
+  }
+  if (slot) {
+    log.slot = slot;
+    log.slots = [slot];
+    log.week = log.week || (info && info.week) || week;
+  }
+}
+
+function stampClassSlots(ds, log) {
+  log.type = 'class';
+  log.mode = 'class';
+  const week = getWeekNumber(new Date(ds + 'T12:00:00'));
+  log.week = log.week || week;
+  const bid = getCurrentBlockId();
+  if (bid && !log.blockId) log.blockId = bid;
+  log.workout = String(log.className || '').trim() || (log.extra ? 'Yoga' : 'Class');
+  if (log.extra) {
+    log.covers = '';
+    delete log.slot;
+    delete log.slots;
+    return log;
+  }
+  const covers = log.covers;
+  const okCover = covers === 'strength' || covers === 'cardio' || covers === 'both';
+  if (log.ouraDraft || !logHasData(Object.assign({}, log, { ouraDraft: false })) || !okCover || !ForgeEngine.isTrainableDay(ds)) {
+    delete log.slot;
+    delete log.slots;
+    return log;
+  }
+  const slots = ForgeEngine.assignClassSlots({
+    weekOrder: PROGRAM.weekOrder,
+    doneSlots: loggedSlotsForWeek(week, ds),
+    covers: covers,
+  });
+  log.slots = slots;
+  if (slots[0]) log.slot = slots[0];
+  else delete log.slot;
+  return log;
+}
+
+function setSessionKind(ds, kind) {
+  if (!ForgeEngine.isTrainableDay(ds)) return;
+  const info = activeInfo || {};
+  let log = getLog(ds);
+  if (kind === 'class') {
+    log = log || {};
+    log.type = 'class';
+    log.mode = 'class';
+    if (log.covers == null) log.covers = '';
+    if (log.ouraDraft) delete log.ouraDraft;
+    stampClassSlots(ds, log);
+    saveLog(ds, log);
+  } else if (log && classLog(log)) {
+    log.type = (info.type === 'cardio' || info.type === 'row' || info.type === 'ruck') ? 'cardio' : (info.type || 'strength');
+    log.mode = log.type === 'cardio' ? (info.mode || 'row') : '';
+    delete log.slots;
+    delete log.ouraDraft;
+    if (log.type === 'cardio') {
+      if (logHasData(log)) assignCardioSlot(ds, log, info);
+      else delete log.slot;
+    } else if (info.slotType && logHasData(log)) {
+      log.slot = info.slotType;
+    } else {
+      delete log.slot;
+    }
+    if (!logHasData(log)) {
+      const s = getState();
+      if (s.logs) delete s.logs[ds];
+      saveState(s);
+    } else saveLog(ds, log);
+  }
+  renderToday();
+}
+
+function setClassPreset(ds, preset) {
+  if (!ForgeEngine.isTrainableDay(ds)) return;
+  const existing = getLog(ds);
+  if (existing && existing.extra) return;
+  const log = existing || {};
+  log.type = 'class';
+  log.mode = 'class';
+  if (log.ouraDraft) delete log.ouraDraft;
+  if (preset === 'Other') {
+    log.className = '';
+    log.classPreset = 'other';
+  } else {
+    log.className = preset;
+    log.classPreset = String(preset).toLowerCase();
+    if (!log.coversTouched) log.covers = 'strength';
+  }
+  log.ts = Date.now();
+  stampClassSlots(ds, log);
+  saveLog(ds, log);
+  renderToday();
+  if (preset === 'Other') {
+    const el = document.querySelector('.class-name');
+    if (el) el.focus();
+  }
+}
+
+function setClassCovers(ds, covers) {
+  if (!ForgeEngine.isTrainableDay(ds)) return;
+  const log = getLog(ds) || {};
+  if (log.extra) return;
+  log.type = 'class';
+  log.mode = 'class';
+  log.covers = covers;
+  log.coversTouched = true;
+  if (log.ouraDraft) delete log.ouraDraft;
+  log.ts = Date.now();
+  stampClassSlots(ds, log);
+  saveLog(ds, log);
+  renderToday();
+}
+
+function renderClassView(info, log, ds) {
+  const name = log.className || '';
+  const preset = String(name).trim().toLowerCase();
+  const activePreset = preset === 'gtx' ? 'gtx' : preset === 'alpha' ? 'alpha' : (log.classPreset === 'other' || (name && preset !== 'gtx' && preset !== 'alpha') ? 'other' : '');
+  const covers = log.covers || '';
+  const filled = (log.slots || []).map(slotFriendly).filter(Boolean);
+  const intensities = ['easy', 'moderate', 'hard'];
+  const picks = log.extra ? `
+      <div class="section-title" style="margin-top:0;">Extra</div>
+      <div class="oura-meta">Does not fill a plan slot.</div>` : `
+      <div class="section-title" style="margin-top:0;">Class</div>
+      <div class="mode-toggle">
+        <button type="button" class="mode-btn ${activePreset==='gtx'?'active':''}" onclick="setClassPreset('${ds}','GTX')">GTX</button>
+        <button type="button" class="mode-btn ${activePreset==='alpha'?'active':''}" onclick="setClassPreset('${ds}','Alpha')">Alpha</button>
+        <button type="button" class="mode-btn ${activePreset==='other'?'active':''}" onclick="setClassPreset('${ds}','Other')">Other</button>
+      </div>`;
+  const fills = log.extra ? '' : `
+      <div class="rpe-label">Fills</div>
+      <div class="mode-toggle">
+        <button type="button" class="mode-btn ${covers==='strength'?'active':''}" onclick="setClassCovers('${ds}','strength')">Strength</button>
+        <button type="button" class="mode-btn ${covers==='cardio'?'active':''}" onclick="setClassCovers('${ds}','cardio')">Cardio</button>
+        <button type="button" class="mode-btn ${covers==='both'?'active':''}" onclick="setClassCovers('${ds}','both')">Both</button>
+      </div>`;
+  return `
+    <div class="card" style="margin-top:12px;">
+      ${picks}
+      <input class="set-input class-name class-log" data-field="className" type="text" inputmode="text" placeholder="Class name" value="${escHtml(name)}">
+      ${fills}
+      <div class="ruck-fields">
+        <div>
+          <label>Duration (min)</label>
+          <input class="set-input class-log" data-field="duration" type="number" inputmode="numeric" placeholder="—" value="${escHtml(log.duration||'')}">
+        </div>
+        <div>
+          <label>Avg HR (bpm)</label>
+          <input class="set-input class-log" data-field="hr" type="number" inputmode="numeric" placeholder="—" value="${escHtml(log.hr||'')}">
+        </div>
+        <div>
+          <label>Calories</label>
+          <input class="set-input class-log" data-field="calories" type="number" inputmode="numeric" placeholder="—" value="${escHtml(log.calories||'')}">
+        </div>
+        <div>
+          <label>Intensity</label>
+          <input class="set-input class-log" data-field="intensity" type="text" inputmode="text" placeholder="—" value="${escHtml(log.intensity||'')}">
+        </div>
+      </div>
+      <div class="rpe-row">
+        ${intensities.map(n => `<button type="button" class="rpe-btn class-intensity ${String(log.intensity).toLowerCase()===n?'selected':''}" data-intensity="${n}">${n}</button>`).join('')}
+      </div>
+      ${filled.length ? `<div class="oura-meta" style="margin-top:8px;">Fills ${escHtml(filled.join(' and '))}. The next ${covers === 'both' ? 'strength and cardio' : covers} session slips forward.</div>` : ''}
+      ${ouraDraftBar(ds, log)}
+    </div>`;
 }
 
 function appendCoreCard(ds, date, opts) {
@@ -2769,7 +3023,7 @@ function maybeRecordBenchmark(ds, info, log) {
 function ensureLog(ds, info) {
   let log = getLog(ds);
   if (!log) log = { type: info.type, workout: info.name, ts: Date.now() };
-  if (info.slotType && !log.slot) log.slot = info.slotType;
+  if (!log.ouraDraft && info.slotType && !log.slot) log.slot = info.slotType;
   if (info.week && !log.week) log.week = info.week;
   if (!log.workout) log.workout = info.name;
   if (!log.type) log.type = info.type;
@@ -2830,35 +3084,83 @@ function attachEventListeners(ds, info) {
     });
   });
 
-  // Cardio (row/ruck) logging
+  // Cardio (row / ruck / treadmill) logging
   document.querySelectorAll('.ruck-log').forEach(input => {
     input.addEventListener('change', () => {
       const log = ensureLog(ds, info);
+      if (log.ouraDraft) delete log.ouraDraft;
       log[input.dataset.field] = input.value;
+      if (log.mode === 'treadmill') {
+        log.type = 'cardio';
+        log.workout = 'Treadmill';
+      }
       log.ts = Date.now();
+      if (log.mode === 'treadmill' || (info && ForgeEngine.slotKind(info.slotType) === 'cardio')) {
+        assignCardioSlot(ds, log, info);
+      }
       saveLog(ds, log);
       maybeRecordBenchmark(ds, info, log);
       renderHeader();
+      if (input.dataset.field && document.querySelector('.oura-note')) renderToday();
     });
   });
   document.querySelectorAll('.ruck-rpe').forEach(btn => {
     btn.addEventListener('click', () => {
       const log = ensureLog(ds, info);
+      if (log.ouraDraft) delete log.ouraDraft;
       log.rpe = btn.dataset.rpe;
+      if (log.mode === 'treadmill') {
+        log.type = 'cardio';
+        log.workout = 'Treadmill';
+        assignCardioSlot(ds, log, info);
+      }
       log.ts = Date.now();
       saveLog(ds, log);
-      document.querySelectorAll('.ruck-rpe').forEach(b => b.classList.remove('selected'));
-      btn.classList.add('selected');
+      renderToday();
+    });
+  });
+  document.querySelectorAll('.class-log').forEach(input => {
+    input.addEventListener('change', () => {
+      const log = getLog(ds) || {};
+      if (log.ouraDraft) delete log.ouraDraft;
+      log[input.dataset.field] = input.value;
+      if (input.dataset.field === 'className') {
+        const preset = ForgeEngine.defaultClassCovers(input.value);
+        if (preset && !log.coversTouched) log.covers = preset;
+        if (String(input.value).trim() && String(input.value).trim().toLowerCase() !== 'gtx' && String(input.value).trim().toLowerCase() !== 'alpha') {
+          log.classPreset = 'other';
+        }
+      }
+      log.ts = Date.now();
+      stampClassSlots(ds, log);
+      saveLog(ds, log);
+      renderToday();
+    });
+  });
+  document.querySelectorAll('.class-intensity').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const log = getLog(ds) || {};
+      if (log.ouraDraft) delete log.ouraDraft;
+      log.type = 'class';
+      log.mode = 'class';
+      log.intensity = log.intensity && String(log.intensity).toLowerCase() === btn.dataset.intensity ? '' : btn.dataset.intensity;
+      log.ts = Date.now();
+      stampClassSlots(ds, log);
+      saveLog(ds, log);
+      renderToday();
     });
   });
   // Notes
   const notesEl = document.querySelector('.session-notes, .ruck-notes');
-  if (notesEl) {
+    if (notesEl) {
     notesEl.addEventListener('change', () => {
       const log = ensureLog(ds, info);
+      if (log.ouraDraft) delete log.ouraDraft;
       log.notes = notesEl.value;
       log.ts = Date.now();
+      if (log.mode === 'treadmill') assignCardioSlot(ds, log, info);
       saveLog(ds, log);
+      renderToday();
     });
   }
 }
@@ -2905,7 +3207,10 @@ function renderWeek() {
     if (!w) return;
     const isCardio = w.type === 'cardio' || w.type === 'ruck' || w.type === 'row';
     const isDone = done.has(slot);
-    const detail = isCardio ? (w.duration + ' • row / ruck') : (w.duration + ' • ' + (w.exercises ? w.exercises.length : 0) + ' exercises');
+    const classHit = classFillForSlot(week, slot);
+    const detail = classHit
+      ? (escHtml(classHit.className || 'Class') + ' · fills this slot')
+      : (isCardio ? (w.duration + ' • row / ruck / tread') : (w.duration + ' • ' + (w.exercises ? w.exercises.length : 0) + ' exercises'));
     html += `
     <div class="week-day" onclick="swapTodayTo('${slot}',${week})">
       <div class="wd-date"><div class="wd-dow">${isCardio ? 'CARD' : 'LIFT'}</div><div class="wd-num">${isDone ? '✓' : '·'}</div></div>
@@ -2915,6 +3220,18 @@ function renderWeek() {
   });
 
   container.innerHTML = html;
+}
+
+function classFillForSlot(week, slot) {
+  const logs = (getState().logs) || {};
+  for (const ds in logs) {
+    const log = logs[ds];
+    if (!classLog(log) || !logHasData(log)) continue;
+    if (getWeekNumber(new Date(ds + 'T12:00:00')) !== week) continue;
+    if (ForgeEngine.slotsOnLog(log).indexOf(slot) === -1) continue;
+    return log;
+  }
+  return null;
 }
 
 function swapTodayTo(slot, week) {
@@ -3017,11 +3334,12 @@ function cardioSeries(blockId) {
   for (const [ds, log] of Object.entries(logs)) {
     if (!log || log.type === 'strength') continue;
     if (!logBelongsToBlock(ds, log, blockId)) continue;
+    if (classLog(log)) continue;
     const mode = log.mode || (log.type === 'ruck' ? 'ruck' : 'row');
     const dist = parseFloat(log.distance);
     if (isNaN(dist) || dist <= 0) continue;
-    // Normalize to miles for chart compare: row meters → miles
-    const miles = mode === 'ruck' ? dist : dist / 1609.34;
+    // Row is stored in meters. Ruck and treadmill are miles.
+    const miles = (mode === 'ruck' || mode === 'treadmill') ? dist : dist / 1609.34;
     points.push({ date: ds, miles, mode, raw: dist });
   }
   points.sort((a, b) => a.date.localeCompare(b.date));
@@ -3101,6 +3419,16 @@ function setChartLift(key) {
   renderHistory();
 }
 
+function modeWord(mode) {
+  if (mode === 'ruck') return '🎒 ruck';
+  if (mode === 'treadmill') return '🏃 treadmill';
+  if (mode === 'class') return 'Class';
+  return '🚣 row';
+}
+function distSuffix(mode) {
+  return (mode === 'ruck' || mode === 'treadmill') ? ' mi' : ' m';
+}
+
 function renderHistory() {
   renderHeader();
   const state = getState();
@@ -3111,7 +3439,12 @@ function renderHistory() {
 
   let totalCardio = 0, totalStrength = 0;
   entries.forEach(([ds, log]) => {
-    if (log.type === 'strength') totalStrength++;
+    if (log.extra) return;
+    if (classLog(log)) {
+      if (log.covers === 'cardio') totalCardio++;
+      else if (log.covers === 'both') { totalStrength++; totalCardio++; }
+      else totalStrength++;
+    } else if (log.type === 'strength') totalStrength++;
     else totalCardio++;
   });
 
@@ -3178,10 +3511,10 @@ function renderHistory() {
   const cardio = cardioSeries(blockId).map(p => ({ date: p.date, value: Math.round(p.miles * 100) / 100, mode: p.mode }));
   chartsHtml += `<div class="chart-card">${renderLineChartSvg(cardio, {
     title: 'Cardio distance',
-    sub: 'Row m→mi · Ruck mi · ' + scopeLabel,
+    sub: 'Row m→mi · Ruck and treadmill mi · ' + scopeLabel,
     color: '#34d399',
     unit: 'mi',
-    empty: 'Log row/ruck distance to chart it',
+    empty: 'Log row, ruck, or treadmill distance to chart it',
     format: (v) => (Math.round(v * 10) / 10),
   })}</div>`;
 
@@ -3194,9 +3527,9 @@ function renderHistory() {
     benchmarks.forEach(([ds, b]) => {
       const d = new Date(ds + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
       const parts = [];
-      if (b.mode) parts.push(b.mode === 'ruck' ? '🎒 ruck' : '🚣 row');
+      if (b.mode) parts.push(modeWord(b.mode));
       if (b.duration) parts.push(`${b.duration} min`);
-      if (b.distance) parts.push(`${b.distance}${b.mode === 'ruck' ? ' mi' : ' m'}`);
+      if (b.distance) parts.push(`${b.distance}${distSuffix(b.mode)}`);
       if (b.watts) parts.push(`${b.watts} W`);
       if (b.rpe) parts.push(`RPE ${b.rpe}`);
       chartsHtml += `<div class="history-entry" style="border-color:rgba(245,158,11,0.4);" onclick="navigateToDay('${ds}')">
@@ -3219,17 +3552,32 @@ function renderHistory() {
     const d = new Date(ds + 'T12:00:00');
     const dateLabel = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
     let stats = '';
-    if (log.type === 'strength') {
+    if (classLog(log)) {
+      const parts = [];
+      if (log.extra) parts.push('extra');
+      else if (log.covers) parts.push(log.covers === 'both' ? 'strength + cardio' : log.covers);
+      if (log.duration) parts.push(`${log.duration} min`);
+      if (log.hr) parts.push(`HR ${log.hr}`);
+      if (log.calories) parts.push(`${log.calories} cal`);
+      if (log.intensity) parts.push(String(log.intensity));
+      stats = parts.join(' • ');
+    } else if (log.type === 'strength') {
       const exCount = Object.keys(log.exercises || {}).length;
       let totalSets = 0;
       Object.values(log.exercises || {}).forEach(ex => { totalSets += Object.keys(ex.sets || {}).length; });
       stats = `${exCount} exercises • ${totalSets} sets`;
     } else {
       const parts = [];
-      if (log.mode) parts.push(log.mode === 'ruck' ? '🎒 ruck' : '🚣 row');
+      const mode = log.mode || (log.type === 'ruck' ? 'ruck' : 'row');
+      parts.push(modeWord(mode));
       if (log.duration) parts.push(`${log.duration} min`);
-      if (log.distance) parts.push(`${log.distance}${log.mode === 'ruck' ? ' mi' : ' m'}`);
-      if (log.weight) parts.push(`${log.weight} lbs`);
+      if (log.distance) parts.push(`${log.distance}${distSuffix(mode)}`);
+      if (mode === 'treadmill') {
+        if (log.incline) parts.push(`${log.incline}% incline`);
+        if (log.speed) parts.push(`${log.speed} mph`);
+        if (log.calories) parts.push(`${log.calories} cal`);
+      }
+      if (mode === 'ruck' && log.weight) parts.push(`${log.weight} lbs`);
       if (log.rpe) parts.push(`RPE ${log.rpe}`);
       stats = parts.join(' • ');
     }
@@ -3528,11 +3876,135 @@ let ouraData = null;
 async function fetchOuraReadiness() {
   try {
     ouraData = await fetchRepoJson('data/oura-readiness.json');
-    // Re-render if on Today page
+    // Read only. Workouts in this file never write a slot by themselves.
     if (document.getElementById('pageToday').classList.contains('active')) {
       renderReadinessCard();
+      renderOuraWorkouts(dateStr(viewDate));
     }
   } catch(e) { ouraData = null; }
+}
+
+function paintDayExtras(ds) {
+  if (ouraData) renderReadinessCard();
+  renderOuraWorkouts(ds);
+}
+
+function renderOuraWorkouts(ds) {
+  const existing = document.getElementById('ouraWorkouts');
+  if (existing) existing.remove();
+  const container = document.getElementById('todayContent');
+  if (!container) return;
+  const items = ForgeEngine.ouraWorkoutsForDay(ouraData, ds);
+  if (!items.length) return;
+  const monday = ForgeEngine.isMonday(ds);
+  const card = document.createElement('div');
+  card.id = 'ouraWorkouts';
+  card.className = 'card oura-workouts';
+  let rows = '';
+  items.forEach((w) => {
+    const pre = ForgeEngine.ouraPrefill(w);
+    const title = pre.kind === 'treadmill'
+      ? (w.label ? String(w.label) : 'Treadmill')
+      : (pre.className || 'Workout');
+    const bits = [];
+    if (pre.duration) bits.push(pre.duration + ' min');
+    if (pre.calories) bits.push(pre.calories + ' cal');
+    if (pre.hr) bits.push('HR ' + pre.hr);
+    if (w.intensity != null && w.intensity !== '') bits.push(String(w.intensity));
+    const isExtra = pre.kind === 'extra' || !ForgeEngine.ouraOffersSlot(w);
+    const kind = isExtra ? 'Extra' : (pre.kind === 'treadmill' ? 'Treadmill' : 'Class');
+    const id = escHtml(String(w.id == null ? '' : w.id));
+    const btn = monday
+      ? ''
+      : (isExtra
+        ? `<button type="button" class="oura-add" onclick="addOuraToSlot('${ds}','${id}')">Log extra</button>`
+        : `<button type="button" class="oura-add" onclick="addOuraToSlot('${ds}','${id}')">Add to this slot</button>`);
+    rows += `<div class="oura-row">
+      <div>
+        <div class="oura-title">${escHtml(title)}</div>
+        <div class="oura-meta">${escHtml(kind)}${bits.length ? ' · ' + escHtml(bits.join(' · ')) : ''}</div>
+      </div>
+      ${btn}
+    </div>`;
+  });
+  card.innerHTML = `<div class="section-title" style="margin-top:0;">Oura workouts</div>
+    ${monday
+      ? '<div class="oura-meta">Monday stays off the plan. Nothing here is added to a slot.</div>'
+      : '<div class="oura-meta">Add prefills the form. Confirm to count this slot.</div>'}
+    ${rows}`;
+  const readiness = document.getElementById('readinessCard');
+  const dateNav = container.querySelector('.date-nav');
+  const anchor = readiness || dateNav;
+  if (anchor) anchor.after(card);
+  else container.prepend(card);
+}
+
+function ouraDraftBar(ds, log) {
+  if (!log || !log.ouraDraft) return '';
+  const note = log.extra
+    ? 'Prefilled from Oura. Confirm to log this extra. It does not fill a plan slot.'
+    : 'Prefilled from Oura. Confirm to count this slot.';
+  return `<button type="button" class="btn btn-primary oura-confirm" style="margin-top:12px;" onclick="confirmOuraDraft('${ds}')">Confirm</button>
+    <div class="oura-note">${note}</div>`;
+}
+
+// Confirm clears the draft and lets the existing slot picker count it.
+// Editing a field does the same. Loading Oura never calls this.
+function confirmOuraDraft(ds) {
+  if (!ForgeEngine.isTrainableDay(ds)) return;
+  const log = getLog(ds);
+  if (!log || !log.ouraDraft) return;
+  delete log.ouraDraft;
+  log.ts = Date.now();
+  const info = activeInfo || {};
+  if (classLog(log)) stampClassSlots(ds, log);
+  else {
+    if (log.mode === 'treadmill') {
+      log.type = 'cardio';
+      log.workout = log.workout || 'Treadmill';
+    }
+    assignCardioSlot(ds, log, info);
+  }
+  saveLog(ds, log);
+  renderToday();
+}
+
+// Called only from the "Add to this slot" button. Prefills the form and
+// leaves ouraDraft set so the slot stays open until Confirm or an edit.
+function addOuraToSlot(ds, id) {
+  if (!ForgeEngine.isTrainableDay(ds)) return;
+  const item = ForgeEngine.ouraWorkoutsForDay(ouraData, ds).find((w) => String(w.id) === String(id));
+  if (!item) return;
+  const pre = ForgeEngine.ouraPrefill(item);
+  const log = getLog(ds) || {};
+  log.ouraId = pre.ouraId;
+  log.ouraDraft = true;
+  log.ts = Date.now();
+  const bid = getCurrentBlockId();
+  if (bid && !log.blockId) log.blockId = bid;
+  delete log.slot;
+  delete log.slots;
+  if (pre.kind === 'treadmill') {
+    log.type = 'cardio';
+    log.mode = 'treadmill';
+    log.workout = 'Treadmill';
+    if (pre.duration) log.duration = pre.duration;
+    if (pre.calories) log.calories = pre.calories;
+    if (pre.hr) log.hr = pre.hr;
+  } else {
+    log.type = 'class';
+    log.mode = 'class';
+    log.extra = !!pre.extra;
+    if (pre.className) log.className = pre.className;
+    if (log.extra) log.covers = '';
+    else if (!log.coversTouched && pre.covers) log.covers = pre.covers;
+    if (pre.duration) log.duration = pre.duration;
+    if (pre.calories) log.calories = pre.calories;
+    if (pre.hr) log.hr = pre.hr;
+    if (pre.intensity) log.intensity = pre.intensity;
+  }
+  saveLog(ds, log);
+  renderToday();
 }
 
 function renderReadinessCard() {
