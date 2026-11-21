@@ -316,4 +316,41 @@ test('oura calories and heart rate round to whole numbers', () => {
   assert.strictEqual(klass.covers, 'strength');
 });
 
+test('yoga is an extra and fills no plan slot', () => {
+  const samples = [
+    { activity: 'yoga', label: null },
+    { activity: 'yoga', label: 'Yin' },
+    { activity: 'yin_yoga', label: null },
+    { activity: 'Yoga', label: 'Yin Yoga' },
+  ];
+  samples.forEach((sample) => {
+    assert.strictEqual(E.ouraEntryKind(sample), 'extra', JSON.stringify(sample));
+    assert.strictEqual(E.inferClassCovers(sample), '', JSON.stringify(sample));
+    assert.strictEqual(E.ouraOffersSlot(sample), false, JSON.stringify(sample));
+    const pre = E.ouraPrefill(Object.assign({
+      id: 'y', day: '2026-11-22',
+      start: '2026-11-22T09:00:00-06:00', end: '2026-11-22T10:00:00-06:00',
+      calories: 90.2, avg_hr: 100.4, intensity: 'easy', source: 'oura',
+    }, sample));
+    assert.strictEqual(pre.kind, 'extra');
+    assert.strictEqual(pre.extra, true);
+    assert.strictEqual(pre.covers, '');
+    assert.strictEqual(pre.slot, undefined);
+    assert.strictEqual(pre.slots, undefined);
+    assert.strictEqual(pre.calories, '90');
+    assert.strictEqual(pre.hr, '100');
+  });
+  assert.strictEqual(E.ouraEntryKind({ activity: 'pilates', label: null }), 'class');
+  assert.strictEqual(E.inferClassCovers({ activity: 'pilates' }), 'strength');
+  assert.strictEqual(E.ouraOffersSlot({ activity: 'pilates' }), true);
+  assert.strictEqual(E.ouraEntryKind({ activity: 'strength_training', label: 'GTX' }), 'class');
+  assert.strictEqual(E.inferClassCovers({ activity: 'strength_training', label: 'GTX' }), 'strength');
+  assert.strictEqual(E.ouraEntryKind({ activity: 'running', label: null }), 'treadmill');
+  assert.strictEqual(E.ouraOffersSlot({ activity: 'running' }), true);
+  const gtx = E.ouraPrefill({ activity: 'strength_training', label: 'Alpha', id: 'a' });
+  assert.strictEqual(gtx.kind, 'class');
+  assert.strictEqual(gtx.covers, 'strength');
+  assert.strictEqual(gtx.extra, undefined);
+});
+
 console.log('\n' + passed + ' tests passed');

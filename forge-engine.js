@@ -123,14 +123,26 @@
     return String(Math.round((b - a) / 60000));
   }
 
+  function mentionsYoga(item) {
+    const activity = String((item && item.activity) || '').toLowerCase();
+    const label = String((item && item.label) || '').toLowerCase();
+    return activity.indexOf('yoga') !== -1 || label.indexOf('yoga') !== -1;
+  }
+
   function ouraEntryKind(item) {
     const label = String((item && item.label) || '').toLowerCase();
     const activity = String((item && item.activity) || '').toLowerCase();
     const blob = label + ' ' + activity;
+    // Yoga, including Yin, is an extra. It never fills a plan slot.
+    if (mentionsYoga(item)) return 'extra';
     if (/\b(gtx|alpha)\b/.test(blob)) return 'class';
-    if (/class|strength|weight|lift|hiit|yoga|pilates|crossfit|functional/.test(blob)) return 'class';
+    if (/class|strength|weight|lift|hiit|pilates|crossfit|functional/.test(blob)) return 'class';
     if (/tread|run|jog|walk|elliptical/.test(blob)) return 'treadmill';
     return 'class';
+  }
+
+  function ouraOffersSlot(item) {
+    return ouraEntryKind(item) !== 'extra';
   }
 
   function defaultClassCovers(name) {
@@ -140,10 +152,11 @@
   }
 
   function inferClassCovers(item) {
+    if (mentionsYoga(item)) return '';
     const named = defaultClassCovers(item && (item.label || item.className));
     if (named) return named;
     const blob = String((item && item.activity) || '').toLowerCase();
-    if (/strength|weight|lift|hiit|functional|crossfit|yoga|pilates/.test(blob)) return 'strength';
+    if (/strength|weight|lift|hiit|functional|crossfit|pilates/.test(blob)) return 'strength';
     if (/cardio|run|walk|row|cycle|bike|tread|elliptical|jog/.test(blob)) return 'cardio';
     return '';
   }
@@ -177,6 +190,15 @@
     if (kind === 'treadmill') {
       base.type = 'cardio';
       base.mode = 'treadmill';
+      return base;
+    }
+    if (kind === 'extra') {
+      base.type = 'class';
+      base.mode = 'class';
+      base.className = ouraClassName(item || {}) || 'Yoga';
+      base.covers = '';
+      base.extra = true;
+      base.intensity = blankNum(item && item.intensity);
       return base;
     }
     const className = ouraClassName(item || {});
@@ -300,6 +322,7 @@
     ouraWorkoutsForDay,
     minutesBetweenIso,
     ouraEntryKind,
+    ouraOffersSlot,
     defaultClassCovers,
     inferClassCovers,
     ouraClassName,

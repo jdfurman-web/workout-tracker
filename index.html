@@ -1005,7 +1005,7 @@ if (sessionStorage.getItem('ri_auth')==='1') {
   <button class="btn btn-secondary" onclick="exportData()">Export All Data (JSON)</button>
   <button class="btn btn-danger" onclick="confirmClear()">Clear All Data</button>
   <div style="text-align:center;margin-top:24px;">
-    <p style="font-size:0.75rem;color:var(--dim);">FORGE v2.9.1 · 2026-11-21</p>
+    <p style="font-size:0.75rem;color:var(--dim);">FORGE v2.9.2 · 2026-11-21</p>
     <p style="font-size:0.65rem;color:var(--dim);letter-spacing:0.04em;">Ruck + Iron · Knox for Jay Furman</p>
   </div>
 </div>
@@ -2496,7 +2496,7 @@ function renderToday() {
   const isClass = classLog(log);
   const isCardio = !isClass && (info.type === 'cardio' || info.type === 'ruck' || info.type === 'row' || log.mode === 'treadmill');
   const parts = isClass
-    ? { title: (String(log.className || '').trim() || 'Class'), sub: coversPhrase(log.covers) }
+    ? { title: (String(log.className || '').trim() || (log.extra ? 'Yoga' : 'Class')), sub: log.extra ? 'Extra · does not fill a plan slot' : coversPhrase(log.covers) }
     : (log.mode === 'treadmill'
       ? { title: 'Treadmill', sub: 'Cardio' }
       : splitWorkoutName(info.name));
@@ -2510,7 +2510,7 @@ function renderToday() {
     ? `<div style="font-size:0.75rem;color:var(--yellow);margin-top:10px;">Next up · not logged yet — same pool slot, not a second session</div>`
     : '';
   const eyebrow = isClass
-    ? 'Class'
+    ? (log.extra ? 'Extra' : 'Class')
     : ((!isToday && !loggedHere)
       ? `${isCardio ? 'Cardio' : 'Strength'} · Next up`
       : `Today's session`);
@@ -2678,7 +2678,13 @@ function stampClassSlots(ds, log) {
   log.week = log.week || week;
   const bid = getCurrentBlockId();
   if (bid && !log.blockId) log.blockId = bid;
-  log.workout = String(log.className || '').trim() || 'Class';
+  log.workout = String(log.className || '').trim() || (log.extra ? 'Yoga' : 'Class');
+  if (log.extra) {
+    log.covers = '';
+    delete log.slot;
+    delete log.slots;
+    return log;
+  }
   const covers = log.covers;
   const okCover = covers === 'strength' || covers === 'cardio' || covers === 'both';
   if (log.ouraDraft || !logHasData(Object.assign({}, log, { ouraDraft: false })) || !okCover || !ForgeEngine.isTrainableDay(ds)) {
@@ -2733,7 +2739,9 @@ function setSessionKind(ds, kind) {
 
 function setClassPreset(ds, preset) {
   if (!ForgeEngine.isTrainableDay(ds)) return;
-  const log = getLog(ds) || {};
+  const existing = getLog(ds);
+  if (existing && existing.extra) return;
+  const log = existing || {};
   log.type = 'class';
   log.mode = 'class';
   if (log.ouraDraft) delete log.ouraDraft;
@@ -2758,6 +2766,7 @@ function setClassPreset(ds, preset) {
 function setClassCovers(ds, covers) {
   if (!ForgeEngine.isTrainableDay(ds)) return;
   const log = getLog(ds) || {};
+  if (log.extra) return;
   log.type = 'class';
   log.mode = 'class';
   log.covers = covers;
@@ -2776,21 +2785,27 @@ function renderClassView(info, log, ds) {
   const covers = log.covers || '';
   const filled = (log.slots || []).map(slotFriendly).filter(Boolean);
   const intensities = ['easy', 'moderate', 'hard'];
-  return `
-    <div class="card" style="margin-top:12px;">
+  const picks = log.extra ? `
+      <div class="section-title" style="margin-top:0;">Extra</div>
+      <div class="oura-meta">Does not fill a plan slot.</div>` : `
       <div class="section-title" style="margin-top:0;">Class</div>
       <div class="mode-toggle">
         <button type="button" class="mode-btn ${activePreset==='gtx'?'active':''}" onclick="setClassPreset('${ds}','GTX')">GTX</button>
         <button type="button" class="mode-btn ${activePreset==='alpha'?'active':''}" onclick="setClassPreset('${ds}','Alpha')">Alpha</button>
         <button type="button" class="mode-btn ${activePreset==='other'?'active':''}" onclick="setClassPreset('${ds}','Other')">Other</button>
-      </div>
-      <input class="set-input class-name class-log" data-field="className" type="text" inputmode="text" placeholder="Class name" value="${escHtml(name)}">
+      </div>`;
+  const fills = log.extra ? '' : `
       <div class="rpe-label">Fills</div>
       <div class="mode-toggle">
         <button type="button" class="mode-btn ${covers==='strength'?'active':''}" onclick="setClassCovers('${ds}','strength')">Strength</button>
         <button type="button" class="mode-btn ${covers==='cardio'?'active':''}" onclick="setClassCovers('${ds}','cardio')">Cardio</button>
         <button type="button" class="mode-btn ${covers==='both'?'active':''}" onclick="setClassCovers('${ds}','both')">Both</button>
-      </div>
+      </div>`;
+  return `
+    <div class="card" style="margin-top:12px;">
+      ${picks}
+      <input class="set-input class-name class-log" data-field="className" type="text" inputmode="text" placeholder="Class name" value="${escHtml(name)}">
+      ${fills}
       <div class="ruck-fields">
         <div>
           <label>Duration (min)</label>
@@ -3424,6 +3439,7 @@ function renderHistory() {
 
   let totalCardio = 0, totalStrength = 0;
   entries.forEach(([ds, log]) => {
+    if (log.extra) return;
     if (classLog(log)) {
       if (log.covers === 'cardio') totalCardio++;
       else if (log.covers === 'both') { totalStrength++; totalCardio++; }
@@ -3538,7 +3554,8 @@ function renderHistory() {
     let stats = '';
     if (classLog(log)) {
       const parts = [];
-      if (log.covers) parts.push(log.covers === 'both' ? 'strength + cardio' : log.covers);
+      if (log.extra) parts.push('extra');
+      else if (log.covers) parts.push(log.covers === 'both' ? 'strength + cardio' : log.covers);
       if (log.duration) parts.push(`${log.duration} min`);
       if (log.hr) parts.push(`HR ${log.hr}`);
       if (log.calories) parts.push(`${log.calories} cal`);
@@ -3894,11 +3911,14 @@ function renderOuraWorkouts(ds) {
     if (pre.calories) bits.push(pre.calories + ' cal');
     if (pre.hr) bits.push('HR ' + pre.hr);
     if (w.intensity != null && w.intensity !== '') bits.push(String(w.intensity));
-    const kind = pre.kind === 'treadmill' ? 'Treadmill' : 'Class';
+    const isExtra = pre.kind === 'extra' || !ForgeEngine.ouraOffersSlot(w);
+    const kind = isExtra ? 'Extra' : (pre.kind === 'treadmill' ? 'Treadmill' : 'Class');
     const id = escHtml(String(w.id == null ? '' : w.id));
     const btn = monday
       ? ''
-      : `<button type="button" class="oura-add" onclick="addOuraToSlot('${ds}','${id}')">Add to this slot</button>`;
+      : (isExtra
+        ? `<button type="button" class="oura-add" onclick="addOuraToSlot('${ds}','${id}')">Log extra</button>`
+        : `<button type="button" class="oura-add" onclick="addOuraToSlot('${ds}','${id}')">Add to this slot</button>`);
     rows += `<div class="oura-row">
       <div>
         <div class="oura-title">${escHtml(title)}</div>
@@ -3921,8 +3941,11 @@ function renderOuraWorkouts(ds) {
 
 function ouraDraftBar(ds, log) {
   if (!log || !log.ouraDraft) return '';
+  const note = log.extra
+    ? 'Prefilled from Oura. Confirm to log this extra. It does not fill a plan slot.'
+    : 'Prefilled from Oura. Confirm to count this slot.';
   return `<button type="button" class="btn btn-primary oura-confirm" style="margin-top:12px;" onclick="confirmOuraDraft('${ds}')">Confirm</button>
-    <div class="oura-note">Prefilled from Oura. Confirm to count this slot.</div>`;
+    <div class="oura-note">${note}</div>`;
 }
 
 // Confirm clears the draft and lets the existing slot picker count it.
@@ -3971,8 +3994,10 @@ function addOuraToSlot(ds, id) {
   } else {
     log.type = 'class';
     log.mode = 'class';
+    log.extra = !!pre.extra;
     if (pre.className) log.className = pre.className;
-    if (!log.coversTouched && pre.covers) log.covers = pre.covers;
+    if (log.extra) log.covers = '';
+    else if (!log.coversTouched && pre.covers) log.covers = pre.covers;
     if (pre.duration) log.duration = pre.duration;
     if (pre.calories) log.calories = pre.calories;
     if (pre.hr) log.hr = pre.hr;

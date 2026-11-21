@@ -1,6 +1,6 @@
 # FORGE
 
-Personal PWA for the **FORGE** 8-week strength + row/ruck/treadmill + class block (4–5 core days per week, not daily). Week windows are **7 days from startDate**. Foundry skin (ember / soot). App v2.9.1, service worker `forge-shell-v2.9.1`.
+Personal PWA for the **FORGE** 8-week strength + row/ruck/treadmill + class block (4–5 core days per week, not daily). Week windows are **7 days from startDate**. Foundry skin (ember / soot). App v2.9.2, service worker `forge-shell-v2.9.2`.
 
 **Live:** https://workout.furmans.me  
 **Data (private):** [jdfurman-web/workout-data](https://github.com/jdfurman-web/workout-data)
@@ -13,7 +13,7 @@ Personal PWA for the **FORGE** 8-week strength + row/ruck/treadmill + class bloc
 - Flexible 4-session weeks (strength A/B, cardio A/B — any days; miss slips, no stacking)
 - Cardio is row, ruck, or treadmill (time, miles, optional incline / speed / calories, HR, RPE)
 - Class log (GTX, Alpha, or a typed name) can fill the strength slot, the cardio slot, or both. GTX and Alpha start as strength. The same slip picker moves the next session.
-- Oura readiness, plus that day's workouts when `data/oura-readiness.json` includes a `workouts` array. "Add to this slot" prefills treadmill or class. Confirm (or editing a field) counts the slot. Loading the file never writes a slot. Calories and heart rate from Oura are whole numbers. Missing `workouts` changes nothing.
+- Oura readiness, plus that day's workouts when `data/oura-readiness.json` includes a `workouts` array. "Add to this slot" prefills treadmill or class. Confirm (or editing a field) counts the slot. Yoga, including Yin, is an extra: it is labeled Extra, is not offered "Add to this slot", and fills no plan slot. Loading the file never writes a slot. Calories and heart rate from Oura are whole numbers. Missing `workouts` changes nothing.
 - Set logging with progressive load suggestions (per-hand aware; last weights carry into a new block)
 - Rest timer (iOS audio unlock + vibrate + flash)
 - Core 4–5 days/week (workout-day default, standalone allowed)
