@@ -1,6 +1,6 @@
 # FORGE
 
-Personal PWA for the **FORGE** 8-week strength + row/ruck/treadmill + class block (4–5 core days per week, not daily). Week windows are **7 days from startDate**. Foundry skin (ember / soot). App v2.9.2, service worker `forge-shell-v2.9.2`.
+Personal PWA for the **FORGE** 8-week strength + row/ruck/treadmill + class block (4–5 core days per week, not daily). Week windows are **7 days from startDate**. Foundry skin (ember / soot). App v2.9.3, service worker `forge-shell-v2.9.3`. Sync Up merges with the cloud copy before it writes. Yoga and other extras live beside the day's slot log and do not fill a plan slot.
 
 **Live:** https://workout.furmans.me  
 **Data (private):** [jdfurman-web/workout-data](https://github.com/jdfurman-web/workout-data)

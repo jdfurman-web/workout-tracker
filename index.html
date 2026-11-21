@@ -1005,7 +1005,7 @@ if (sessionStorage.getItem('ri_auth')==='1') {
   <button class="btn btn-secondary" onclick="exportData()">Export All Data (JSON)</button>
   <button class="btn btn-danger" onclick="confirmClear()">Clear All Data</button>
   <div style="text-align:center;margin-top:24px;">
-    <p style="font-size:0.75rem;color:var(--dim);">FORGE v2.9.2 · 2026-11-21</p>
+    <p style="font-size:0.75rem;color:var(--dim);">FORGE v2.9.3 · 2026-11-21</p>
     <p style="font-size:0.65rem;color:var(--dim);letter-spacing:0.04em;">Ruck + Iron · Knox for Jay Furman</p>
   </div>
 </div>
@@ -1300,7 +1300,10 @@ function ensureBlocks(s) {
 function getState() {
   try {
     const s = JSON.parse(localStorage.getItem('ruckIronState') || '{}');
-    return ensureBlocks(s);
+    ensureBlocks(s);
+    const mig = ForgeEngine.migrateLegacyExtras(s);
+    if (mig.changed) localStorage.setItem('ruckIronState', JSON.stringify(s));
+    return s;
   } catch { return ensureBlocks({}); }
 }
 
@@ -1445,7 +1448,7 @@ function pickSlotForDate(date) {
     doneSlots: loggedSlotsForWeek(week),
     fromDs: dateStr(date),
     weekEndDs: bounds.end,
-    lastDates: ForgeEngine.lastSlotDates(getState().logs || {}, logHasData),
+    lastDates: ForgeEngine.lastSlotDates(getState().logs || {}, (log) => log && !log.extra && logHasData(log)),
   });
 }
 
@@ -1493,7 +1496,7 @@ function loggedSlotsForWeek(week, exceptDs) {
   for (const ds in logs) {
     if (exceptDs && ds === exceptDs) continue;
     const log = logs[ds];
-    if (!log || !logHasData(log)) continue;
+    if (!log || log.extra || !logHasData(log)) continue;
     if (getWeekNumber(new Date(ds + 'T12:00:00')) !== week) continue;
     const slots = ForgeEngine.slotsOnLog(log);
     for (let i = 0; i < slots.length; i++) done.add(slots[i]);
@@ -1503,7 +1506,7 @@ function loggedSlotsForWeek(week, exceptDs) {
 function nextSlotForWeek(week) {
   const remaining = ForgeEngine.sortSlotsByStaleness(
     ForgeEngine.remainingSlots(PROGRAM.weekOrder, loggedSlotsForWeek(week)),
-    ForgeEngine.lastSlotDates(getState().logs || {}, logHasData),
+    ForgeEngine.lastSlotDates(getState().logs || {}, (log) => log && !log.extra && logHasData(log)),
     PROGRAM.weekOrder
   );
   return remaining[0] || null;
@@ -1520,7 +1523,7 @@ function weekProgress(week) {
   let sessions = 0;
   for (const ds in logs) {
     const log = logs[ds];
-    if (!log || !log.slot || !logHasData(log)) continue;
+    if (!log || log.extra || !log.slot || !logHasData(log)) continue;
     if (getWeekNumber(new Date(ds + 'T12:00:00')) === week) sessions++;
   }
   const bonus = Math.max(0, sessions - done.size);
@@ -1582,12 +1585,63 @@ function getLog(dateStr) {
   return (s.logs || {})[dateStr] || null;
 }
 function saveLog(dateStr, data) {
+  if (data && data.extra) {
+    saveExtra(dateStr, data);
+    return;
+  }
+  if (data) data.updatedAt = Date.now();
   const s = getState();
   if (!s.logs) s.logs = {};
   s.logs[dateStr] = data;
   saveState(s);
   // Auto-sync to cloud if configured (debounced)
   debouncedSync();
+}
+
+function newExtraId() {
+  return 'ex-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8);
+}
+
+function getExtras(ds) {
+  const list = (getState().extras || {})[ds];
+  return Array.isArray(list) ? list.slice() : [];
+}
+
+function saveExtra(ds, entry) {
+  if (!entry) return;
+  const s = getState();
+  if (!s.extras) s.extras = {};
+  const id = entry.id || entry.ouraId || newExtraId();
+  entry.id = id;
+  entry.extra = true;
+  entry.covers = '';
+  delete entry.slot;
+  delete entry.slots;
+  entry.updatedAt = Date.now();
+  const list = Array.isArray(s.extras[ds]) ? s.extras[ds].slice() : [];
+  const idx = list.findIndex((e) => e && (e.id === id || (entry.ouraId && e.ouraId === entry.ouraId)));
+  if (idx >= 0) list[idx] = entry;
+  else list.push(entry);
+  s.extras[ds] = list;
+  if (s.logs && s.logs[ds] && s.logs[ds].extra) delete s.logs[ds];
+  saveState(s);
+  debouncedSync();
+}
+
+function ouraAlreadyLogged(id) {
+  const sid = String(id || '');
+  if (!sid) return false;
+  const s = getState();
+  for (const log of Object.values(s.logs || {})) {
+    if (log && (String(log.ouraId || '') === sid || String(log.id || '') === sid)) return true;
+  }
+  for (const list of Object.values(s.extras || {})) {
+    for (const entry of list || []) {
+      if (!entry || entry.ouraDraft) continue;
+      if (String(entry.id || '') === sid || String(entry.ouraId || '') === sid) return true;
+    }
+  }
+  return false;
 }
 
 let _syncTimer = null;
@@ -1672,99 +1726,9 @@ function updateExerciseChecks(info, log) {
   renderHeader();
 }
 
-// Merge two log objects for the same date — keep the "richer" one, or union fields.
-function mergeDayLogs(cloudLog, localLog) {
-  if (!cloudLog) return localLog;
-  if (!localLog) return cloudLog;
-  const cScore = logRichness(cloudLog);
-  const lScore = logRichness(localLog);
-  if (lScore > cScore) {
-    // Prefer local structure but fill missing fields from cloud
-    return deepFill(localLog, cloudLog);
-  }
-  if (cScore > lScore) return deepFill(cloudLog, localLog);
-  // Equal richness: prefer newer ts if present, else local (device is source of truth for active edits)
-  const cTs = cloudLog.ts || 0;
-  const lTs = localLog.ts || 0;
-  if (cTs > lTs) return deepFill(cloudLog, localLog);
-  return deepFill(localLog, cloudLog);
-}
-
-function logRichness(log) {
-  if (!log) return 0;
-  let n = 0;
-  if (log.type === 'strength') {
-    const ex = log.exercises || {};
-    for (const k of Object.keys(ex)) {
-      const sets = (ex[k] && ex[k].sets) || {};
-      for (const s of Object.keys(sets)) {
-        const set = sets[s] || {};
-        if (set.weight || set.reps || set.rpe) n += 1;
-      }
-    }
-  } else {
-    if (log.duration) n += 2;
-    if (log.distance) n += 2;
-    if (log.watts || log.weight) n += 1;
-    if (log.hr) n += 1;
-    if (log.rpe) n += 1;
-    if (log.calories) n += 1;
-    if (log.incline || log.speed) n += 1;
-    if (log.className) n += 2;
-    if (log.covers) n += 1;
-    if (log.intensity) n += 1;
-  }
-  if (log.notes) n += 1;
-  return n;
-}
-
-function deepFill(primary, secondary) {
-  const out = JSON.parse(JSON.stringify(primary));
-  if (!secondary) return out;
-  for (const k of Object.keys(secondary)) {
-    if (out[k] == null || out[k] === '') out[k] = secondary[k];
-    else if (k === 'exercises' && typeof secondary[k] === 'object') {
-      out.exercises = out.exercises || {};
-      for (const ek of Object.keys(secondary.exercises || {})) {
-        if (!out.exercises[ek]) out.exercises[ek] = secondary.exercises[ek];
-        else {
-          out.exercises[ek].sets = out.exercises[ek].sets || {};
-          const sSets = (secondary.exercises[ek] && secondary.exercises[ek].sets) || {};
-          for (const sk of Object.keys(sSets)) {
-            if (!out.exercises[ek].sets[sk]) out.exercises[ek].sets[sk] = sSets[sk];
-            else {
-              for (const f of ['weight', 'reps', 'rpe']) {
-                if (out.exercises[ek].sets[sk][f] == null || out.exercises[ek].sets[sk][f] === '') {
-                  out.exercises[ek].sets[sk][f] = sSets[sk][f];
-                }
-              }
-            }
-          }
-          if (!out.exercises[ek].name && secondary.exercises[ek].name) {
-            out.exercises[ek].name = secondary.exercises[ek].name;
-          }
-          if (!out.exercises[ek].id && secondary.exercises[ek].id) {
-            out.exercises[ek].id = secondary.exercises[ek].id;
-          }
-        }
-      }
-    }
-  }
-  return out;
-}
-
-function mergeLogMaps(cloudLogs, localLogs) {
-  const keys = new Set([...Object.keys(cloudLogs || {}), ...Object.keys(localLogs || {})]);
-  const out = {};
-  for (const ds of keys) {
-    out[ds] = mergeDayLogs((cloudLogs || {})[ds], (localLogs || {})[ds]);
-  }
-  return out;
-}
-
-function mergeMapsPreferUnion(cloudMap, localMap) {
-  return { ...(cloudMap || {}), ...(localMap || {}) };
-}
+function mergeDayLogs(cloudLog, localLog) { return ForgeEngine.mergeDayLogs(cloudLog, localLog); }
+function logRichness(log) { return ForgeEngine.logRichness(log); }
+function mergeLogMaps(cloudLogs, localLogs) { return ForgeEngine.mergeLogMaps(cloudLogs, localLogs); }
 
 
 // ═══════════════════════════════════════════
@@ -2559,6 +2523,10 @@ function renderCardioView(info, log, ds) {
           <input class="set-input ruck-log" data-field="speed" type="number" inputmode="decimal" step="0.1" placeholder="—" value="${escHtml(log.speed||'')}">
         </div>
         <div>
+          <label>Max speed (mph) <span class="opt-tag">optional</span></label>
+          <input class="set-input ruck-log" data-field="maxSpeed" type="number" inputmode="decimal" step="0.1" placeholder="—" value="${escHtml(log.maxSpeed||'')}">
+        </div>
+        <div>
           <label>Calories <span class="opt-tag">optional</span></label>
           <input class="set-input ruck-log" data-field="calories" type="number" inputmode="numeric" placeholder="—" value="${escHtml(log.calories||'')}">
         </div>`
@@ -3219,6 +3187,18 @@ function renderWeek() {
     </div>`;
   });
 
+  const weekExtras = [];
+  const allExtras = getState().extras || {};
+  Object.keys(allExtras).forEach((ds) => {
+    if (getWeekNumber(new Date(ds + 'T12:00:00')) !== week) return;
+    (allExtras[ds] || []).forEach((entry) => {
+      if (entry && !entry.ouraDraft) weekExtras.push(entry.className || entry.workout || 'Extra');
+    });
+  });
+  if (weekExtras.length) {
+    html += `<div class="card" style="margin-top:12px;"><div class="section-title" style="margin-top:0;">Extras</div><div class="oura-meta">${escHtml(weekExtras.join(' · '))} · not a plan slot</div></div>`;
+  }
+
   container.innerHTML = html;
 }
 
@@ -3453,7 +3433,7 @@ function renderHistory() {
 
   const statsHtml = `
     <div class="stats-grid">
-      <div class="stat-box"><div class="stat-num">${entries.length}</div><div class="stat-label">Sessions</div></div>
+      <div class="stat-box"><div class="stat-num">${entries.length + Object.keys(state.extras || {}).reduce((n, ds) => n + (state.extras[ds] || []).filter((e) => e && !e.ouraDraft && logBelongsToBlock(ds, e, blockId)).length, 0)}</div><div class="stat-label">Sessions</div></div>
       <div class="stat-box"><div class="stat-num">${totalStrength}</div><div class="stat-label">Strength</div></div>
       <div class="stat-box"><div class="stat-num">${totalCardio}</div><div class="stat-label">Cardio</div></div>
       <div class="stat-box"><div class="stat-num">${ForgeEngine.coreWeekLabel(coreDaysForWeek(getWeekNumber(new Date())))}</div><div class="stat-label">Core This Week</div></div>
@@ -3542,7 +3522,17 @@ function renderHistory() {
 
   document.getElementById('chartsContent').innerHTML = chartsHtml;
 
-  if (entries.length === 0) {
+  const extraRows = [];
+  Object.keys(state.extras || {}).forEach((ds) => {
+    (state.extras[ds] || []).forEach((entry) => {
+      if (!entry || entry.ouraDraft) return;
+      if (!logBelongsToBlock(ds, entry, blockId)) return;
+      extraRows.push([ds, entry]);
+    });
+  });
+  extraRows.sort((a, b) => b[0].localeCompare(a[0]));
+
+  if (entries.length === 0 && extraRows.length === 0) {
     document.getElementById('historyContent').innerHTML = '<div class="empty-state"><p>No workouts in this block yet.</p></div>';
     return;
   }
@@ -3575,6 +3565,7 @@ function renderHistory() {
       if (mode === 'treadmill') {
         if (log.incline) parts.push(`${log.incline}% incline`);
         if (log.speed) parts.push(`${log.speed} mph`);
+        if (log.maxSpeed) parts.push(`max ${log.maxSpeed} mph`);
         if (log.calories) parts.push(`${log.calories} cal`);
       }
       if (mode === 'ruck' && log.weight) parts.push(`${log.weight} lbs`);
@@ -3593,6 +3584,22 @@ function renderHistory() {
       <div class="he-stats">${escHtml(stats)}</div>
       ${log.notes ? `<div style="font-size:0.8rem;color:var(--muted);font-style:italic;margin-top:4px;">"${escHtml(log.notes)}"</div>` : ''}
       <div class="he-hint">Tap to open / edit →</div>
+    </div>`;
+  });
+  extraRows.forEach(([ds, entry]) => {
+    const d = new Date(ds + 'T12:00:00');
+    const dateLabel = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+    const parts = ['extra'];
+    if (entry.duration) parts.push(entry.duration + ' min');
+    if (entry.hr) parts.push('HR ' + entry.hr);
+    if (entry.calories) parts.push(entry.calories + ' cal');
+    if (entry.intensity) parts.push(String(entry.intensity));
+    histHtml += `
+    <div class="history-entry" onclick="navigateToDay('${ds}')" title="Open this day">
+      <div class="he-date">${dateLabel}</div>
+      <div class="he-title">${escHtml(entry.className || entry.workout || 'Extra')}</div>
+      <div class="he-stats">${escHtml(parts.join(' • '))}</div>
+      <div class="he-hint">Extra · does not fill a plan slot</div>
     </div>`;
   });
   document.getElementById('historyContent').innerHTML = histHtml;
@@ -3703,15 +3710,6 @@ function syncIsStale() {
   return !t || (Date.now() - t) > 48 * 3600 * 1000;
 }
 
-// Pure decision: block upload when the cloud clearly has more history than
-// this device (fresh install / stale device). Auto-sync blocks silently;
-// manual Sync Up asks the user. Born 2026-07-18 after an empty fresh
-// install overwrote 24 cloud workouts.
-function shouldBlockUpload(cloudLogs, localLogs, auto) {
-  if (cloudLogs <= localLogs) return 'allow';
-  return auto ? 'block' : 'ask';
-}
-
 function ensurePat(auto) {
   let pat = getSyncPat();
   if (!pat && !auto) {
@@ -3721,72 +3719,95 @@ function ensurePat(auto) {
   return getSyncPat();
 }
 
+function decodeGithubContent(content) {
+  const raw = atob(String(content || '').replace(/\s/g, ''));
+  try { return decodeURIComponent(escape(raw)); }
+  catch (e) { return raw; }
+}
+
+async function fetchCloudContents() {
+  const pat = getSyncPat();
+  const headers = {
+    'Authorization': `Bearer ${pat}`,
+    'Accept': 'application/vnd.github+json'
+  };
+  const resp = await fetch(`https://api.github.com/repos/${SYNC_REPO}/contents/${SYNC_FILE}?t=${Date.now()}`, { headers });
+  if (resp.status === 401) { setSyncPat(''); throw new Error('Invalid PAT — cleared, try again'); }
+  if (resp.status === 404) return { sha: null, doc: null };
+  if (!resp.ok) throw new Error(`Data fetch failed: ${resp.status}`);
+  const existing = await resp.json();
+  const doc = JSON.parse(decodeGithubContent(existing.content));
+  return { sha: existing.sha, doc };
+}
+
+function pullMergeLocal(cloudDoc) {
+  const local = getState();
+  if (!cloudDoc) return local;
+  const merged = ForgeEngine.mergeSyncState(cloudDoc, local);
+  ensureBlocks(merged);
+  saveState(merged);
+  return merged;
+}
+
+async function putCloudDoc(doc, sha) {
+  const pat = getSyncPat();
+  const headers = {
+    'Authorization': `Bearer ${pat}`,
+    'Content-Type': 'application/json',
+    'Accept': 'application/vnd.github+json'
+  };
+  const data = JSON.stringify(doc, null, 2);
+  const body = {
+    message: `sync: workout data ${new Date().toISOString().slice(0, 10)}`,
+    content: btoa(unescape(encodeURIComponent(data))),
+    ...(sha ? { sha } : {})
+  };
+  return fetch(`https://api.github.com/repos/${SYNC_REPO}/contents/${SYNC_FILE}`, {
+    method: 'PUT', headers, body: JSON.stringify(body)
+  });
+}
+
 async function syncToCloud(auto) {
   const pat = ensurePat(auto);
   if (!pat) return;
 
   const btn = document.getElementById('syncBtn');
   const status = document.getElementById('syncStatus');
-  btn.disabled = true;
-  btn.textContent = '⏳ Syncing...';
-  status.textContent = '';
+  if (btn) btn.disabled = true;
+  if (btn) btn.textContent = '⏳ Syncing...';
+  if (status) status.textContent = '';
 
   try {
-    const data = JSON.stringify(getState(), null, 2);
-    const headers = {
-      'Authorization': `Bearer ${pat}`,
-      'Content-Type': 'application/json',
-      'Accept': 'application/vnd.github+json'
-    };
-
-    // Check if file exists (get SHA for update) + clobber guard
-    let sha = null;
-    const getResp = await fetch(`https://api.github.com/repos/${SYNC_REPO}/contents/${SYNC_FILE}`, { headers });
-    if (getResp.status === 401) { setSyncPat(''); throw new Error('Invalid PAT — cleared, try again'); }
-    if (getResp.ok) {
-      const existing = await getResp.json();
-      sha = existing.sha;
-      try {
-        const cloud = JSON.parse(atob((existing.content || '').replace(/\s/g, '')));
-        const cloudLogs = Object.keys(cloud.logs || {}).length;
-        const localLogs = Object.keys(getState().logs || {}).length;
-        const verdict = shouldBlockUpload(cloudLogs, localLogs, !!auto);
-        if (verdict === 'block') { throw new Error(`Auto-sync paused — cloud has ${cloudLogs} workouts, this device has ${localLogs}. Tap Restore first.`); }
-        if (verdict === 'ask' && !confirm(`⚠️ Cloud has ${cloudLogs} workouts; this device has ${localLogs}.\n\nSync Up will OVERWRITE the cloud copy. Fresh install? Cancel and tap Restore instead.`)) {
-          throw new Error('Sync cancelled — tap Restore to pull cloud data first');
-        }
-      } catch (e) {
-        if (e instanceof SyntaxError) { /* content unavailable or unparsable — proceed */ }
-        else throw e;
-      }
+    let pulled = await fetchCloudContents();
+    let merged = pullMergeLocal(pulled.doc);
+    let putResp = await putCloudDoc(merged, pulled.sha);
+    if (putResp.status === 409) {
+      pulled = await fetchCloudContents();
+      merged = pullMergeLocal(pulled.doc);
+      putResp = await putCloudDoc(merged, pulled.sha);
     }
-
-    // Create or update file
-    const body = {
-      message: `sync: workout data ${new Date().toISOString().slice(0,10)}`,
-      content: btoa(unescape(encodeURIComponent(data))),
-      ...(sha ? { sha } : {})
-    };
-
-    const putResp = await fetch(`https://api.github.com/repos/${SYNC_REPO}/contents/${SYNC_FILE}`, {
-      method: 'PUT', headers, body: JSON.stringify(body)
-    });
     if (putResp.status === 401) { setSyncPat(''); throw new Error('Invalid PAT — cleared, try again'); }
     if (!putResp.ok) {
       const err = await putResp.json().catch(() => ({}));
       throw new Error(`Sync failed: ${putResp.status} ${err.message || ''}`);
     }
-
     markSynced();
-    status.textContent = `✅ Synced — ${new Date().toLocaleTimeString()}`;
-    status.style.color = 'var(--green)';
+    if (status) {
+      status.textContent = `✅ Synced — ${new Date().toLocaleTimeString()}`;
+      status.style.color = 'var(--green)';
+    }
     renderHeader();
+    if (document.getElementById('pageToday')?.classList.contains('active')) renderToday();
   } catch (e) {
-    status.textContent = `❌ ${e.message}`;
-    status.style.color = 'var(--red)';
+    if (status) {
+      status.textContent = `❌ ${e.message}`;
+      status.style.color = 'var(--red)';
+    }
   } finally {
-    btn.disabled = false;
-    btn.textContent = '☁️ Sync Up';
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = '☁️ Sync Up';
+    }
   }
 }
 
@@ -3800,49 +3821,13 @@ async function restoreFromCloud() {
 
   try {
     const data = await fetchRepoJson(SYNC_FILE);
-
-    // Smart merge: per-date log richness (not blind local-wins).
-    // Prevents a thin local day from wiping a fuller cloud session.
     const local = getState();
-    const merged = { ...data };
-    merged.logs = mergeLogMaps(data.logs || {}, local.logs || {});
-    if (local.startDate && !merged.startDate) {
-      merged.startDate = local.startDate;
-    }
-    // Core / swaps / benchmarks: union by date; local fills holes but does not clobber richer cloud
-    merged.core = {};
-    const coreKeys = new Set([...Object.keys(data.core || {}), ...Object.keys(local.core || {})]);
-    for (const k of coreKeys) {
-      const c = (data.core || {})[k];
-      const l = (local.core || {})[k];
-      if (!c) merged.core[k] = l;
-      else if (!l) merged.core[k] = c;
-      else {
-        const cR = (c.rounds != null ? c.rounds : (c.done ? 3 : 0));
-        const lR = (l.rounds != null ? l.rounds : (l.done ? 3 : 0));
-        merged.core[k] = (lR > cR || (l.ts || 0) >= (c.ts || 0)) ? { ...c, ...l } : { ...l, ...c };
-        if (!merged.core[k].note && (c.note || l.note)) merged.core[k].note = l.note || c.note;
-      }
-    }
-    merged.swaps = { ...(data.swaps || {}), ...(local.swaps || {}) };
-    merged.benchmarks = { ...(data.benchmarks || {}), ...(local.benchmarks || {}) };
-
-    // Blocks: union by id; prefer local currentBlockId if present
-    const byId = {};
-    for (const b of (data.blocks || [])) byId[b.id] = { ...b };
-    for (const b of (local.blocks || [])) {
-      byId[b.id] = byId[b.id] ? { ...byId[b.id], ...b } : { ...b };
-    }
-    merged.blocks = Object.values(byId).sort((a, b) => (a.startDate || '').localeCompare(b.startDate || ''));
-    merged.currentBlockId = local.currentBlockId || data.currentBlockId || (merged.blocks[0] && merged.blocks[0].id) || null;
+    const merged = ForgeEngine.mergeSyncState(data, local);
     ensureBlocks(merged);
-
-    // Conflict report when both sides had same-date strength logs
     let conflicts = 0;
     for (const ds of Object.keys(data.logs || {})) {
       if ((local.logs || {})[ds] && logRichness(data.logs[ds]) !== logRichness(local.logs[ds])) conflicts++;
     }
-
     saveState(merged);
     const logCount = Object.keys(merged.logs || {}).length;
     status.textContent = `✅ Restored ${logCount} workout(s)${conflicts ? ` · merged ${conflicts} overlapping day(s)` : ''} — ${new Date().toLocaleTimeString()}`;
@@ -3886,7 +3871,49 @@ async function fetchOuraReadiness() {
 
 function paintDayExtras(ds) {
   if (ouraData) renderReadinessCard();
+  renderStoredExtras(ds);
   renderOuraWorkouts(ds);
+}
+
+function renderStoredExtras(ds) {
+  const existing = document.getElementById('extraCards');
+  if (existing) existing.remove();
+  const list = getExtras(ds);
+  if (!list.length) return;
+  const container = document.getElementById('todayContent');
+  if (!container) return;
+  const wrap = document.createElement('div');
+  wrap.id = 'extraCards';
+  wrap.innerHTML = list.map((entry) => {
+    const bits = ['Extra'];
+    if (entry.duration) bits.push(entry.duration + ' min');
+    if (entry.calories) bits.push(entry.calories + ' cal');
+    if (entry.hr) bits.push('HR ' + entry.hr);
+    const id = escHtml(entry.id || '');
+    const confirm = entry.ouraDraft
+      ? `<button type="button" class="btn btn-primary oura-confirm" style="margin-top:12px;" onclick="confirmExtra('${ds}','${id}')">Confirm</button>
+         <div class="oura-note">Extra. Confirm logs it beside today's slot. It does not fill a plan slot.</div>`
+      : '<div class="oura-meta" style="margin-top:6px;">Does not fill a plan slot.</div>';
+    return `<div class="card" style="margin-top:12px;">
+      <div class="section-title" style="margin-top:0;">Extra</div>
+      <div style="font-size:1.05rem;font-weight:700;color:var(--heading);">${escHtml(entry.className || entry.workout || 'Extra')}</div>
+      <div class="oura-meta">${escHtml(bits.join(' · '))}</div>
+      ${confirm}
+    </div>`;
+  }).join('');
+  const session = container.querySelector('.session-card');
+  if (session) session.after(wrap);
+  else container.prepend(wrap);
+}
+
+function confirmExtra(ds, id) {
+  const entry = getExtras(ds).find((e) => e && e.id === id);
+  if (!entry) return;
+  delete entry.ouraDraft;
+  entry.extra = true;
+  entry.covers = '';
+  saveExtra(ds, entry);
+  renderToday();
 }
 
 function renderOuraWorkouts(ds) {
@@ -3914,11 +3941,14 @@ function renderOuraWorkouts(ds) {
     const isExtra = pre.kind === 'extra' || !ForgeEngine.ouraOffersSlot(w);
     const kind = isExtra ? 'Extra' : (pre.kind === 'treadmill' ? 'Treadmill' : 'Class');
     const id = escHtml(String(w.id == null ? '' : w.id));
+    const logged = ouraAlreadyLogged(w.id);
     const btn = monday
       ? ''
-      : (isExtra
-        ? `<button type="button" class="oura-add" onclick="addOuraToSlot('${ds}','${id}')">Log extra</button>`
-        : `<button type="button" class="oura-add" onclick="addOuraToSlot('${ds}','${id}')">Add to this slot</button>`);
+      : (logged
+        ? '<div class="oura-meta">Logged</div>'
+        : (isExtra
+          ? `<button type="button" class="oura-add" onclick="addOuraToSlot('${ds}','${id}')">Log extra</button>`
+          : `<button type="button" class="oura-add" onclick="addOuraToSlot('${ds}','${id}')">Add to this slot</button>`));
     rows += `<div class="oura-row">
       <div>
         <div class="oura-title">${escHtml(title)}</div>
